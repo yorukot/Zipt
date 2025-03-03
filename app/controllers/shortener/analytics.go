@@ -50,7 +50,7 @@ func GetURLAnalytics(c *gin.Context) {
 		"url": gin.H{
 			"short_code":   url.ShortCode,
 			"original_url": url.OriginalURL,
-			"total_clicks": url.ClickCount,
+			"total_clicks": summary.TotalClicks,
 			"created_at":   url.CreatedAt,
 			"expires_at":   url.ExpiresAt,
 		},

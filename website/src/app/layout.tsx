@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import Header from "@/components/layout/header/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,7 +37,10 @@ export default async function RootLayout({
           <NextIntlClientProvider messages={messages}>
             {/* Nuqs for Type-safe search params */}
             <NuqsAdapter>
-              <TooltipProvider>{children}</TooltipProvider>
+              <TooltipProvider>
+                <Header />
+                {children}
+              </TooltipProvider>
               {/* Shadcn toaster */}
             </NuqsAdapter>
 

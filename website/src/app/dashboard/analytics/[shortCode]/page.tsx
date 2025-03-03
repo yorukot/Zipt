@@ -41,25 +41,41 @@ import {
 
 import API_URLS from "@/lib/api-urls";
 
-// Chart config for different metrics
-const getChartConfig = (data: any) => ({
-  browsers: {
-    label: "Browsers",
-    color: "hsl(var(--chart-1))",
-  },
-  devices: {
-    label: "Devices",
-    color: "hsl(var(--chart-2))",
+// Chart config type definition
+type ChartConfig = {
+  [key: string]: {
+    label: string;
+    theme: {
+      light: string;
+      dark: string;
+    };
+  };
+};
+
+// Chart config with proper theme colors
+const chartConfig = {
+  referrers: {
+    label: "Referrers",
+    theme: {
+      light: "hsl(var(--chart-1))",
+      dark: "hsl(var(--chart-1))",
+    },
   },
   countries: {
     label: "Countries",
-    color: "hsl(var(--chart-3))",
+    theme: {
+      light: "hsl(var(--chart-2))",
+      dark: "hsl(var(--chart-2))",
+    },
   },
-  referrers: {
-    label: "Referrers",
-    color: "hsl(var(--chart-4))",
+  hourly: {
+    label: "Hourly",
+    theme: {
+      light: "hsl(var(--chart-3))",
+      dark: "hsl(var(--chart-3))",
+    },
   },
-});
+} satisfies ChartConfig;
 
 // Fetcher for SWR
 const fetcher = async (url: string) => {
@@ -72,6 +88,17 @@ const fetcher = async (url: string) => {
   }
   
   return response.json();
+};
+
+// Helper function to safely format dates
+const formatDate = (dateString: string | undefined | null): string => {
+  if (!dateString) return '-';
+  try {
+    return format(new Date(dateString), "PPP");
+  } catch (error) {
+    console.error('Invalid date:', dateString);
+    return '-';
+  }
 };
 
 export default function AnalyticsPage() {
@@ -119,8 +146,26 @@ export default function AnalyticsPage() {
     );
   }
 
-  const analytics = data?.data?.analytics;
-  const urlData = data?.data?.url;
+  const analytics = data?.result?.analytics;
+  const urlData = data?.result?.url;
+
+  // Transform data for charts
+  const referrerData = analytics?.referrer_stats?.map((stat: any) => ({
+    referrer: stat.referrer,
+    count: stat.click_count,
+    percentage: stat.percentage,
+  })) || [];
+
+  const countryData = analytics?.country_stats?.map((stat: any) => ({
+    country: stat.country,
+    count: stat.click_count,
+    percentage: stat.percentage,
+  })) || [];
+
+  const hourlyData = analytics?.hourly_engagement?.map((stat: any) => ({
+    hour: format(new Date(stat.time_start), "HH:mm"),
+    count: stat.engagement,
+  })) || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -159,102 +204,25 @@ export default function AnalyticsPage() {
         
         <StatsCard
           title={t("Dashboard.analytics.created_at")}
-          value={format(new Date(urlData?.created_at), "PPP")}
+          value={formatDate(urlData?.created_at)}
           icon={<Icon icon="lucide:calendar" className="h-4 w-4" />}
         />
         
         <StatsCard
           title={t("Dashboard.analytics.expires_at")}
-          value={urlData?.expires_at ? format(new Date(urlData.expires_at), "PPP") : t("Dashboard.analytics.never")}
+          value={urlData?.expires_at ? formatDate(urlData.expires_at) : t("Dashboard.analytics.never")}
           icon={<Icon icon="lucide:clock" className="h-4 w-4" />}
         />
         
         <StatsCard
           title={t("Dashboard.analytics.original_url")}
-          value={urlData?.original_url}
+          value={urlData?.original_url || '-'}
           icon={<Icon icon="lucide:link" className="h-4 w-4" />}
           tooltip
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Devices Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon icon="lucide:monitor" className="h-5 w-5" />
-              {t("Dashboard.analytics.devices")}
-            </CardTitle>
-            <CardDescription>
-              {t("Dashboard.analytics.devices_description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
-            ) : (
-              <ChartContainer config={getChartConfig(analytics)} className="h-[300px]">
-                <PieChart data={analytics?.devices}>
-                  <Pie
-                    dataKey="count"
-                    nameKey="device"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="var(--color-devices)"
-                  />
-                  <ChartTooltip content={<ChartTooltipContent nameKey="device" />} />
-                  <ChartLegend content={<ChartLegendContent nameKey="device" />} />
-                </PieChart>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Browsers Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon icon="lucide:globe" className="h-5 w-5" />
-              {t("Dashboard.analytics.browsers")}
-            </CardTitle>
-            <CardDescription>
-              {t("Dashboard.analytics.browsers_description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
-            ) : (
-              <ChartContainer config={getChartConfig(analytics)} className="h-[300px]">
-                <BarChart data={analytics?.browsers}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                  <XAxis
-                    dataKey="browser"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickMargin={8}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill="var(--color-browsers)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent nameKey="browser" />} />
-                  <ChartLegend content={<ChartLegendContent nameKey="browser" />} />
-                </BarChart>
-              </ChartContainer>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Countries Chart */}
         <Card>
           <CardHeader>
@@ -270,31 +238,64 @@ export default function AnalyticsPage() {
             {isLoading ? (
               <Skeleton className="h-[300px] w-full" />
             ) : (
-              <ChartContainer config={getChartConfig(analytics)} className="h-[300px]">
-                <BarChart data={analytics?.countries}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                  <XAxis
-                    dataKey="country"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickMargin={8}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill="var(--color-countries)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent nameKey="country" />} />
-                  <ChartLegend content={<ChartLegendContent nameKey="country" />} />
-                </BarChart>
-              </ChartContainer>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={countryData}>
+                    <CartesianGrid 
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                      horizontal={true}
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="country"
+                      className="text-sm fill-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      padding={{ left: 20, right: 20 }}
+                    />
+                    <YAxis
+                      className="text-sm fill-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      width={40}
+                    />
+                    <Bar
+                      dataKey="count"
+                      fill="currentColor"
+                      className="fill-primary"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload) return null;
+                        return (
+                          <div className="rounded-lg border bg-background p-2 shadow-sm">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                  Country
+                                </span>
+                                <span className="font-bold text-muted-foreground">
+                                  {payload[0]?.payload?.country}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                  Clicks
+                                </span>
+                                <span className="font-bold">
+                                  {payload[0]?.value}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -314,31 +315,141 @@ export default function AnalyticsPage() {
             {isLoading ? (
               <Skeleton className="h-[300px] w-full" />
             ) : (
-              <ChartContainer config={getChartConfig(analytics)} className="h-[300px]">
-                <BarChart data={analytics?.referrers}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                  <XAxis
-                    dataKey="referrer"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                    tickMargin={8}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill="var(--color-referrers)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent nameKey="referrer" />} />
-                  <ChartLegend content={<ChartLegendContent nameKey="referrer" />} />
-                </BarChart>
-              </ChartContainer>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={referrerData}>
+                    <CartesianGrid 
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                      horizontal={true}
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="referrer"
+                      className="text-sm fill-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      padding={{ left: 20, right: 20 }}
+                    />
+                    <YAxis
+                      className="text-sm fill-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      width={40}
+                    />
+                    <Bar
+                      dataKey="count"
+                      fill="currentColor"
+                      className="fill-primary"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload) return null;
+                        return (
+                          <div className="rounded-lg border bg-background p-2 shadow-sm">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                  Referrer
+                                </span>
+                                <span className="font-bold text-muted-foreground">
+                                  {payload[0]?.payload?.referrer}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                  Clicks
+                                </span>
+                                <span className="font-bold">
+                                  {payload[0]?.value}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Hourly Engagement Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon icon="lucide:clock" className="h-5 w-5" />
+              {t("Dashboard.analytics.hourly")}
+            </CardTitle>
+            <CardDescription>
+              {t("Dashboard.analytics.hourly_description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : (
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlyData}>
+                    <CartesianGrid 
+                      strokeDasharray="3 3"
+                      className="stroke-muted"
+                      horizontal={true}
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="hour"
+                      className="text-sm fill-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      padding={{ left: 20, right: 20 }}
+                    />
+                    <YAxis
+                      className="text-sm fill-muted-foreground"
+                      tickLine={false}
+                      axisLine={false}
+                      width={40}
+                    />
+                    <Bar
+                      dataKey="count"
+                      fill="currentColor"
+                      className="fill-primary"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload) return null;
+                        return (
+                          <div className="rounded-lg border bg-background p-2 shadow-sm">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                  Time
+                                </span>
+                                <span className="font-bold text-muted-foreground">
+                                  {payload[0]?.payload?.hour}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                  Clicks
+                                </span>
+                                <span className="font-bold">
+                                  {payload[0]?.value}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>

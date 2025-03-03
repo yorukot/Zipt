@@ -2,6 +2,7 @@ package queries
 
 import (
 	"errors"
+	"time"
 
 	"github.com/yorukot/zipt/app/models"
 	db "github.com/yorukot/zipt/pkg/database"
@@ -121,35 +122,31 @@ func GetAnalyticsSummaryByURLID(urlID uint64) (*AnalyticsSummary, error) {
 // GetUserURLSummaries retrieves summarized data for all URLs created by a specific user
 func GetUserURLSummaries(userID uint64) ([]URLSummary, error) {
 	database := db.GetDB()
-	var urls []models.URL
 	var summaries []URLSummary
 
 	// Get all URLs created by this user with their analytics
-	result := database.
-		Select("urls.*, COALESCE(url_analytics.click_count, 0) as click_count").
+	result := database.Table("urls").
+		Select("urls.id, urls.short_code, urls.original_url, urls.created_at, urls.expires_at, COALESCE(url_analytics.click_count, 0) as click_count").
 		Joins("LEFT JOIN url_analytics ON urls.id = url_analytics.url_id").
 		Where("urls.user_id = ?", userID).
 		Order("urls.created_at DESC").
-		Find(&urls)
+		Scan(&summaries)
+
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	// Build the summary for each URL
-	for _, url := range urls {
-		summary := URLSummary{
-			ID:          url.ID,
-			ShortCode:   url.ShortCode,
-			OriginalURL: url.OriginalURL,
-			CreatedAt:   url.CreatedAt.Format("2006-01-02 15:04:05"),
-			ClickCount:  url.ClickCount,
+	// Format dates for each summary
+	for i := range summaries {
+		// Parse the string dates back to time.Time for formatting
+		if createdAt, err := time.Parse("2006-01-02 15:04:05", summaries[i].CreatedAt); err == nil {
+			summaries[i].CreatedAt = createdAt.Format("2006-01-02 15:04:05")
 		}
-
-		if url.ExpiresAt != nil {
-			summary.ExpiresAt = url.ExpiresAt.Format("2006-01-02 15:04:05")
+		if summaries[i].ExpiresAt != "" {
+			if expiresAt, err := time.Parse("2006-01-02 15:04:05", summaries[i].ExpiresAt); err == nil {
+				summaries[i].ExpiresAt = expiresAt.Format("2006-01-02 15:04:05")
+			}
 		}
-
-		summaries = append(summaries, summary)
 	}
 
 	return summaries, nil

@@ -7,7 +7,7 @@ import (
 )
 
 func UserRoute(r *gin.RouterGroup) {
-	userGroup := r.Group("/user")
+	userGroup := r.Group("/users")
 	userGroup.Use(middleware.IsAuthorized())
 
 	userGroup.GET("/profile", userCtrl.GetProfile)

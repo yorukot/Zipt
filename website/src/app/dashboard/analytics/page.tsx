@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function AnalyticsPage() {
-  return <div>Analytics</div>;
+  redirect("/dashboard");
 }

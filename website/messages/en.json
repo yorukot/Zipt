@@ -9,7 +9,45 @@
     "or": "or"
   },
   "HomePage": {
-    "title": "Hello world!"
+    "hero": {
+      "title": "Share links with style.",
+      "subtitle": "Create beautiful, trackable short links in seconds.",
+      "cta": "Get Started — It's Free",
+      "secondary_cta": "Learn more",
+      "url_input": {
+        "placeholder": "Paste your long URL here...",
+        "button": "Shorten URL",
+        "copied": "Copied to clipboard!",
+        "error": "Please enter a valid URL",
+        "processing": "Shortening..."
+      }
+    },
+    "features": {
+      "title": "Everything you need",
+      "subtitle": "Powerful features for modern link sharing",
+      "analytics": {
+        "title": "Rich Analytics",
+        "description": "Track clicks, locations, and devices in real-time with beautiful visualizations."
+      },
+      "custom": {
+        "title": "Custom Links",
+        "description": "Create memorable links with your own custom short codes."
+      },
+      "expiration": {
+        "title": "Link Expiration",
+        "description": "Set expiration dates for temporary links and campaigns."
+      }
+    },
+    "stats": {
+      "links_created": "Links Created",
+      "total_clicks": "Total Clicks",
+      "active_users": "Active Users"
+    },
+    "cta_section": {
+      "title": "Ready to transform your links?",
+      "subtitle": "Join thousands of users who trust us with their link management.",
+      "button": "Start for Free"
+    }
   },
   "Auth": {
     "display_name": "Display name",
@@ -141,7 +179,9 @@
       "referrers": "Referrers",
       "referrers_description": "Top sources of traffic to your URL",
       "never": "Never",
-      "loading": "Loading analytics data..."
+      "loading": "Loading analytics data...",
+      "hourly": "Hourly Engagement",
+      "hourly_description": "Click distribution over time"
     }
   }
 }

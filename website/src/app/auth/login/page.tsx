@@ -3,38 +3,35 @@
 import { useTranslations } from "next-intl";
 
 import AuthPageLayout from "@/components/layout/auth-layout";
-import SignupEmailModal from "./signup-email-modal";
 
-const SignupLayout = () => {
+import LoginModal from "./login-modal";
+
+const LoginLayout = () => {
   const t = useTranslations("Auth");
 
   return (
     <AuthPageLayout
       Footer={
         <p className="text-peach font-bold">
-          {t("signup.already_have_an_account")}{" "}
+          {t("login.dont_have_an_account")}{" "}
           <a
-            href="/login"
+            href="/auth/signup"
             className="text-blue font-bold transition-colors duration-100 hover:underline hover:decoration-blue"
           >
-            {t("login.login")}
+            {t("signup.signup")}
           </a>
         </p>
       }
       Button={
-        <a href="/login">
+        <a href="/auth/signup">
           <button className="px-4 py-1 rounded-lg bg-transparent border-surface1 border-2 hover:bg-surface1 font-bold transition-ease-in-out">
-            {t("login.login")}
+            {t("signup.signup")}
           </button>
         </a>
       }
-      Modal={
-        <>
-          <SignupEmailModal />
-        </>
-      }
+      Modal={<LoginModal />}
     />
   );
 };
 
-export default SignupLayout;
+export default LoginLayout;
