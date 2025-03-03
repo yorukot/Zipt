@@ -39,6 +39,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -94,6 +102,8 @@ export default function DashboardPage() {
   // Sidebar state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [urlToEdit, setUrlToEdit] = useState<Url | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [urlToDelete, setUrlToDelete] = useState<Url | null>(null);
 
   // Use SWR for data fetching
   const { data, error, isLoading, mutate } = useSWR<ListUrlsResponse>(
@@ -124,16 +134,22 @@ export default function DashboardPage() {
     );
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t("Dashboard.url.confirm_delete"))) {
-      return;
-    }
+  const handleDeleteClick = (url: Url) => {
+    setUrlToDelete(url);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!urlToDelete) return;
 
     try {
-      const response = await fetch(`${API_URLS.URL.DELETE}/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_URLS.URL.DELETE}/${urlToDelete.short_code}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
 
       if (!response.ok) {
         throw new Error(t("Dashboard.error.delete_failed"));
@@ -143,6 +159,7 @@ export default function DashboardPage() {
         description: t("Dashboard.url.deleted_description"),
       });
 
+      setShowDeleteDialog(false);
       mutate();
     } catch (error) {
       toast.error(t("Dashboard.error.delete_failed"), {
@@ -301,43 +318,34 @@ export default function DashboardPage() {
                 <div key={url.id} className="border rounded-lg overflow-hidden">
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="group">
-                            <div className="flex items-center gap-1">
-                              <div className="font-medium truncate max-w-[180px]">
-                                {url.short_code}
-                              </div>
-                            </div>
-
-                            {url.expires_at && (
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Badge
-                                    variant="outline"
-                                    className="ml-1 border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400"
-                                  >
-                                    <Clock className="h-3 w-3 mr-1" />{" "}
-                                    {t("Dashboard.url.expires")}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {format(new Date(url.expires_at), "PPP", {
-                                      locale: dateLocale,
-                                    })}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
+                      <div className="group">
+                        <div className="flex items-center gap-1">
+                          <div className="font-medium truncate max-w-[180px]">
+                            {url.short_code}
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start">
-                          <p>
-                            {window.location.origin}/{url.short_code}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
+                        </div>
+
+                        {url.expires_at && (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge
+                                variant="outline"
+                                className="ml-1 border-amber-200 text-amber-700 dark:border-amber-800 dark:text-amber-400"
+                              >
+                                <Clock className="h-3 w-3 mr-1" />{" "}
+                                {t("Dashboard.url.expires")}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {format(new Date(url.expires_at), "PPP", {
+                                  locale: dateLocale,
+                                })}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -378,8 +386,8 @@ export default function DashboardPage() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => handleDelete(url.short_code)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onSelect={() => handleDeleteClick(url)}
                           >
                             <Trash className="h-4 w-4 mr-2" />
                             {t("Dashboard.url.delete")}
@@ -463,6 +471,36 @@ export default function DashboardPage() {
         editUrl={urlToEdit}
         onSuccess={mutate}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+              <Trash className="h-5 w-5 text-destructive" />
+              {t("Dashboard.url.delete")}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-4 pt-3">
+                <p className="text-lg text-muted-foreground">
+                  {t("Dashboard.url.confirm_delete")}
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              {t("Dashboard.url.cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              {t("Dashboard.url.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

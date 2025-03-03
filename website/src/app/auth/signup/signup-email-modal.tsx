@@ -42,37 +42,42 @@ const SignupEmailModal = () => {
   const handleSignup = async (values: EmailSignupForm) => {
     try {
       setSignupLoading(true);
-      const response = await fetch(
-        API_URLS.AUTH.REGISTER,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(values),
+      const response = await fetch(API_URLS.AUTH.REGISTER, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(values),
+      });
 
       setSignupLoading(false);
 
       const data = await response.json();
 
       if (response.ok) {
-        if (data.status === "success" && data.data?.token) {
-          toast.success(t("Auth.signup.success"), {
-            description: t("Auth.signup.success_description"),
-          });
-          
-          router.push("/dashboard");
-          return;
-        }
+        toast.success(t("Auth.signup.success"), {
+          description: t("Auth.signup.success_description"),
+        });
+
+        router.push("/dashboard");
+        return;
       } else if (response.status === 400) {
-        if (data.message?.includes("email")) {
-          setError("email", { message: "Auth.error.email_already_been_used" });
+        if (data.error === "email_already_used" || data.error === "email_already_exists") {
+          setError("email", { 
+            message: "Auth.error.email_already_been_used" 
+          });
+        } else if (data.message?.includes("email")) {
+          setError("email", { 
+            message: "Auth.error.email_already_been_used" 
+          });
         } else if (data.message?.includes("password")) {
-          setError("password", { message: "Auth.error.invalid_password" });
+          setError("password", { 
+            message: "Auth.error.password_min_length" 
+          });
         } else if (data.message?.includes("display_name")) {
-          setError("display_name", { message: "Auth.error.invalid_display_name" });
+          setError("display_name", {
+            message: "Auth.error.display_name_is_required",
+          });
         } else {
           toast.error(t("Auth.error.invalid_registration_data"));
         }
@@ -136,7 +141,7 @@ const SignupEmailModal = () => {
           <div>
             <Input
               {...register("password")}
-              placeholder={t("Auth.password")}
+              placeholder={t("Auth.password.password")}
               className="font-semibold"
               startAdornment={
                 <Icon

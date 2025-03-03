@@ -85,10 +85,17 @@ const LoginModal = () => {
   const handleLogin: SubmitHandler<LoginForm> = async (values) => {
     try {
       setLoginLoading(true);
+      
+      // Sanitize email input by trimming whitespace and converting to lowercase
+      const sanitizedValues = {
+        ...values,
+        email: values.email.trim().toLowerCase()
+      };
+      
       const response = await fetch(API_URLS.AUTH.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(sanitizedValues),
       });
 
       setLoginLoading(false);
@@ -96,28 +103,34 @@ const LoginModal = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // According to API docs, successful login returns token and user data
-        if (data.status === "success" && data.data?.token) {
-          // Store token in cookies if it's not automatically handled by the server
-          // Note: The server likely sets HTTP-only cookies for security
-          
-          toast.success(t("Auth.login.verify_successful"), {
-            description: t("Auth.login.verify_successful_content"),
-          });
-          
-          // Redirect to dashboard or home page
-          router.push("/dashboard");
-          return;
-        }
+        // Use a more appropriate success message for login
+        toast.success(t("Auth.login.success"), {
+          description: t("Auth.login.success_description"),
+        });
+
+        // Redirect to dashboard or home page
+        router.push("/dashboard");
+        return;
       } else if (response.status === 400) {
-        // Invalid format
-        setError("password", { message: "Auth.error.invalid_format" });
-        setError("email", { message: "Auth.error.invalid_format" });
+        // Handle specific error codes from the backend
+        if (data.error === "invalid_email_format") {
+          setError("email", { message: "Auth.error.email_not_valid" });
+        } else if (data.error === "password_too_short") {
+          setError("password", { message: "Auth.error.password_min_length" });
+        } else if (data.field === "email") {
+          setError("email", { message: "Auth.error.invalid_credentials" });
+        } else if (data.field === "password") {
+          setError("password", { message: "Auth.error.invalid_credentials" });
+        } else {
+          // Generic format error fallback
+          setError("email", { message: "Auth.error.invalid_format" });
+          setError("password", { message: "Auth.error.invalid_format" });
+        }
         return;
       } else if (response.status === 401) {
         // Incorrect credentials
-        setError("password", { message: "Auth.error.invalid_credentials" });
         setError("email", { message: "Auth.error.invalid_credentials" });
+        setError("password", { message: "Auth.error.invalid_credentials" });
         return;
       } else if (response.status >= 500) {
         // Server error
@@ -165,7 +178,7 @@ const LoginModal = () => {
           <div>
             <Input
               {...register("password")}
-              placeholder={t("Auth.password")}
+              placeholder={t("Auth.password.password")}
               startAdornment={
                 <Icon
                   icon="lucide:lock-keyhole"

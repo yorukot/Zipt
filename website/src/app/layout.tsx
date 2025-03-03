@@ -11,8 +11,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "InstructHub",
-  description: "Learn should always be everything right",
+  title: "zipt",
+  description: "zip your links with zipt",
 };
 
 export default async function RootLayout({

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/models"
@@ -37,7 +38,12 @@ func Login(c *gin.Context) {
 		return // Error response already sent in the session function
 	}
 
-	utils.FullyResponse(c, 200, "Login successful", nil, nil)
+	// Return user information with success response
+	utils.FullyResponse(c, 200, "Login successful", nil, map[string]interface{}{
+		"user_id":      user.ID,
+		"email":        user.Email,
+		"display_name": user.DisplayName,
+	})
 }
 
 // validateLoginRequest validates the incoming login request
@@ -45,14 +51,28 @@ func validateLoginRequest(c *gin.Context) (*EmailLoginRequest, error) {
 	var request EmailLoginRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.FullyResponse(c, 400, "Invalid request", utils.ErrBadRequest, err.Error())
+		// Provide more specific error messages based on validation failure
+		if strings.Contains(err.Error(), "Email") {
+			utils.FullyResponse(c, 400, "Invalid email format", utils.ErrBadRequest, map[string]interface{}{
+				"field": "email",
+				"error": "invalid_email_format",
+			})
+		} else if strings.Contains(err.Error(), "Password") {
+			utils.FullyResponse(c, 400, "Password must be at least 8 characters", utils.ErrBadRequest, map[string]interface{}{
+				"field": "password",
+				"error": "password_too_short",
+			})
+		} else {
+			utils.FullyResponse(c, 400, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
+				"error":   "invalid_request_format",
+				"details": err.Error(),
+			})
+		}
 		return nil, err
 	}
 
-	if request.Email == "" {
-		utils.FullyResponse(c, 400, "Email is required", utils.ErrBadRequest, nil)
-		return nil, errors.New("email is required")
-	}
+	// Sanitize inputs
+	request.Email = strings.TrimSpace(strings.ToLower(request.Email))
 
 	return &request, nil
 }
@@ -61,10 +81,13 @@ func validateLoginRequest(c *gin.Context) (*EmailLoginRequest, error) {
 func fetchUserByEmail(c *gin.Context, email string) (models.User, error) {
 	user, result := queries.GetUserQueueByEmail(email)
 	if result.Error == gorm.ErrRecordNotFound {
-		utils.FullyResponse(c, 400, "Invalid email", utils.ErrInvalidUsernameOrEmail, nil)
+		utils.FullyResponse(c, 401, "Invalid email or password", utils.ErrInvalidUsernameOrEmail, map[string]interface{}{
+			"field": "email",
+			"error": "invalid_credentials",
+		})
 		return models.User{}, result.Error
 	} else if result.Error != nil {
-		utils.ServerErrorResponse(c, 500, "Error check email", utils.ErrGetData, result.Error)
+		utils.ServerErrorResponse(c, 500, "Error checking email", utils.ErrGetData, result.Error)
 		return models.User{}, result.Error
 	}
 
@@ -74,13 +97,19 @@ func fetchUserByEmail(c *gin.Context, email string) (models.User, error) {
 // validateUserPassword verifies if the provided password matches the stored hash
 func validateUserPassword(c *gin.Context, user models.User, password string) error {
 	if user.Password == "" {
-		utils.FullyResponse(c, 400, "Invalid password", utils.ErrInvalidPassword, nil)
+		utils.FullyResponse(c, 401, "Invalid email or password", utils.ErrInvalidPassword, map[string]interface{}{
+			"field": "password",
+			"error": "invalid_credentials",
+		})
 		return errors.New("invalid password")
 	}
 
 	match, err := encryption.ComparePasswordAndHash(password, user.Password)
 	if err != nil || !match {
-		utils.FullyResponse(c, 400, "Invalid password", utils.ErrInvalidPassword, nil)
+		utils.FullyResponse(c, 401, "Invalid email or password", utils.ErrInvalidPassword, map[string]interface{}{
+			"field": "password",
+			"error": "invalid_credentials",
+		})
 		return errors.New("invalid password")
 	}
 

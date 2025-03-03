@@ -14,6 +14,7 @@ export const API_URLS = {
     LOGIN: `${BASE_URL}/auth/login`,
     REGISTER: `${BASE_URL}/auth/register`,
     LOGOUT: `${BASE_URL}/auth/logout`,
+    CHANGE_PASSWORD: `${BASE_URL}/auth/change-password`,
     OAUTH: (oauthProvider: string) => `${BASE_URL}/auth/oauth/${oauthProvider}`,
     CHECK_EMAIL_VERIFY: (userID: string) =>
       `${BASE_URL}/auth/email/verify/check/${userID}`,

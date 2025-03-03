@@ -97,6 +97,58 @@ Authenticates a user and returns a JWT token.
 - `401 Unauthorized`: Incorrect email or password
 - `500 Internal Server Error`: Server-side error
 
+#### User Logout
+
+Logs out a user by invalidating their session.
+
+**Endpoint:** `POST /auth/logout`
+
+**Authentication:** None (but requires active session)
+
+**Request Body:** None
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Logged out successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `500 Internal Server Error`: Server-side error
+
+#### Change Password
+
+Changes the user's password.
+
+**Endpoint:** `POST /auth/change-password`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "current_password": "oldSecurePassword123",
+  "new_password": "newSecurePassword456"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Password changed successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid password format or new password same as current
+- `401 Unauthorized`: Missing or invalid authentication
+- `500 Internal Server Error`: Server-side error
+
 #### Refresh Token
 
 Refreshes an expired JWT token.

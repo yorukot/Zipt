@@ -23,3 +23,9 @@ func CreateUserQueue(user models.User) *gorm.DB {
 	result := db.GetDB().Create(&user)
 	return result
 }
+
+// UpdateUserPassword updates a user's password in the database
+func UpdateUserPassword(userID uint64, hashedPassword string) *gorm.DB {
+	result := db.GetDB().Model(&models.User{}).Where("id = ?", userID).Update("password", hashedPassword)
+	return result
+}

@@ -2,39 +2,34 @@
 
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { thumbs } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
-import useSWR from "swr";
+import { toast } from "sonner";
+
 import API_URLS from "@/lib/api-urls";
 import { User } from "./header";
 
 import SelectLanguage from "@/components/select-language";
 import { ToggleTheme } from "@/components/toggle-theme";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { LogOut, Settings, LayoutDashboard } from "lucide-react";
 
 interface HeaderClientSideProps {
   user: User;
 }
 
-// Fetcher function for SWR
-const fetcher = async (url: string) => {
-  const response = await fetch(url, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error("Failed to fetch user data");
-  }
-  
-  const data = await response.json();
-  return data?.result;
-};
-
 export default function HeaderClientSide({ user: initialUser }: HeaderClientSideProps) {
   const t = useTranslations();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(initialUser);
   
   const refreshToken = async () => {
@@ -52,6 +47,30 @@ export default function HeaderClientSide({ user: initialUser }: HeaderClientSide
       }
     } catch (error) {
       console.error("Error refreshing token:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(API_URLS.AUTH.LOGOUT, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        toast.success(t("Auth.logout.success"));
+        // Redirect to homepage after logout
+        router.push("/");
+        router.refresh();
+      } else {
+        toast.error(t("Auth.logout.error"));
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast.error(t("Global.error.unexpected_error"));
     }
   };
 
@@ -75,7 +94,7 @@ export default function HeaderClientSide({ user: initialUser }: HeaderClientSide
             src="/logo.png"
             width={40}
             height={40}
-            alt="InstructHub logo"
+            alt="Zipt logo"
           />
         </div>
         <div className="flex h-14 items-center px-4 space-x-2">
@@ -83,18 +102,48 @@ export default function HeaderClientSide({ user: initialUser }: HeaderClientSide
           <ToggleTheme />
           {user ? (
             <div className="flex items-center space-x-3">
-              <Image
-                src={
-                  user?.avatar ||
-                  createAvatar(thumbs, {
-                    seed: user?.id.toString(),
-                  }).toDataUri()
-                }
-                width={40}
-                height={40}
-                alt={`${user.username}'s avatar`}
-                className="rounded-full"
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="cursor-pointer rounded-full hover:ring-2 hover:ring-primary/50 transition-all">
+                    <Image
+                      src={
+                        user?.avatar ||
+                        createAvatar(thumbs, {
+                          seed: user?.id.toString(),
+                        }).toDataUri()
+                      }
+                      width={40}
+                      height={40}
+                      alt={`${user.username}'s avatar`}
+                      className="rounded-full"
+                    />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>{t("Navigation.dashboard")}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>{t("Navigation.settings")}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t("Auth.logout.logout")}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <>

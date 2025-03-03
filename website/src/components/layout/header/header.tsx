@@ -9,9 +9,6 @@ import API_URLS from "@/lib/api-urls";
 
 import HeaderClientSide from "./header-client";
 
-// import SelectLanguage from "../select-language";
-// import { ToggleTheme } from "../toggle-theme";
-
 export interface User {
   id: number;
   username: string;
