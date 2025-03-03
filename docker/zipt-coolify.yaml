@@ -13,6 +13,12 @@ services:
     restart: always
     networks:
       - zipt-network
+    healthcheck:
+      test: ["CMD", "ping", "-c", "1", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       - ENV=production
       - DB_HOST=postgres
@@ -51,7 +57,7 @@ services:
     networks:
       - zipt-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      test: ["CMD", "ping", "-c", "1", "127.0.0.1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -97,7 +103,7 @@ services:
     environment:
       - COOLIFY_DOMAIN=${COOLIFY_DOMAIN}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
+      test: ["CMD", "ping", "-c", "1", "127.0.0.1"]
       interval: 10s
       timeout: 5s
       retries: 3
