@@ -1,7 +1,7 @@
 // components/AuthPageLayout.tsx
-import { useTranslations } from "next-intl";
+// import { useTranslations } from "next-intl";
 import { cookies } from "next/headers";
-import Image from "next/image";
+// import Image from "next/image";
 
 import React from "react";
 
@@ -23,7 +23,7 @@ export default async function Header() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("access_token")?.value;
 
-  let response = await fetch(API_URLS.USER.GET_DATA, {
+  const response = await fetch(API_URLS.USER.GET_DATA, {
     method: "GET",
     credentials: "include",
     headers: {

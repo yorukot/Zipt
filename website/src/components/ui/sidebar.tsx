@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -23,11 +22,14 @@ import {
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
-const SidebarContext = createContext<{ open: boolean } | undefined>(undefined)
+// Provide a default context value with a no-op toggleSidebar function
+const SidebarContext = createContext<{ open: boolean; toggleSidebar: () => void }>({
+  open: false,
+  toggleSidebar: () => {},
+})
 
 function useSidebar() {
   const context = useContext(SidebarContext)
@@ -44,7 +46,10 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
   ({ className, open = true, ...props }, ref) => {
     return (
-      <SidebarContext.Provider value={{ open }}>
+      <SidebarContext.Provider value={{ 
+        open, 
+        toggleSidebar: () => {}
+      }}>
         <div
           ref={ref}
           className={cn("w-full h-full flex flex-col", className)}
@@ -128,6 +133,7 @@ const SidebarProvider = React.forwardRef<
     ref
   ) => {
     const isMobile = useIsMobile()
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [openMobile, setOpenMobile] = React.useState(false)
 
     // This is the internal state of the sidebar.
@@ -174,13 +180,15 @@ const SidebarProvider = React.forwardRef<
 
     // We add a state so that we can do data-state="expanded" or "collapsed".
     // This makes it easier to style the sidebar with Tailwind classes.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const state = open ? "expanded" : "collapsed"
 
-    const contextValue = React.useMemo<{ open: boolean }>(
+    const contextValue = React.useMemo<{ open: boolean; toggleSidebar: () => void }>(
       () => ({
         open,
+        toggleSidebar,
       }),
-      [open]
+      [open, toggleSidebar]
     )
 
     return (

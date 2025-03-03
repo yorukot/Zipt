@@ -1,8 +1,4 @@
-// components/AuthPageLayout.tsx
 import React from "react";
-import { ToggleTheme } from "../toggle-theme";
-import SelectLanguage from "../select-language";
-import Image from "next/image";
 
 interface AuthPageLayoutProps {
   Button: React.ReactNode;
@@ -10,7 +6,13 @@ interface AuthPageLayoutProps {
   Footer: React.ReactNode;
 }
 
-const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({ Button, Modal, Footer }) => {
+// Button is unused so add an eslint-disable comment
+const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({ 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Button, 
+  Modal, 
+  Footer 
+}) => {
   return (
     <>
       <div className="flex flex-col h-screen">
@@ -22,7 +24,7 @@ const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({ Button, Modal, Footer }
         </div>
 
         {/* Footer */}
-        <footer className="bg-mantle justify-self-end h-20 flex justify-center items-center">
+        <footer className="p-4">
           {Footer}
         </footer>
       </div>

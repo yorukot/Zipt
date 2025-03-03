@@ -30,7 +30,7 @@ interface HeaderClientSideProps {
 export default function HeaderClientSide({ user: initialUser }: HeaderClientSideProps) {
   const t = useTranslations();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(initialUser);
+  const [user,] = useState<User | null>(initialUser);
   
   const refreshToken = async () => {
     try {

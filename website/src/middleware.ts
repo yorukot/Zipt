@@ -20,7 +20,6 @@ async function refreshTokenFunc(accessToken: string | undefined, refreshToken: s
         "Cookie": `refresh_token=${refreshToken}`, // Send refresh_token
       },
     });
-    const data = await res.json();
     if (res.ok) {
       return {
         success: true,
@@ -41,7 +40,11 @@ export async function middleware(req: NextRequest) {
   const accessToken = req.cookies.get("access_token")?.value;
   const refreshToken = req.cookies.get("refresh_token")?.value;
 
-  const { success, cookies } = await refreshTokenFunc(accessToken, refreshToken);
+  const { 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    success, 
+    cookies 
+  } = await refreshTokenFunc(accessToken, refreshToken);
 
   const response =  NextResponse.next();
   if (cookies) response.headers.set("Set-Cookie", cookies);

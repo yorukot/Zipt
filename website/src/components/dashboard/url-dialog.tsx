@@ -36,6 +36,13 @@ interface UrlDialogProps {
   onSuccess: () => void;
 }
 
+// Define type for URL payload
+interface UrlPayload {
+  original_url: string;
+  short_code?: string;
+  expiration_date?: string;
+}
+
 export function UrlDialog({
   open,
   onClose,
@@ -85,7 +92,7 @@ export function UrlDialog({
     setLoading(true);
 
     try {
-      const payload: any = {
+      const payload: UrlPayload = {
         original_url: url,
       };
 
@@ -94,7 +101,7 @@ export function UrlDialog({
       }
 
       if (useExpiration && expiresAt) {
-        payload.expires_at = expiresAt.toISOString();
+        payload.expiration_date = expiresAt.toISOString();
       }
 
       const endpoint = editUrl

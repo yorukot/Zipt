@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -83,7 +82,9 @@ export default function HomePage() {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
-      toast.error("Failed to copy to clipboard");
+      toast.error("Failed to copy to clipboard", {
+        description: error instanceof Error ? error.message : "Failed to copy to clipboard",
+      });
     }
   };
 

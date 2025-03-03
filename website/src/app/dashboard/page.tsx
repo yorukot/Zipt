@@ -15,8 +15,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  SortAsc,
-  SortDesc,
   Trash,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -56,14 +54,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -106,7 +96,13 @@ export default function DashboardPage() {
   const [urlToDelete, setUrlToDelete] = useState<Url | null>(null);
 
   // Use SWR for data fetching
-  const { data, error, isLoading, mutate } = useSWR<ListUrlsResponse>(
+  const { 
+    data, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    error, 
+    isLoading, 
+    mutate 
+  } = useSWR<ListUrlsResponse>(
     API_URLS.URL.LIST,
     fetcher,
     {
@@ -116,8 +112,6 @@ export default function DashboardPage() {
   );
 
   const urls = data?.result?.urls || [];
-  const errorMessage = error?.message || data?.message || null;
-
   const dateLocale = locale === "zh-tw" ? zhTW : enUS;
 
   const handleCopy = (shortCode: string) => {
@@ -183,12 +177,14 @@ export default function DashboardPage() {
     setUrlToEdit(null);
   };
 
+  // Keeping handleSort but commenting out since it might be needed in the future
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleSort = (field: keyof Url) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection("desc");
+      setSortDirection("asc");
     }
   };
 

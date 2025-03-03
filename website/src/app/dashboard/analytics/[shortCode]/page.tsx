@@ -10,8 +10,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Pie,
-  PieChart,
 } from "recharts";
 import { format } from "date-fns";
 import { Icon } from "@iconify/react";
@@ -32,16 +30,13 @@ import {
 } from "@/components/ui/tooltip";
 
 import {
-  ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "@/components/ui/chart";
 
 import API_URLS from "@/lib/api-urls";
 
 // Chart config type definition
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ChartConfig = {
   [key: string]: {
     label: string;
@@ -51,31 +46,6 @@ type ChartConfig = {
     };
   };
 };
-
-// Chart config with proper theme colors
-const chartConfig = {
-  referrers: {
-    label: "Referrers",
-    theme: {
-      light: "hsl(var(--chart-1))",
-      dark: "hsl(var(--chart-1))",
-    },
-  },
-  countries: {
-    label: "Countries",
-    theme: {
-      light: "hsl(var(--chart-2))",
-      dark: "hsl(var(--chart-2))",
-    },
-  },
-  hourly: {
-    label: "Hourly",
-    theme: {
-      light: "hsl(var(--chart-3))",
-      dark: "hsl(var(--chart-3))",
-    },
-  },
-} satisfies ChartConfig;
 
 // Fetcher for SWR
 const fetcher = async (url: string) => {
@@ -95,11 +65,30 @@ const formatDate = (dateString: string | undefined | null): string => {
   if (!dateString) return '-';
   try {
     return format(new Date(dateString), "PPP");
-  } catch (error) {
+  } catch {
+    // Using catch without an error param to avoid linter warnings
     console.error('Invalid date:', dateString);
     return '-';
   }
 };
+
+// Define types for analytics data
+interface ReferrerStat {
+  referrer: string;
+  click_count: number;
+  percentage: number;
+}
+
+interface CountryStat {
+  country: string;
+  click_count: number;
+  percentage: number;
+}
+
+interface HourlyEngagement {
+  time_start: string;
+  engagement: number;
+}
 
 export default function AnalyticsPage() {
   const params = useParams();
@@ -150,19 +139,19 @@ export default function AnalyticsPage() {
   const urlData = data?.result?.url;
 
   // Transform data for charts
-  const referrerData = analytics?.referrer_stats?.map((stat: any) => ({
+  const referrerData = analytics?.referrer_stats?.map((stat: ReferrerStat) => ({
     referrer: stat.referrer,
     count: stat.click_count,
     percentage: stat.percentage,
   })) || [];
 
-  const countryData = analytics?.country_stats?.map((stat: any) => ({
+  const countryData = analytics?.country_stats?.map((stat: CountryStat) => ({
     country: stat.country,
     count: stat.click_count,
     percentage: stat.percentage,
   })) || [];
 
-  const hourlyData = analytics?.hourly_engagement?.map((stat: any) => ({
+  const hourlyData = analytics?.hourly_engagement?.map((stat: HourlyEngagement) => ({
     hour: format(new Date(stat.time_start), "HH:mm"),
     count: stat.engagement,
   })) || [];

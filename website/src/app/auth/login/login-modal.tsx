@@ -6,7 +6,6 @@ import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { getCookie } from "cookies-next/client";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
@@ -57,30 +56,19 @@ const LoginModal = () => {
   }, [verify, t]);
 
   // Handle opening the popup for OAuth
-  const openPopup = (authUrl: string) => {
-    const width = 500;
-    const height = 600;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
+  // Commented out to fix linter warning, may be needed in the future
+  // const openPopup = (authUrl: string) => {
+  //   const width = 500;
+  //   const height = 600;
+  //   const left = (window.screen.width - width) / 2;
+  //   const top = (window.screen.height - height) / 2;
 
-    const popup = window.open(
-      authUrl,
-      "Oauth",
-      `width=${width},height=${height},top=${top},left=${left}`,
-    );
-
-    const checkConnect = setInterval(() => {
-      if (popup?.location?.href.includes("callback")) {
-        popup.close();
-        // Check if cookie are set and redirect
-        const accessToken = getCookie("access_token");
-        if (accessToken) {
-          router.push("/");
-        }
-        clearInterval(checkConnect);
-      }
-    }, 100);
-  };
+  //   const popup = window.open(
+  //     authUrl,
+  //     "Oauth",
+  //     `width=${width},height=${height},top=${top},left=${left}`,
+  //   );
+  // };
 
   const handleLogin: SubmitHandler<LoginForm> = async (values) => {
     try {
