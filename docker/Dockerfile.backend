@@ -32,9 +32,16 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/main .
 
-# Copy config files (adjust as needed)
-COPY --from=builder /app/.env.production ./.env
-COPY --from=builder /app/static ./static
+# Copy environment files and create static directory
+COPY --from=builder /app/.env* ./
+RUN mkdir -p /app/static
+
+# Use shell to handle potential missing files
+RUN if [ -d /tmp/build/app/static ]; then \
+      cp -r /tmp/build/app/static/* /app/static/; \
+    else \
+      echo "Static directory not found, continuing..."; \
+    fi
 
 # Set ownership
 RUN chown -R appuser:appgroup /app

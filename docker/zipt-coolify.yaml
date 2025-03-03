@@ -1,10 +1,24 @@
+version: '3.8'
+
+networks:
+  zipt-network:
+    driver: bridge
+
 services:
   # Backend service
   backend:
     build:
-      context: ${GIT_REPOSITORY_ROOT_PATH}
+      context: .
       dockerfile: docker/Dockerfile.backend
     restart: always
+    networks:
+      - zipt-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       - ENV=production
       - DB_HOST=postgres
@@ -22,40 +36,65 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: "1"
           memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Frontend website
   website:
     build:
-      context: ${GIT_REPOSITORY_ROOT_PATH}/website
-      dockerfile: ${GIT_REPOSITORY_ROOT_PATH}/docker/Dockerfile.website
+      context: ./website
+      dockerfile: ../docker/Dockerfile.website
     restart: always
+    networks:
+      - zipt-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${API_URL}
       - NEXT_PUBLIC_BASE_URL=${BASE_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: "0.5"
           memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Nginx for reverse proxy with HTTPS
   nginx:
     image: nginx:alpine
     restart: always
+    networks:
+      - zipt-network
     ports:
       - "80:80"
     volumes:
-      - ${GIT_REPOSITORY_ROOT_PATH}/docker/nginx/nginx.coolify.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/nginx.coolify.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - website
-      - backend
+      website:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -63,17 +102,33 @@ services:
           memory: 128M
     environment:
       - COOLIFY_DOMAIN=${COOLIFY_DOMAIN}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Database
   postgres:
     image: postgres:15-alpine
     restart: always
+    networks:
+      - zipt-network
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - type: bind
+        source: ./docker/postgres/init-scripts/
+        target: /docker-entrypoint-initdb.d/
+        read_only: true
     deploy:
       resources:
         limits:
@@ -81,14 +136,21 @@ services:
           memory: 1G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Cache
   redis:
     image: redis:7-alpine
     restart: always
+    networks:
+      - zipt-network
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
@@ -97,7 +159,19 @@ services:
         limits:
           cpus: "0.5"
           memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres-data:
-  redis-data: 
+    name: zipt-postgres-data
+  redis-data:
+    name: zipt-redis-data 

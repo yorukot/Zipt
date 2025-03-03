@@ -34,6 +34,7 @@ First, ensure you have set up in Coolify:
 3. Ensure you configure at least these variables:
    - `BASE_URL`: Your Zipt domain (e.g., https://zipt.example.com)
    - `API_URL`: API endpoint (e.g., https://zipt.example.com/api)
+   - `COOLIFY_DOMAIN`: Your domain name without protocol (e.g., zipt.example.com)
    - `DB_USER`: Database username
    - `DB_PASSWORD`: Database password
    - `DB_NAME`: Database name
@@ -67,6 +68,23 @@ If you encounter issues:
 3. Verify your domain DNS settings are properly pointing to the Coolify server
 
 ### Common Issues
+
+#### GIT_REPOSITORY_ROOT_PATH Error
+
+If you see an error like this:
+```
+The "GIT_REPOSITORY_ROOT_PATH" variable is not set. Defaulting to a blank string.
+unable to prepare context: path "/website" not found
+```
+
+This is because Coolify cannot find the correct paths in your repository. The solution is:
+
+1. Use relative paths in your Docker Compose file
+2. For the backend context, use `.` instead of `${GIT_REPOSITORY_ROOT_PATH}`
+3. For the website context, use `./website` instead of `${GIT_REPOSITORY_ROOT_PATH}/website`
+4. For volume mounts, use relative paths like `./docker/nginx/nginx.coolify.conf`
+
+#### Other Common Issues
 
 - **Database connection errors**: Ensure database credentials are correct
 - **Cannot access application**: Check Nginx configuration and domain settings
