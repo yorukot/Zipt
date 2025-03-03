@@ -13,12 +13,6 @@ services:
     restart: always
     networks:
       - zipt-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/api/v1/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
     environment:
       - ENV=production
       - DB_HOST=postgres
