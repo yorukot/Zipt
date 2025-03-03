@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,13 +14,13 @@ import (
 
 // EmailAuthRequest represents the request body for signup
 type EmailAuthRequest struct {
-	DisplayName string `json:"display_name" binding:"required,max=32,min=1,alphanumunicode"`
+	DisplayName string `json:"display_name" binding:"required,max=32,min=1"`
 	Email       string `json:"email" binding:"required,email,max=320"`
 	Password    string `json:"password" binding:"required,max=128,min=8"`
 }
 
-// Signup handles the user registration process
-func Signup(c *gin.Context) {
+// Register handles the user registration process
+func Register(c *gin.Context) {
 	request, err := validateSignupRequest(c)
 	if err != nil {
 		return // Error response already sent in the validation function
@@ -29,9 +30,7 @@ func Signup(c *gin.Context) {
 		return // Error response already sent in the check function
 	}
 
-	if err := checkUsernameAvailability(c); err != nil {
-		return // Error response already sent in the check function
-	}
+	fmt.Println("test")
 
 	user := createUserModel(request)
 
@@ -42,12 +41,11 @@ func Signup(c *gin.Context) {
 	if err := saveUserToQueue(c, user); err != nil {
 		return // Error response already sent in the save function
 	}
-
 	if err := generateUserSession(c, user.ID); err != nil {
 		return // Error response already sent in the session function
 	}
 
-	utils.FullyResponse(c, 200, "Signup successful please verify email", nil, nil)
+	utils.FullyResponse(c, 200, "Signup successful", nil, nil)
 }
 
 // validateSignupRequest validates the incoming signup request
@@ -70,25 +68,6 @@ func checkEmailAvailability(c *gin.Context, email string) error {
 		return result.Error
 	} else if result.Error != gorm.ErrRecordNotFound {
 		utils.ServerErrorResponse(c, 500, "Error checking email", utils.ErrGetData, result.Error)
-		return result.Error
-	}
-
-	return nil
-}
-
-// checkUsernameAvailability verifies if the username is already in use
-func checkUsernameAvailability(c *gin.Context) error {
-	// Note: The original code seems to have an incomplete check for username
-	// It checks if result.Error == nil but doesn't have the query before it
-	// I'm preserving the original logic, but this might need review
-
-	result := &gorm.DB{Error: gorm.ErrRecordNotFound} // Simulating the intended behavior
-
-	if result.Error == nil {
-		utils.FullyResponse(c, 400, "Username already been used", utils.ErrUsernameAlreadyUsed, nil)
-		return result.Error
-	} else if result.Error != gorm.ErrRecordNotFound {
-		utils.ServerErrorResponse(c, 500, "Error checking username", utils.ErrGetData, result.Error)
 		return result.Error
 	}
 

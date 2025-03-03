@@ -1,0 +1,122 @@
+{
+    "Global": {
+      "error": {
+        "unexpected_error": "發生意外錯誤"
+      },
+      "unit": {
+        "sec": "秒"
+      },
+      "or": "或"
+    },
+    "HomePage": {
+      "title": "你好！"
+    },
+    "Auth": {
+      "display_name": "顯示名稱",
+      "password": "密碼",
+      "email": "電子郵件",
+      "login": {
+        "title": "登入",
+        "email": "電子郵件",
+        "login": "登入",
+        "verify_successful": "帳戶已驗證",
+        "verify_successful_content": "您的帳戶已成功驗證。"
+      },
+      "signup": {
+        "email": {
+          "email": "電子郵件",
+          "verify": {
+            "verify_email": "驗證您的電子郵件",
+            "send": "我們已將電子郵件驗證連結發送到您的電子郵件",
+            "check": "請檢查以完成註冊。",
+            "pending": "仍在等待中",
+            "auto": "這將每10秒自動檢查一次。",
+            "received": "沒有收到？",
+            "resend": "重新發送",
+            "successful_verify": "成功驗證",
+            "successful_resend": "成功重新發送",
+            "successful_resend_content": "成功重新發送驗證電子郵件",
+            "resending_title": "重新發送電子郵件",
+            "resending_content": "正在重新發送電子郵件到您的信箱"
+          }
+        },
+        "create_new_account": "建立新帳戶",
+        "signup": "註冊",
+        "title": "讓我們開始學習吧！",
+        "already_have_an_account": "已經有帳戶？"
+      },
+      "error": {
+        "please_enter_your_username": "請輸入您的用戶名",
+        "display_name_is_required": "顯示名稱為必填項",
+        "display_name_too_long": "顯示名稱太長（< 32）",
+        "username_too_short": "用戶名太短（> 3）",
+        "username_too_long": "用戶名太長（< 32）",
+        "username_not_valid": "用戶名只能包含：a-z _ .",
+        "username_already_been_used": "此用戶名已被使用",
+        "please_enter_email": "請輸入您的電子郵件",
+        "email_already_been_used": "此電子郵件已被使用",
+        "error_check_email_verify": "檢查電子郵件驗證時出錯",
+        "email_not_valid": "請輸入有效的電子郵件地址",
+        "please_enter_password": "請輸入您的密碼",
+        "password_min_length": "密碼必須至少8個字符",
+        "login_error": "無效的電子郵件或密碼",
+        "try_to_login_first": "請先嘗試登錄",
+        "verify_error": "驗證失敗",
+        "verify_error_content": "我們無法驗證您的帳戶。請重試。",
+        "invalid_format": "無效格式",
+        "invalid_credentials": "無效的電子郵件或密碼"
+      }
+    },
+    "Dashboard": {
+      "title": "儀表板",
+      "error": {
+        "failed_to_load": "無法加載網址",
+        "copy_failed": "複製失敗",
+        "delete_failed": "刪除失敗"
+      },
+      "url": {
+        "your_urls": "您的短網址",
+        "manage_description": "管理您創建的所有短網址",
+        "search": "搜索短網址...",
+        "refresh": "刷新",
+        "no_urls": "還沒有短網址",
+        "no_urls_description": "創建您的第一個短網址以開始追蹤點擊次數和分析訪客。",
+        "create_first": "創建第一個短網址",
+        "short_url": "短網址",
+        "destination": "目標網址",
+        "clicks": "點擊次數",
+        "created": "創建時間",
+        "actions": "操作",
+        "copy": "複製",
+        "visit": "訪問",
+        "analytics": "分析",
+        "delete": "刪除",
+        "showing": "顯示 {count} 個，共 {total} 個",
+        "view_all_analytics": "查看所有分析",
+        "create_new": "創建新短網址",
+        "copied": "已複製",
+        "copied_description": "短網址已複製到剪貼板",
+        "deleted": "已刪除",
+        "deleted_description": "短網址已成功刪除",
+        "expires": "到期",
+        "edit": "編輯短網址",
+        "update": "更新網址",
+        "updated": "已更新",
+        "updated_description": "您的短網址已成功更新。",
+        "custom_code": "自定義短代碼",
+        "use_custom": "使用自定義代碼",
+        "expiration": "到期日期",
+        "use_expiration": "使用到期日期",
+        "pick_date": "選擇到期日期",
+        "cancel": "取消",
+        "processing": "處理中...",
+        "create": "創建短網址",
+        "error": {
+          "url_required": "網址為必填項",
+          "create_failed": "創建短網址失敗",
+          "update_failed": "更新短網址失敗"
+        },
+        "confirm_delete": "你確定要刪除這個短網址嗎？"
+      }
+    }
+  }

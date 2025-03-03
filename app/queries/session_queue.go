@@ -27,3 +27,10 @@ func DeleteSessionQueue(secretKey string) *gorm.DB {
 	result := db.GetDB().Where("secret_key = ?", secretKey).Delete(&models.Session{})
 	return result
 }
+
+// Delete session by ID
+func DeleteSessionQueueByID(sessionID uint64) *gorm.DB {
+	// Delete session by ID
+	result := db.GetDB().Where("session_id = ?", sessionID).Delete(&models.Session{})
+	return result
+}

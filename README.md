@@ -1,217 +1,137 @@
-# Zipt - URL Shortener
+# Zipt URL Shortener
 
-A lightweight, high-performance URL shortener built with Go's Gin framework. Zipt provides a robust solution for creating and managing shortened URLs with custom slugs, expiration dates, and analytics.
-
-![Go Version](https://img.shields.io/badge/Go-v1.22+-blue.svg)
-![Gin Version](https://img.shields.io/badge/Gin-v1.10.0-green.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+A robust URL shortening service with analytics tracking built with Go and Gin.
 
 ## Features
 
-- **URL Shortening**: Create short links with random codes or custom slugs
-- **Link Expiration**: Set optional expiration dates for links
-- **Modern Go Architecture**: Clean, modular structure for maintainable code
-- **Multiple Database Support**: PostgreSQL, MySQL/MariaDB, and SQLite
-- **Authentication**: JWT-based authentication with secure cookie storage
-- **User Management**: Complete user registration and profile management
-- **Logging**: Structured logging with levels using Zap
-- **Middleware**: Request logging, error handling, and JWT validation
-- **Environment Configuration**: Flexible configuration via environment variables
-- **Docker Support**: Ready-to-use Docker and Docker Compose configurations
-- **Caching**: Redis integration for performance optimization
-- **Security**: Password hashing with Argon2, JWT token management
-- **OAuth**: Optional social login integration (Google, GitHub, GitLab)
-- **Object Storage**: Optional S3-compatible storage integration
-- **Email**: Optional SMTP support for sending emails
+- **URL Shortening**: Generate short URLs for long links
+- **Custom Short Codes**: Registered users can create custom short codes
+- **Analytics Tracking**: Track click counts, browser information, and referrers
+- **User Authentication**: JWT-based user authentication
+- **API Support**: RESTful API for programmatic access
 
-## Project Structure
+## Tech Stack
 
-```
-.
-├── app/                       # Application code
-│   ├── controllers/           # HTTP request handlers
-│   │   ├── auth/              # Authentication controllers (login, signup)
-│   │   ├── shortener/         # URL shortener controllers
-│   │   ├── user/              # User-related controllers (profile)
-│   │   └── ...                # Add any other necessary controllers
-│   ├── models/                # Database models
-│   ├── queries/               # Database query functions
-│   └── routes/                # Route definitions
-├── pkg/                       # Reusable packages
-│   ├── cache/                 # Redis cache implementation
-│   ├── database/              # Database connection and utilities
-│   ├── encryption/            # JWT and password encryption
-│   ├── logger/                # Logging configuration
-│   ├── middleware/            # Gin middleware (auth, logging, error handling)
-│   ├── oauth/                 # OAuth providers integration
-│   ├── s3/                    # S3 storage integration
-│   └── utils/                 # Utility functions and error codes
-├── static/                    # Static files (favicon, etc.)
-├── .env                       # Environment variables (local development)
-├── template.env               # Environment template (for deployment)
-├── docker-compose.yml         # Docker Compose configuration
-├── Dockerfile                 # Docker build configuration
-├── go.mod                     # Go modules definition
-├── go.sum                     # Go modules checksums
-├── main.go                    # Application entry point
-└── README.md                  # Project documentation
-```
-
-## Prerequisites
-
-- [Go](https://golang.org/doc/install) (version 1.22 or higher)
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (for containerized deployment)
+- **Backend**: Go with Gin framework
+- **Database**: Flexible support for PostgreSQL, MySQL, MariaDB, or SQLite
+- **Authentication**: JWT (JSON Web Tokens)
+- **Logging**: Structured logging with Zap
 
 ## Getting Started
 
-### Local Development
+### Prerequisites
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yorukot/zipt
-   ```
+- Go 1.17 or higher
+- Database (PostgreSQL, MySQL, MariaDB, or SQLite)
 
-2. **Navigate to the project directory:**
+### Installation
+
+1. Clone the repository:
    ```bash
+   git clone https://github.com/yourusername/zipt.git
    cd zipt
    ```
 
-3. **Setup the environment:**
+2. Install dependencies:
+   ```bash
+   go mod download
+   ```
+
+3. Copy the environment template and modify as needed:
    ```bash
    cp template.env .env
    ```
-   Edit the `.env` file to configure your local development environment.
 
-4. **Install dependencies:**
-   ```bash
-   go mod tidy
+4. Set up the environment variables in `.env`:
+   ```
+   # Server configuration
+   VERSION=1
+   BASE_URL=http://localhost:8080/
+   PORT=8080
+   
+   # Database configuration
+   DATABASE_TYPE=postgres  # postgres, mysql, mariadb, or sqlite
+   DATABASE_HOST=localhost
+   DATABASE_PORT=5432
+   DATABASE_USER=postgres
+   DATABASE_PASSWORD=yourpassword
+   DATABASE_DBNAME=zipt
+   DATABASE_SSLMODE=disable
    ```
 
-5. **Run the application:**
+5. Run the application:
    ```bash
    go run main.go
    ```
 
-6. **Access the API:**
-   The API will be available at `http://localhost:8080/api/v1`
+### Docker Setup
 
-### API Endpoints
-
-#### URL Shortener
-
-- **POST /api/v1/urls**: Create a shortened URL
-  ```json
-  {
-    "original_url": "https://example.com/very/long/path/to/something",
-    "custom_slug": "my-custom-slug",  // Optional
-    "expires_at": "2023-12-31T23:59:59Z"  // Optional
-  }
-  ```
-  Response:
-  ```json
-  {
-    "status": "success",
-    "message": "Short URL created successfully",
-    "data": {
-      "short_code": "my-custom-slug",
-      "original_url": "https://example.com/very/long/path/to/something",
-      "short_url": "http://yourdomain.com/my-custom-slug",
-      "expires_at": "2023-12-31T23:59:59Z",
-      "created_at": "2023-06-01T12:34:56Z"
-    }
-  }
-  ```
-
-#### Authentication
-
-- **POST /api/v1/auth/signup**: Register a new user
-  ```json
-  {
-    "display_name": "John Doe",
-    "email": "john@example.com",
-    "password": "secure_password"
-  }
-  ```
-
-- **POST /api/v1/auth/login**: Login with email and password
-  ```json
-  {
-    "email": "john@example.com",
-    "password": "secure_password"
-  }
-  ```
-
-#### User Management
-
-- **GET /api/v1/user/profile**: Get current user profile (requires authentication)
-
-## Docker Deployment
-
-### Running with Docker Compose
-
-This project includes Docker and Docker Compose configurations for easy deployment.
+For Docker enthusiasts, a Docker Compose setup is provided:
 
 ```bash
-docker compose up -d
+docker-compose up -d
 ```
 
-This command starts:
-- The application (running on port 8080)
-- PostgreSQL database (running on port 5432)
-- Redis cache (running on port 6379)
+## API Documentation
 
-### Database Configuration
+See [API Documentation](docs/api.md) for detailed information on available endpoints.
 
-The PostgreSQL database is configured with:
-- User: zipt
-- Password: xxxxxxxxxx (change in production)
-- Database: zipt
-- Host: postgres
-- Port: 5432
+### Quick Examples
 
-### Data Persistence
-
-All database data is stored in Docker volumes to ensure persistence:
-- PostgreSQL: postgres-data
-- Redis: redis-data
-
-### Stopping the Application
+#### Create a Short URL (Anonymous)
 
 ```bash
-docker compose down
+curl -X POST http://localhost:8080/api/v1/url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "original_url": "https://example.com/very/long/url"
+  }'
 ```
 
-To remove volumes (this will delete all data):
+#### Create a Short URL with Custom Code (Authenticated)
+
 ```bash
-docker compose down -v
+curl -X POST http://localhost:8080/api/v1/url \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_jwt_token" \
+  -d '{
+    "original_url": "https://example.com/very/long/url",
+    "custom_slug": "my-brand"
+  }'
 ```
 
-## Configuration
+## Project Structure
 
-The application is configured through environment variables. See `template.env` for all available options:
-
-### Core Settings
-- `GIN_MODE`: Set to `debug` for development, `release` for production
-- `PORT`: The port the application listens on (default: 8080)
-- `VERSION`: API version
-- `BASE_URL`: Base URL for the application (used for generating short links)
-
-### Database Settings
-- `DATABASE_TYPE`: Database type (`postgres`, `mysql`, `mariadb`, `sqlite`)
-- Database connection parameters for each supported database
-
-### Security
-- `JWT_SECRET_KEY`: Secret key for JWT token signing (change in production)
-- `COOKIE_DOMAIN`: Domain for cookies
-- `COOKIE_REFRESH_TOKEN_EXPIRES`: Refresh token expiration (days)
-- `COOKIE_ACCESS_TOKEN_EXPIRES`: Access token expiration (minutes)
-
-### Optional Features
-- Redis cache settings
-- S3 storage settings
-- OAuth provider settings
-- SMTP settings for email
+```
+zipt/
+├── app/
+│   ├── controllers/     # Request handlers
+│   ├── models/          # Database models
+│   ├── queries/         # Database queries
+│   └── routes/          # API routes
+├── pkg/
+│   ├── cache/           # Caching mechanisms
+│   ├── database/        # Database connection
+│   ├── encryption/      # Encryption utilities
+│   ├── logger/          # Logging utilities
+│   ├── middleware/      # HTTP middleware
+│   ├── oauth/           # OAuth authentication
+│   ├── s3/              # S3 file storage
+│   └── utils/           # Utility functions
+├── static/              # Static files
+├── main.go              # Application entry point
+├── go.mod               # Go modules
+├── go.sum               # Go modules checksums
+├── .env                 # Environment variables
+└── docker-compose.yml   # Docker Compose configuration
+```
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- [Gin](https://github.com/gin-gonic/gin) for the web framework
+- [GORM](https://gorm.io/) for the ORM
+- All other open-source packages used in this project

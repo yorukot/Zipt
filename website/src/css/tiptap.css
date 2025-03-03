@@ -1,0 +1,87 @@
+/* Basic editor styles */
+.tiptap {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+  }
+
+  a {
+    color: rgb(var(--lavender));
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: underline;
+      color: rgb(var(--blue));
+    }
+  }
+
+  ul,
+  ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+  }
+
+  ul ul,
+  ol ol,
+  ul ol,
+  ol ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    list-style-type: circle;
+  }
+
+  code {
+    background-color: rgb(var(--crust));
+    padding: 2px;
+    border-radius: 2px;
+    font-family: "Fira Code", "Courier New", monospace;
+    font-size: 0.9rem;
+  }
+
+  pre {
+    code {
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: small;
+      background-color: rgb(var(--crust));
+      display: block;
+    }
+  }
+
+  /* Blockquote styles */
+  blockquote {
+    border-left: 4px solid rgb(var(--overlay0));
+    padding-left: 16px;
+    margin: 1em 0;
+  }
+
+  /* Placeholder (at the top) */
+  p.is-editor-empty:first-child::before {
+    color: rgb(var(--overlay0));
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+}

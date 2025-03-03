@@ -68,6 +68,11 @@ func GenerateUserSession(c *gin.Context, userID uint64) error {
 	return nil
 }
 
+// IsCookieSecure returns whether cookies should be secure based on the environment
+func IsCookieSecure() bool {
+	return secret
+}
+
 func init() {
 	baseURL := os.Getenv("BASE_URL")
 

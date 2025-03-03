@@ -11,6 +11,14 @@ const (
 const (
 	ErrBadRequest     = "bad_request"
 	ErrUserIDNotFound = "user_id_not_found"
+	ErrForbidden      = "forbidden"
+)
+
+// Resource errors
+const (
+	ErrResourceNotFound = "resource_not_found"
+	ErrResourceGone     = "resource_expired"
+	ErrResourceExists   = "resource_already_exists"
 )
 
 // User-related errors

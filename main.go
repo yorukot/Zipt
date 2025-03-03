@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/routes"
 
@@ -20,14 +21,30 @@ import (
 func main() {
 	root := gin.New()
 
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"*"} // Allow all origins
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	config.AllowCredentials = true
+
+	root.Use(cors.New(config))
+
+	root.OPTIONS("/*any", func(c *gin.Context) {
+		c.Status(204) // No Content
+	})
+
 	root.SetTrustedProxies([]string{"127.0.0.1"})
 	root.StaticFile("/favicon.ico", "./static/favicon.ico")
+
 	root.Use(middleware.CustomLogger())
 	root.Use(middleware.ErrorLoggerMiddleware())
 
 	r := root.Group("/api/v" + os.Getenv("VERSION"))
 
 	route(r)
+
+	// Configure redirect routes at the root level
+	root.GET("/:shortCode", routes.RedirectRoute)
 
 	printAppInfo()
 
@@ -56,4 +73,5 @@ func printAppInfo() {
 func route(r *gin.RouterGroup) {
 	routes.AuthRoute(r)
 	routes.UserRoute(r)
+	routes.ShortenerRoute(r)
 }

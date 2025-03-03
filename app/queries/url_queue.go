@@ -38,3 +38,10 @@ func CheckShortCodeExists(shortCode string) (bool, error) {
 	result := db.GetDB().Model(&models.URL{}).Where("short_code = ?", shortCode).Count(&count)
 	return count > 0, result.Error
 }
+
+// GetURLsByUserID gets all URLs created by a specific user
+func GetURLsByUserID(userID uint64) ([]models.URL, error) {
+	var urls []models.URL
+	result := db.GetDB().Where("user_id = ?", userID).Order("created_at DESC").Find(&urls)
+	return urls, result.Error
+}

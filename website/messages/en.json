@@ -1,0 +1,147 @@
+{
+  "Global": {
+    "error": {
+      "unexpected_error": "Unexpected error occurred"
+    },
+    "unit": {
+      "sec": "sec"
+    },
+    "or": "or"
+  },
+  "HomePage": {
+    "title": "Hello world!"
+  },
+  "Auth": {
+    "display_name": "Display name",
+    "password": "Password",
+    "email": "Email",
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "login": "Login",
+      "verify_successful": "Account Verified",
+      "verify_successful_content": "Your account has been successfully verified."
+    },
+    "signup": {
+      "email": {
+        "email": "Email",
+        "verify": {
+          "verify_email": "Verify your email",
+          "send": "We sent an email verification link to your email",
+          "check": "Please check to finish sign up.",
+          "pending": "Still pending",
+          "auto": "This will automatically check every 10 seconds.",
+          "received": "Didn't receive?",
+          "resend": "Resend",
+          "successful_verify": "Successful verify",
+          "successful_resend": "Successful resend",
+          "successful_resend_content": "Successful resend verification email",
+          "resending_title": "Resending email",
+          "resending_content": "Resending email to your mailbox"
+        }
+      },
+      "create_new_account": "Create new account",
+      "signup": "Sign up",
+      "title": "Let's get started to learn!",
+      "already_have_an_account": "Already have an account?"
+    },
+    "error": {
+      "please_enter_your_username": "Please enter your username",
+      
+      "display_name_is_required": "Display name is required",
+      "display_name_too_long": "Display name too long (< 32)",
+
+      "username_too_short": "Username too short (> 3)",
+      "username_too_long": "Username too long (< 32)",
+      "username_not_valid": "Username can only have: a-z _ .",
+      "username_already_been_used": "This username has already been used",
+
+      "please_enter_email": "Please enter your email",
+      "email_already_been_used": "This email has already been used",
+      "error_check_email_verify": "Error while checking email verification",
+      "email_not_valid": "Please enter a valid email address",
+      "please_enter_password": "Please enter your password",
+      "password_min_length": "Password must be at least 8 characters",
+      "login_error": "Invalid email or password",
+      "try_to_login_first": "Please try logging in first",
+      "verify_error": "Verification Failed",
+      "verify_error_content": "We couldn't verify your account. Please try again.",
+      "invalid_format": "Invalid format",
+      "invalid_credentials": "Invalid email or password"
+    }
+  },    
+  "Dashboard": {
+    "title": "Dashboard",
+    "error": {
+      "failed_to_load": "Failed to load URLs",
+      "copy_failed": "Copy failed",
+      "delete_failed": "Delete failed"
+    },
+    "url": {
+      "your_urls": "Your URLs",
+      "manage_description": "Manage all of your URLs",
+      "search": "Search URLs...",
+      "refresh": "Refresh",
+      "no_urls": "No URLs",
+      "no_urls_description": "Create your first URL to start tracking clicks and analyzing visitors.",
+      "create_first": "Create your first URL",
+      "short_url": "Short URL",
+      "destination": "Destination",
+      "clicks": "Clicks",
+      "created": "Created",
+      "actions": "Actions",
+      "copy": "Copy",
+      "visit": "Visit",
+      "analytics": "Analytics",
+      "delete": "Delete",
+      "showing": "Showing {count} of {total}",
+      "view_all_analytics": "View all analytics",
+      "create_new": "Create new URL",
+      "copied": "Copied",
+      "copied_description": "URL has been copied to clipboard",
+      "deleted": "Deleted",
+      "deleted_description": "URL has been successfully deleted",
+      "expires": "Expires",
+      "edit": "Edit URL",
+      "update": "Update URL",
+      "updated": "URL Updated",
+      "updated_description": "Your URL has been successfully updated.",
+      "created_description": "Your URL has been successfully created.",
+      "custom_code": "Custom Short Code",
+      "use_custom": "Use custom code",
+      "expiration": "Expiration Date",
+      "use_expiration": "Use expiration date",
+      "pick_date": "Pick an expiration date",
+      "cancel": "Cancel",
+      "processing": "Processing...",
+      "create": "Create URL",
+      "error": {
+        "url_required": "URL is required",
+        "create_failed": "Failed to create URL",
+        "update_failed": "Failed to update URL"
+      },
+      "confirm_delete": "Are you sure you want to delete this URL?"
+    },
+    "analytics": {
+      "title": "URL Analytics",
+      "error": "Error Loading Analytics",
+      "go_back": "Go Back",
+      "back_to_dashboard": "Back to Dashboard",
+      "visit_url": "Visit URL",
+      "total_clicks": "Total Clicks",
+      "created_at": "Created At",
+      "expires_at": "Expires At",
+      "original_url": "Original URL",
+      "devices": "Device Types",
+      "devices_description": "Distribution of visits by device type",
+      "browsers": "Browsers",
+      "browsers_description": "Distribution of visits by browser",
+      "countries": "Countries",
+      "countries_description": "Geographic distribution of visitors",
+      "referrers": "Referrers",
+      "referrers_description": "Top sources of traffic to your URL",
+      "never": "Never",
+      "loading": "Loading analytics data..."
+    }
+  }
+}

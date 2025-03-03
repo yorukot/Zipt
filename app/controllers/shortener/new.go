@@ -3,7 +3,10 @@ package shortener
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/http"
+	"os"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +19,7 @@ import (
 // ShortenURLRequest represents the request body for creating a short URL
 type ShortenURLRequest struct {
 	OriginalURL string     `json:"original_url" binding:"required,url"`
-	CustomSlug  string     `json:"custom_slug" binding:"omitempty,alphanum,max=20"`
+	ShortCode   string     `json:"short_code" binding:"omitempty,max=20"`
 	ExpiresAt   *time.Time `json:"expires_at" binding:"omitempty"`
 }
 
@@ -36,19 +39,40 @@ func CreateShortURL(c *gin.Context) {
 		return // Error response already sent in the validation function
 	}
 
+	// Check for custom slug - only allowed for authenticated users
+	if request.ShortCode != "" {
+		// Get user from context (if authenticated)
+		_, exists := c.Get("userID")
+		if !exists {
+			utils.FullyResponse(c, http.StatusUnauthorized, "custom slugs require authentication", utils.ErrUnauthorized, nil)
+			return
+		}
+	}
+
 	shortCode, err := getShortCode(c, request)
 	if err != nil {
 		return // Error response already sent in the function
 	}
 
-	urlModel := createURLModel(request, shortCode)
+	// Get user ID if authenticated
+	var userIDPtr *uint64
+	if userID, exists := c.Get("userID"); exists {
+		id := userID.(uint64)
+		userIDPtr = &id
+		fmt.Println("User ID:", id)
+	}
+
+	urlModel := createURLModel(request, shortCode, userIDPtr)
 
 	if err := saveURLToDatabase(c, urlModel); err != nil {
 		return // Error response already sent in the save function
 	}
 
 	// Construct the full short URL
-	baseURL := "http://yourdomain.com/" // Replace with your actual domain
+	baseURL := os.Getenv("BACKEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080/" // Default for local development
+	}
 	response := ShortenURLResponse{
 		ShortCode:   shortCode,
 		OriginalURL: request.OriginalURL,
@@ -63,30 +87,63 @@ func CreateShortURL(c *gin.Context) {
 // validateShortenRequest validates the incoming URL shortening request
 func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 	var request ShortenURLRequest
-
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid request", utils.ErrBadRequest, err.Error())
+		utils.FullyResponse(c, http.StatusBadRequest, "invalid request", utils.ErrBadRequest, err.Error())
 		return nil, err
+	}
+
+	// Check if this is the custom endpoint (which already requires auth through middleware)
+	isCustomEndpoint := c.FullPath() == "/api/v1/url/custom"
+
+	// For the custom endpoint, a custom slug is required
+	if isCustomEndpoint && request.ShortCode == "" {
+		errMsg := "custom slug is required for this endpoint"
+		utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
+		return nil, fmt.Errorf(errMsg)
+	}
+
+	// Validate custom slug if present
+	if request.ShortCode != "" {
+		if !isValidCustomSlug(request.ShortCode) {
+			errMsg := "custom slug must contain only alphanumeric characters and hyphens, and cannot start or end with a hyphen"
+			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
+			return nil, fmt.Errorf(errMsg)
+		}
+
+		// Check if the slug already exists in the database
+		exists, err := checkSlugExists(request.ShortCode)
+		if err != nil {
+			utils.ServerErrorResponse(c, http.StatusInternalServerError, "error checking custom slug", utils.ErrGetData, err)
+			return nil, err
+		}
+		if exists {
+			errMsg := "custom slug already in use; please choose a different one"
+			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
+			return nil, fmt.Errorf(errMsg)
+		}
 	}
 
 	return &request, nil
 }
 
+// isValidCustomSlug checks if a custom slug meets all requirements
+func isValidCustomSlug(slug string) bool {
+	// Length check (3-20 characters)
+	if len(slug) < 3 || len(slug) > 20 {
+		return false
+	}
+
+	// Regex pattern: allow alphanumeric and hyphens, but no consecutive hyphens
+	// and cannot start or end with a hyphen
+	pattern := regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$`)
+	return pattern.MatchString(slug)
+}
+
 // getShortCode generates or validates a short code for the URL
 func getShortCode(c *gin.Context, request *ShortenURLRequest) (string, error) {
 	// If custom slug is provided, check if it's available
-	if request.CustomSlug != "" {
-		// Check if the custom slug is already in use
-		exists, err := checkSlugExists(request.CustomSlug)
-		if err != nil {
-			utils.ServerErrorResponse(c, http.StatusInternalServerError, "Error checking custom slug", utils.ErrGetData, err)
-			return "", err
-		}
-		if exists {
-			utils.FullyResponse(c, http.StatusBadRequest, "Custom slug already in use", utils.ErrBadRequest, nil)
-			return "", err
-		}
-		return request.CustomSlug, nil
+	if request.ShortCode != "" {
+		return request.ShortCode, nil
 	}
 
 	// Generate a random short code
@@ -122,14 +179,16 @@ func checkSlugExists(slug string) (bool, error) {
 }
 
 // createURLModel creates a new URL model with the request data
-func createURLModel(request *ShortenURLRequest, shortCode string) models.URL {
+func createURLModel(request *ShortenURLRequest, shortCode string, userID *uint64) models.URL {
 	return models.URL{
 		ID:          encryption.GenerateID(),
+		UserID:      userID,
 		OriginalURL: request.OriginalURL,
 		ShortCode:   shortCode,
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
+		ClickCount: 0,
 	}
 }
 

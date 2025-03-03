@@ -48,6 +48,43 @@ func IsAuthorized() gin.HandlerFunc {
 }
 
 // IsAuthorized is a middleware to check if the user is authorized
+func GetContextUserID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Retrieve the JWT token from the cookie
+		cookie, err := c.Request.Cookie("access_token")
+		if err != nil || cookie.Value == "" {
+			c.Next()
+			return
+		}
+
+		// Parse and validate the JWT token
+		claims, err := encryption.ParseAndValidateJWT(cookie.Value)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		// Retrieve the user ID (subject) from the claims
+		userIDFloat, ok := claims["sub"].(float64)
+		if !ok {
+			c.Next()
+			return
+		}
+		userID := uint64(userIDFloat)
+
+		_, ok = claims["pedding"].(bool)
+		if ok {
+			c.Next()
+			return
+		}
+
+		// Add the user ID to the request context for further use
+		c.Set("userID", userID)
+		c.Next()
+	}
+}
+
+// IsAuthorized is a middleware to check if the user is authorized
 func IsPeddingVerify() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Retrieve the JWT token from the cookie
