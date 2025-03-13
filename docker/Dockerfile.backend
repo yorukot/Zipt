@@ -1,70 +1,46 @@
 # Build stage
 FROM golang:1.22-alpine AS builder
 
-# Install dependencies
-RUN apk add --no-cache git make curl
+# Install build dependencies
+RUN apk add --no-cache gcc musl-dev git
 
 # Set working directory
 WORKDIR /app
 
-# Configure Go proxy for more reliable downloads
-ENV GOPROXY=https://proxy.golang.org,direct
-ENV GO111MODULE=on
-ENV GOSUMDB=sum.golang.org
-
-# Copy go.mod and go.sum first for better caching
+# Copy go.mod and go.sum files
 COPY go.mod go.sum ./
 
-# Print Go environment info for debugging
-RUN go env && echo "Running go mod download with verbose output"
+# Download dependencies
+RUN go mod download
 
-# Download dependencies with verbose output and retries
-RUN go mod download -x || (echo "Failed to download modules on first attempt, retrying..." && \
-    go mod download -x) || (echo "Failed on second attempt, checking module issues..." && \
-    go list -m all && \
-    go mod verify && \
-    exit 1)
-
-# Copy the rest of the application
+# Copy the source code
 COPY . .
 
-# Build the application with verbose output
-RUN CGO_ENABLED=0 GOOS=linux go build -v -a -installsuffix cgo -ldflags="-s -w" -o main .
+# Build the application
+RUN CGO_ENABLED=1 GOOS=linux go build -a -o main .
+RUN ls -la
 
-# Final stage
-FROM alpine:3.19
-
-# Install dependencies for SSL/TLS (for outgoing connections)
-RUN apk add --no-cache ca-certificates tzdata && update-ca-certificates
-
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Runtime stage
+FROM alpine:3.18
 
 # Set working directory
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/main .
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates tzdata sqlite
 
-# Copy environment files and create static directory
-COPY --from=builder /app/.env* ./
-RUN mkdir -p /app/static
+# Copy binary from build stage
+COPY --from=builder /app/main /app/main
+RUN chmod +x /app/main
 
-# Use shell to handle potential missing files
-RUN if [ -d /tmp/build/app/static ]; then \
-      cp -r /tmp/build/app/static/* /app/static/; \
-    else \
-      echo "Static directory not found, continuing..."; \
-    fi
+# Copy configuration files
+COPY --from=builder /app/template.env .env
 
-# Set ownership
-RUN chown -R appuser:appgroup /app
+# Create directory for SQLite database (if used)
+RUN mkdir -p /app/data
 
-# Use non-root user
-USER appuser
-
-# Expose the port
+# Expose the application port
 EXPOSE 8080
 
-# Command to run
-CMD ["./main"] 
+# Run the application
+CMD ["/app/main"]

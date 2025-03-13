@@ -39,13 +39,6 @@ COPY --from=builder /app/template.env .env
 # Create directory for SQLite database (if used)
 RUN mkdir -p /app/data
 
-# Set default environment variables
-ENV GIN_MODE=release \
-    DATABASE_TYPE=postgres \
-    DATABASE_USER=gin-template \
-    DATABASE_PASSWORD=xxxxxxxxxx \
-    DATABASE_DBNAME=gin-template
-
 # Expose the application port
 EXPOSE 8080
 
