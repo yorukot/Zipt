@@ -12,18 +12,8 @@ services:
       dockerfile: docker/Dockerfile.backend
     ports:
       - "8080:8080"
-    depends_on:
-      - postgres
-      - redis
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "echo", "healthy"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
   # Frontend website
   website:
     build:
