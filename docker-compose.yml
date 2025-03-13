@@ -10,8 +10,6 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
-    ports:
-      - "8080:8080"
     networks:
       - app-network
   # Frontend website
@@ -19,8 +17,6 @@ services:
     build:
       context: ./website
       dockerfile: ../docker/Dockerfile.website
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8080/api
