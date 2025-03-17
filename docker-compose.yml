@@ -38,8 +38,6 @@ services:
       - COOKIE_PATH=/
       - COOKIE_REFRESH_TOKEN_EXPIRES=60
       - COOKIE_ACCESS_TOKEN_EXPIRES=15
-    ports:
-      - "8080:8080"
     networks:
       - app-network
     depends_on:
@@ -70,9 +68,6 @@ services:
   # Caddy web server with automatic HTTPS
   caddy:
     image: caddy:2.7-alpine
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
