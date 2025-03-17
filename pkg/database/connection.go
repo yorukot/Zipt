@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/yorukot/zipt/pkg/logger"
@@ -27,6 +28,9 @@ const (
 	SQLite     = "sqlite"   // SQLite database
 )
 
+// DefaultAppName is used when no app name is specified for the database
+const DefaultAppName = "zipt"
+
 // init initializes the database connection when the package is imported
 // Database configuration is read from environment variables:
 //   - DATABASE_TYPE: Type of database to connect to (default: postgres)
@@ -34,12 +38,13 @@ const (
 //   - DATABASE_PORT: Database server port
 //   - DATABASE_USER: Database username
 //   - DATABASE_PASSWORD: Database password
-//   - DATABASE_DBNAME: Database name
+//   - DATABASE_DBNAME: Database name (or auto-generated based on APP_NAME and APP_ENV)
 //   - DATABASE_SSLMODE: SSL mode for PostgreSQL
 //   - DATABASE_PATH: File path for SQLite database
 //   - DATABASE_MAX_IDLE_CONNS: Maximum number of idle connections
 //   - DATABASE_MAX_OPEN_CONNS: Maximum number of open connections
 //   - DATABASE_CONN_MAX_LIFETIME: Maximum lifetime of connections in minutes
+
 func init() {
 	// Get database type from environment
 	dbType := os.Getenv("DATABASE_TYPE")
@@ -47,6 +52,9 @@ func init() {
 		dbType = PostgreSQL // Default to PostgreSQL if not specified
 		logger.Log.Sugar().Info("DATABASE_TYPE not set, defaulting to PostgreSQL")
 	}
+
+	// Ensure database exists
+	ensureDatabaseExists(dbType)
 
 	var err error
 
@@ -73,6 +81,171 @@ func init() {
 	configureConnectionPool(dbType)
 
 	logger.Log.Sugar().Infof("Successfully connected to %s database", dbType)
+}
+
+// getDatabaseName gets the database name from environment variables or generates a default name
+// if DATABASE_DBNAME is not set, it generates a name based on APP_NAME and APP_ENV
+// Format: [app_name]_[environment] (e.g., zipt_development)
+func getDatabaseName() string {
+	// First check if database name is explicitly set
+	dbName := os.Getenv("DATABASE_DBNAME")
+	if dbName != "" {
+		return dbName
+	}
+
+	// Get application name and environment for name generation
+	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		appName = DefaultAppName
+		logger.Log.Sugar().Info("APP_NAME not set, using default app name for database: ", DefaultAppName)
+	}
+
+	appEnv := os.Getenv("APP_ENV")
+	if appEnv == "" {
+		appEnv = "development"
+		logger.Log.Sugar().Info("APP_ENV not set, using default environment: development")
+	}
+
+	// Generate database name
+	dbName = fmt.Sprintf("%s_%s", strings.ToLower(appName), strings.ToLower(appEnv))
+	logger.Log.Sugar().Infof("DATABASE_DBNAME not set, using generated name: %s", dbName)
+
+	// Store the generated name in environment for other parts of the application
+	os.Setenv("DATABASE_DBNAME", dbName)
+
+	return dbName
+}
+
+// ensureDatabaseExists checks if the database exists and creates it if it doesn't
+func ensureDatabaseExists(dbType string) {
+	// Get or generate database name
+	dbname := getDatabaseName()
+
+	switch dbType {
+	case PostgreSQL:
+		ensurePostgreSQLDatabase(dbname)
+	case MySQL, MariaDB:
+		ensureMySQLDatabase(dbname)
+	case SQLite:
+		// For SQLite, the database file is created automatically if it doesn't exist
+		logger.Log.Sugar().Info("SQLite database will be created automatically if it doesn't exist")
+	default:
+		logger.Log.Sugar().Warnf("Database existence check not implemented for %s", dbType)
+	}
+}
+
+// ensurePostgreSQLDatabase checks if the PostgreSQL database exists and creates it if it doesn't
+func ensurePostgreSQLDatabase(dbname string) {
+	host := os.Getenv("DATABASE_HOST")
+	user := os.Getenv("DATABASE_USER")
+	password := os.Getenv("DATABASE_PASSWORD")
+	port := os.Getenv("DATABASE_PORT")
+	sslmode := os.Getenv("DATABASE_SSLMODE")
+
+	// Validate required parameters
+	if host == "" || user == "" || port == "" {
+		logger.Log.Sugar().Warn("Missing required PostgreSQL connection parameters, skipping database existence check")
+		return
+	}
+
+	// Connect to the 'postgres' database to check if our database exists
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=postgres port=%s sslmode=%s",
+		host, user, password, port, sslmode,
+	)
+
+	tempDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		logger.Log.Sugar().Warnf("Could not connect to PostgreSQL server to check database existence: %v", err)
+		return
+	}
+
+	// Check if database exists
+	var exists int
+	query := fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname = '%s'", dbname)
+	if err := tempDB.Raw(query).Scan(&exists).Error; err != nil {
+		logger.Log.Sugar().Warnf("Error checking if database exists: %v", err)
+		return
+	}
+
+	// Create database if it doesn't exist
+	if exists != 1 {
+		logger.Log.Sugar().Infof("Database %s does not exist, creating it", dbname)
+		createDBQuery := fmt.Sprintf("CREATE DATABASE %s", dbname)
+		if err := tempDB.Exec(createDBQuery).Error; err != nil {
+			logger.Log.Sugar().Warnf("Failed to create database %s: %v", dbname, err)
+			return
+		}
+		logger.Log.Sugar().Infof("Database %s created successfully", dbname)
+	} else {
+		logger.Log.Sugar().Infof("Database %s already exists", dbname)
+	}
+
+	// Close the temporary connection
+	sqlDB, _ := tempDB.DB()
+	if sqlDB != nil {
+		_ = sqlDB.Close()
+	}
+}
+
+// ensureMySQLDatabase checks if the MySQL database exists and creates it if it doesn't
+func ensureMySQLDatabase(dbname string) {
+	host := os.Getenv("DATABASE_HOST")
+	user := os.Getenv("DATABASE_USER")
+	password := os.Getenv("DATABASE_PASSWORD")
+	port := os.Getenv("DATABASE_PORT")
+
+	// Validate required parameters
+	if host == "" || user == "" || port == "" {
+		logger.Log.Sugar().Warn("Missing required MySQL connection parameters, skipping database existence check")
+		return
+	}
+
+	// Connect to MySQL without specifying a database
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s:%s)/",
+		user, password, host, port,
+	)
+
+	tempDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		logger.Log.Sugar().Warnf("Could not connect to MySQL server to check database existence: %v", err)
+		return
+	}
+
+	// Check if database exists
+	var databases []string
+	if err := tempDB.Raw("SHOW DATABASES").Scan(&databases).Error; err != nil {
+		logger.Log.Sugar().Warnf("Error checking if database exists: %v", err)
+		return
+	}
+
+	exists := false
+	for _, db := range databases {
+		if db == dbname {
+			exists = true
+			break
+		}
+	}
+
+	// Create database if it doesn't exist
+	if !exists {
+		logger.Log.Sugar().Infof("Database %s does not exist, creating it", dbname)
+		createDBQuery := fmt.Sprintf("CREATE DATABASE `%s`", dbname)
+		if err := tempDB.Exec(createDBQuery).Error; err != nil {
+			logger.Log.Sugar().Warnf("Failed to create database %s: %v", dbname, err)
+			return
+		}
+		logger.Log.Sugar().Infof("Database %s created successfully", dbname)
+	} else {
+		logger.Log.Sugar().Infof("Database %s already exists", dbname)
+	}
+
+	// Close the temporary connection
+	sqlDB, _ := tempDB.DB()
+	if sqlDB != nil {
+		_ = sqlDB.Close()
+	}
 }
 
 // configureConnectionPool sets up the database connection pool parameters
@@ -103,17 +276,17 @@ func configureConnectionPool(dbType string) {
 
 // initPostgreSQL initializes a PostgreSQL connection
 // Required env vars: DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD,
-// DATABASE_DBNAME, DATABASE_PORT, DATABASE_SSLMODE
+// DATABASE_PORT, DATABASE_SSLMODE
 func initPostgreSQL() (*gorm.DB, error) {
 	host := os.Getenv("DATABASE_HOST")
 	user := os.Getenv("DATABASE_USER")
 	password := os.Getenv("DATABASE_PASSWORD")
-	dbname := os.Getenv("DATABASE_DBNAME")
+	dbname := getDatabaseName()
 	port := os.Getenv("DATABASE_PORT")
 	sslmode := os.Getenv("DATABASE_SSLMODE")
 
 	// Validate required parameters
-	if host == "" || user == "" || dbname == "" || port == "" {
+	if host == "" || user == "" || port == "" {
 		return nil, fmt.Errorf("missing required PostgreSQL connection parameters")
 	}
 
@@ -128,16 +301,16 @@ func initPostgreSQL() (*gorm.DB, error) {
 
 // initMySQL initializes a MySQL or MariaDB connection
 // Required env vars: DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD,
-// DATABASE_DBNAME, DATABASE_PORT
+// DATABASE_PORT
 func initMySQL() (*gorm.DB, error) {
 	host := os.Getenv("DATABASE_HOST")
 	user := os.Getenv("DATABASE_USER")
 	password := os.Getenv("DATABASE_PASSWORD")
-	dbname := os.Getenv("DATABASE_DBNAME")
+	dbname := getDatabaseName()
 	port := os.Getenv("DATABASE_PORT")
 
 	// Validate required parameters
-	if host == "" || user == "" || dbname == "" || port == "" {
+	if host == "" || user == "" || port == "" {
 		return nil, fmt.Errorf("missing required MySQL connection parameters")
 	}
 

@@ -1,0 +1,147 @@
+# Development configuration - will work on localhost
+:80 {
+    # Configure compression
+    encode zstd gzip
+
+    # Common headers for security
+    header {
+        # Security headers
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        X-XSS-Protection "1; mode=block"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # API routes, making sure API calls to /api/* are routed to backend
+    handle_path /api/* {
+        rewrite * /api{uri}  # Rewrite the path to keep the /api prefix
+        reverse_proxy backend:8080
+    }
+
+    # Known frontend routes (match both /dashboard and /dashboard/*)
+    @frontend path /dashboard* /settings* /auth* /login* /signup* /profile* /analytics* /admin* /about* /terms* /privacy* /password* /reset* /verify*
+    handle @frontend {
+        reverse_proxy website:3000
+        header Cache-Control "public, max-age=86400" # 1 day
+    }
+
+    # Static assets with longer cache time
+    @static path /_next* /favicon.ico /robots.txt /sitemap.xml /manifest.json
+    handle @static {
+        reverse_proxy website:3000
+        header Cache-Control "public, max-age=2592000, immutable" # 30 days + immutable for better caching
+    }
+
+    # Homepage route
+    handle_path / {
+        reverse_proxy website:3000
+    }
+
+    # Short URL redirection (for URLs like /abc123)
+    @shortener path_regexp shortcode ^/[a-zA-Z0-9_-]{6,}$
+    handle @shortener {
+        reverse_proxy backend:8080 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Handle errors with custom pages
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}" {http.error.status_code}
+    }
+
+    # Catch-all routes (fallback to frontend)
+    handle {
+        try_files {path} /index.html
+        reverse_proxy website:3000
+    }
+
+    # Logging
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}
+
+# Production configuration - uncomment and modify when deploying to production
+# Replace yourdomain.com with your actual domain
+# {$DOMAIN:yourdomain.com} {
+#     # Automatic HTTPS with Let's Encrypt
+#     tls {
+#         # Use ZeroSSL instead of Let's Encrypt if you're hitting rate limits
+#         # issuer zerossl
+#     }
+#
+#     # Same configuration as above
+#     encode zstd gzip
+#
+#     header {
+#         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+#         X-Content-Type-Options nosniff
+#         X-Frame-Options SAMEORIGIN
+#         X-XSS-Protection "1; mode=block"
+#         Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+#         Referrer-Policy "strict-origin-when-cross-origin"
+#         Permissions-Policy "camera=(), microphone=(), geolocation=()"
+#         -Server
+#     }
+#
+#     # API routes
+#     handle_path /api/* {
+#         reverse_proxy backend:8080
+#     }
+#
+#     # Known frontend routes
+#     @frontend path /dashboard/* /settings/* /auth/* /login/* /signup/* /profile/* /analytics/* /admin/* /about/* /terms/* /privacy/* /password/* /reset/* /verify/*
+#     handle @frontend {
+#         reverse_proxy website:3000
+#         header Cache-Control "public, max-age=86400" # 1 day
+#     }
+#
+#     # Static assets with longer cache time
+#     @static path /_next/* /favicon.ico /robots.txt /sitemap.xml /manifest.json
+#     handle @static {
+#         reverse_proxy website:3000
+#         header Cache-Control "public, max-age=2592000, immutable" # 30 days + immutable
+#     }
+#
+#     # Homepage
+#     handle_path / {
+#         reverse_proxy website:3000
+#     }
+#
+#     # Short URL redirection
+#     @shortener path_regexp shortcode ^/[a-zA-Z0-9_-]{6,}$
+#     handle @shortener {
+#         reverse_proxy backend:8080 {
+#             header_up X-Forwarded-For {remote_host}
+#             header_up X-Real-IP {remote_host}
+#             header_up X-Forwarded-Proto {scheme}
+#         }
+#     }
+#
+#     # Handle errors with custom pages
+#     handle_errors {
+#         respond "{http.error.status_code} {http.error.status_text}" {http.error.status_code}
+#     }
+#
+#     # Catch-all routes
+#     handle {
+#         try_files {path} /index.html
+#         reverse_proxy website:3000
+#     }
+#
+#     # Logging
+#     log {
+#         output stdout
+#         format json
+#         level INFO
+#     }
+# }

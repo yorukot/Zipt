@@ -1,7 +1,7 @@
 const BASE_URL = (() => {
   if (typeof window === "undefined") {
     if (process.env.NEXT_PUBLIC_API_BASE_URL?.startsWith("http://localhost")) {
-      return "http://nginx:80/api/v1";
+      return "http://backend:8080/api/v1";
     }
     return process.env.NEXT_PUBLIC_API_BASE_URL;
   } else {
