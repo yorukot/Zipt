@@ -16,7 +16,7 @@ services:
       - MACHINE_ID=1
       - BACKEND_URL=http://localhost:8080/
       - FRONTEND_URL=http://localhost:8080/
-      - SHORT_DOMAIN=zipt.com
+      - SHORT_DOMAIN=http://localhost:8080/
 
       - DATABASE_TYPE=postgres
       - DATABASE_HOST=postgres
