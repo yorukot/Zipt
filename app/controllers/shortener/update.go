@@ -1,7 +1,7 @@
 package shortener
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"os"
 	"time"
@@ -92,7 +92,7 @@ func validateUpdateRequest(c *gin.Context, urlShortCode string) (*UpdateURLReque
 	if request.OriginalURL == "" && request.CustomSlug == "" && request.ExpiresAt == nil {
 		errMsg := "no fields to update were provided"
 		utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-		return nil, fmt.Errorf(errMsg)
+		return nil, errors.New(errMsg)
 	}
 
 	// Validate custom slug if present
@@ -100,7 +100,7 @@ func validateUpdateRequest(c *gin.Context, urlShortCode string) (*UpdateURLReque
 		if !isValidCustomSlug(request.CustomSlug) {
 			errMsg := "custom slug must contain only alphanumeric characters and hyphens, and cannot start or end with a hyphen"
 			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-			return nil, fmt.Errorf(errMsg)
+			return nil, errors.New(errMsg)
 		}
 
 		// Check if the slug already exists in the database
@@ -112,7 +112,7 @@ func validateUpdateRequest(c *gin.Context, urlShortCode string) (*UpdateURLReque
 		if exists {
 			errMsg := "custom slug already in use; please choose a different one"
 			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-			return nil, fmt.Errorf(errMsg)
+			return nil, errors.New(errMsg)
 		}
 	}
 

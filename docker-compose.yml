@@ -16,6 +16,7 @@ services:
       - MACHINE_ID=1
       - BACKEND_URL=http://localhost:8080/
       - FRONTEND_URL=http://localhost:8080/
+      - SHORT_DOMAIN=zipt.com
 
       - DATABASE_TYPE=postgres
       - DATABASE_HOST=postgres
@@ -58,26 +59,11 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://backend:8080/api
-      - NEXT_PUBLIC_BASE_URL=http://caddy
     depends_on:
       - backend
     networks:
       - app-network
     restart: unless-stopped
-
-  # Caddy web server with automatic HTTPS
-  caddy:
-    image: caddy:2.7-alpine
-    volumes:
-      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    restart: unless-stopped
-    depends_on:
-      - website
-      - backend
-    networks:
-      - app-network
 
   # Database
   postgres:

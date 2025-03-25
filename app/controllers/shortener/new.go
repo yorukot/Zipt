@@ -3,6 +3,7 @@ package shortener
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -69,14 +70,14 @@ func CreateShortURL(c *gin.Context) {
 	}
 
 	// Construct the full short URL
-	baseURL := os.Getenv("BACKEND_URL")
-	if baseURL == "" {
-		baseURL = "http://localhost:8080/" // Default for local development
+	shortDomain := os.Getenv("SHORT_DOMAIN")
+	if shortDomain == "" {
+		shortDomain = "zipt.com" // Default for local development
 	}
 	response := ShortenURLResponse{
 		ShortCode:   shortCode,
 		OriginalURL: request.OriginalURL,
-		ShortURL:    baseURL + shortCode,
+		ShortURL:    shortDomain + "/" + shortCode,
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   urlModel.CreatedAt,
 	}
@@ -99,7 +100,7 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 	if isCustomEndpoint && request.ShortCode == "" {
 		errMsg := "custom slug is required for this endpoint"
 		utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-		return nil, fmt.Errorf(errMsg)
+		return nil, errors.New(errMsg)
 	}
 
 	// Validate custom slug if present
@@ -107,7 +108,7 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 		if !isValidCustomSlug(request.ShortCode) {
 			errMsg := "custom slug must contain only alphanumeric characters and hyphens, and cannot start or end with a hyphen"
 			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-			return nil, fmt.Errorf(errMsg)
+			return nil, errors.New(errMsg)
 		}
 
 		// Check if the slug already exists in the database
@@ -119,7 +120,7 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 		if exists {
 			errMsg := "custom slug already in use; please choose a different one"
 			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-			return nil, fmt.Errorf(errMsg)
+			return nil, errors.New(errMsg)
 		}
 	}
 
@@ -188,7 +189,7 @@ func createURLModel(request *ShortenURLRequest, shortCode string, userID *uint64
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ClickCount: 0,
+		ClickCount:  0,
 	}
 }
 
