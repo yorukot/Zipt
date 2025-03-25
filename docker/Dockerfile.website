@@ -1,6 +1,15 @@
 FROM node:20 AS base
 WORKDIR /app
 RUN npm i -g pnpm
+
+# Add build arguments
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_API_SHORT_DOMAIN
+
+# Set environment variables
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_SHORT_DOMAIN=$NEXT_PUBLIC_API_SHORT_DOMAIN
+
 COPY package.json pnpm-lock.yaml ./
 
 RUN pnpm install
@@ -11,6 +20,14 @@ RUN pnpm build
 FROM node:20-alpine3.19 as release
 WORKDIR /app
 RUN npm i -g pnpm
+
+# Add build arguments again in release stage
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_API_SHORT_DOMAIN
+
+# Set environment variables in release stage
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_SHORT_DOMAIN=$NEXT_PUBLIC_API_SHORT_DOMAIN
 
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./package.json
