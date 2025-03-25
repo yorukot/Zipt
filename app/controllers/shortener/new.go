@@ -72,12 +72,12 @@ func CreateShortURL(c *gin.Context) {
 	// Construct the full short URL
 	shortDomain := os.Getenv("SHORT_DOMAIN")
 	if shortDomain == "" {
-		shortDomain = "zipt.com" // Default for local development
+		shortDomain = "http://localhost:8080" // Default for local development
 	}
 	response := ShortenURLResponse{
 		ShortCode:   shortCode,
 		OriginalURL: request.OriginalURL,
-		ShortURL:    shortDomain + "/" + shortCode,
+		ShortURL:    shortDomain + shortCode,
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   urlModel.CreatedAt,
 	}

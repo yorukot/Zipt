@@ -87,7 +87,20 @@ If you prefer to run without Docker:
    DATABASE_SSLMODE=disable
    ```
 
-5. Run the application:
+5. Update your environment variables in `.env`:
+   ```
+   # Backend environment variables
+   BACKEND_URL=https://your-domain.com/
+   FRONTEND_URL=https://your-domain.com/
+   SHORT_DOMAIN=your-domain.com
+   COOKIE_DOMAIN=your-domain.com
+
+   # Frontend environment variables (website/.env)
+   NEXT_PUBLIC_API_URL=https://your-domain.com/api
+   NEXT_PUBLIC_API_SHORT_DOMAIN=https://your-domain.com
+   ```
+
+6. Run the application:
    ```bash
    go run main.go
    ```
@@ -152,22 +165,15 @@ If you prefer to run without Docker:
    sudo systemctl restart nginx
    ```
 
-5. Update your environment variables in `.env`:
-   ```
-   BACKEND_URL=https://your-domain.com/
-   FRONTEND_URL=https://your-domain.com/
-   SHORT_DOMAIN=your-domain.com
-   COOKIE_DOMAIN=your-domain.com
-   ```
-
-6. Update the frontend environment in `docker-compose.yml`:
+5. Update the frontend environment in `docker-compose.yml`:
    ```yaml
    website:
      environment:
        - NEXT_PUBLIC_API_URL=https://your-domain.com/api
+       - NEXT_PUBLIC_API_SHORT_DOMAIN=https://your-domain.com
    ```
 
-7. Restart your Docker containers:
+6. Restart your Docker containers:
    ```bash
    docker-compose down
    docker-compose up -d

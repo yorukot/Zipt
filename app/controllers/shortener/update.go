@@ -67,7 +67,7 @@ func UpdateURL(c *gin.Context) {
 	// Construct the full short URL for the response
 	baseURL := os.Getenv("SHORT_DOMAIN")
 	if baseURL == "" {
-		baseURL = "http://localhost:8080/" // Default for local development
+		baseURL = "http://localhost:8080" // Default for local development
 	}
 	response := ShortenURLResponse{
 		ShortCode:   updated.ShortCode,

@@ -16,7 +16,7 @@ services:
       - MACHINE_ID=1
       - BACKEND_URL=http://localhost:8080/
       - FRONTEND_URL=http://localhost:8080/
-      - SHORT_DOMAIN=http://localhost:8080/
+      - SHORT_DOMAIN=http://localhost:8080
 
       - DATABASE_TYPE=postgres
       - DATABASE_HOST=postgres
@@ -59,6 +59,7 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://backend:8080/api
+      - NEXT_PUBLIC_API_SHORT_DOMAIN=http://localhost:8080
     depends_on:
       - backend
     networks:
