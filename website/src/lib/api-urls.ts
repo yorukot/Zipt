@@ -1,4 +1,8 @@
 const BASE_URL = (() => {
+  console.log("All env variables:", process.env);
+  console.log("NEXT_PUBLIC_API_BASE_URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
+  console.log("NEXT_PUBLIC_API_SHORT_DOMAIN:", process.env.NEXT_PUBLIC_API_SHORT_DOMAIN);
+
   if (typeof window === "undefined") {
     if (process.env.NEXT_PUBLIC_API_BASE_URL?.startsWith("http://localhost")) {
       return "http://backend:8080/api/v1";

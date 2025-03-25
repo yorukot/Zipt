@@ -57,7 +57,6 @@ services:
       context: ./website
       dockerfile: ../docker/Dockerfile.website
     environment:
-      - NODE_ENV=development
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080/api/v1}
       - NEXT_PUBLIC_API_SHORT_DOMAIN=${NEXT_PUBLIC_API_SHORT_DOMAIN:-http://localhost:8080}
     depends_on:
