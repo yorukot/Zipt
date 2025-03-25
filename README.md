@@ -99,7 +99,7 @@ If you prefer to run without Docker:
    COOKIE_DOMAIN=your-domain.com
 
    # Frontend environment variables (website/.env)
-   NEXT_PUBLIC_API_URL=https://your-domain.com/api
+   NEXT_PUBLIC_API_BASE_URL=https://your-domain.com/api
    NEXT_PUBLIC_API_SHORT_DOMAIN=https://your-domain.com
    ```
 
@@ -172,7 +172,7 @@ If you prefer to run without Docker:
    ```yaml
    website:
      environment:
-       - NEXT_PUBLIC_API_URL=https://your-domain.com/api
+       - NEXT_PUBLIC_API_BASE_URL=https://your-domain.com/api
        - NEXT_PUBLIC_API_SHORT_DOMAIN=https://your-domain.com
    ```
 

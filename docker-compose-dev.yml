@@ -57,7 +57,7 @@ services:
       dockerfile: ../docker/Dockerfile.website
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:8080/api
+      - NEXT_PUBLIC_API_BASE_URL=http://backend:8080/api
     depends_on:
       - backend
     networks:
