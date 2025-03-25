@@ -115,7 +115,7 @@ export default function DashboardPage() {
   const dateLocale = locale === "zh-tw" ? zhTW : enUS;
 
   const handleCopy = (shortCode: string) => {
-    const fullUrl = `${window.location.origin}/${shortCode}`;
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_SHORT_DOMAIN}/${shortCode}`;
     navigator.clipboard.writeText(fullUrl).then(
       () => {
         toast.success(t("Dashboard.url.copied"), {
@@ -361,7 +361,7 @@ export default function DashboardPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link
-                              href={`${window.location.origin}/${url.short_code}`}
+                              href={`${process.env.NEXT_PUBLIC_API_SHORT_DOMAIN}/${url.short_code}`}
                               target="_blank"
                             >
                               <ExternalLink className="h-4 w-4 mr-2" />

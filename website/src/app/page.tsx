@@ -61,7 +61,7 @@ export default function HomePage() {
       }
 
       const data = await response.json();
-      const shortUrl = `${window.location.origin}/${data.result.short_code}`;
+      const shortUrl = `${process.env.NEXT_PUBLIC_API_SHORT_DOMAIN}/${data.result.short_code}`;
       setShortUrl(shortUrl);
       
       // Auto copy to clipboard
