@@ -1,5 +1,8 @@
 # Zipt URL Shortener
 
+> [!NOTE]
+> This documentation is AI-generated and will be updated when the project is officially released on GitHub. Some features and configurations may change during development.
+
 A robust URL shortening service with analytics tracking built with Go and Gin.
 
 ## Features
