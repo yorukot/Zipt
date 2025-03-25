@@ -81,5 +81,3 @@ services:
 
 volumes:
   postgres-data:  # Data volume for PostgreSQL
-  caddy_data:     # Stores certificates
-  caddy_config:   # Stores Caddy configuration 
