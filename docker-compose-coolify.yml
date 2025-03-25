@@ -70,7 +70,7 @@ services:
 
   # Database
   postgres:
-    image: postgres:17-alpine
+    image: postgres:16-alpine
     user: postgres
     environment:
       POSTGRES_USER: postgres
