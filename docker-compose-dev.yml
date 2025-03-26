@@ -5,9 +5,10 @@ networks:
 services:
   # Backend service
   backend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.backend
+    image: cosmtrek/air:latest
+    working_dir: /app
+    volumes:
+      - .:/app
     environment:
       - GIN_MODE=debug
       - PORT=8080
@@ -16,6 +17,7 @@ services:
       - MACHINE_ID=1
       - BACKEND_URL=http://localhost:8080/
       - FRONTEND_URL=http://localhost:8080/
+      - SHORT_DOMAIN=http://localhost:8080
 
       - DATABASE_TYPE=postgres
       - DATABASE_HOST=postgres
@@ -38,26 +40,32 @@ services:
       - COOKIE_PATH=/
       - COOKIE_REFRESH_TOKEN_EXPIRES=60
       - COOKIE_ACCESS_TOKEN_EXPIRES=15
+    ports:
+      - "8080:8080"
     networks:
       - app-network
     depends_on:
       - postgres
-    healthcheck:
-      test: ["CMD", "echo", "healthy"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
     restart: unless-stopped
 
   # Frontend website
   website:
-    build:
-      context: ./website
-      dockerfile: ../docker/Dockerfile.website
+    image: node:20
+    working_dir: /app
+    volumes:
+      - ./website:/app
+      - /app/node_modules
+      - /app/.next
+    command: >
+      sh -c "npm install -g pnpm &&
+             pnpm install &&
+             pnpm dev"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_BASE_URL=http://backend:8080/api
+      - NEXT_PUBLIC_API_BASE_URL=http://backend:8080/api/v1
+      - NEXT_PUBLIC_API_SHORT_DOMAIN=http://localhost:8080
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
     networks:
