@@ -7,14 +7,14 @@ RUN apk add --no-cache gcc musl-dev git
 # Set working directory
 WORKDIR /app
 
-# Copy go.mod and go.sum files
-COPY go.mod go.sum ./
+# Copy go.mod and go.sum files from backend directory
+COPY backend/go.mod backend/go.sum ./
 
 # Download dependencies
 RUN go mod download
 
-# Copy the source code
-COPY . .
+# Copy the source code from backend directory
+COPY backend/ ./
 
 # Build the application
 RUN CGO_ENABLED=1 GOOS=linux go build -a -o main .
