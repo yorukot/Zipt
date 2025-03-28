@@ -1,14 +1,15 @@
 networks:
-  app-network:
+  dev:
     driver: bridge
 
 services:
-  # Backend service
+  # Backend
   backend:
     image: cosmtrek/air:latest
-    working_dir: /app
     volumes:
-      - .:/app
+      - ./backend:/app
+    working_dir: /app
+    command: sh -c "air"
     environment:
       - GIN_MODE=debug
       - PORT=8080
@@ -43,19 +44,20 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - app-network
+      - dev
     depends_on:
       - postgres
-    restart: unless-stopped
+    logging:
+      options:
+        max-size: "100kb"
+        max-file: "1"
 
   # Frontend website
   website:
-    image: node:20
-    working_dir: /app
+    image: node:22
     volumes:
-      - ./website:/app
-      - /app/node_modules
-      - /app/.next
+      - ../website:/app
+    working_dir: /app
     command: >
       sh -c "npm install -g pnpm &&
              pnpm install &&
@@ -69,10 +71,12 @@ services:
     depends_on:
       - backend
     networks:
-      - app-network
-    restart: unless-stopped
+      - dev
+    logging:
+      options:
+        max-size: "100kb"
+        max-file: "1"
 
-  # Caddy web server with automatic HTTPS
   caddy:
     image: caddy:2.7-alpine
     ports:
@@ -90,23 +94,28 @@ services:
       - website
       - backend
     networks:
-      - app-network
+      - dev
 
-  # Database
   postgres:
-    image: postgres:17-alpine
-    user: postgres
+    image: postgres:15-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: p0stgr3s
-      POSTGRES_DB: zipt  # Explicitly set the default database
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=p0stgr3s
+      - POSTGRES_DB=zipt
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data  # Persist database data
+      - postgres-data:/var/lib/postgresql/data
     networks:
-      - app-network
+      - dev
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres-data:  # Data volume for PostgreSQL
-  caddy_data:     # Stores certificates
-  caddy_config:   # Stores Caddy configuration 
+  postgres-data:
+  caddy_data:
+  caddy_config:
