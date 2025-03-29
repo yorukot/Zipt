@@ -4,10 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
-	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,8 +17,9 @@ import (
 // ShortenURLRequest represents the request body for creating a short URL
 type ShortenURLRequest struct {
 	OriginalURL string     `json:"original_url" binding:"required,url"`
-	ShortCode   string     `json:"short_code" binding:"omitempty,max=20"`
+	ShortCode   string     `json:"short_code" binding:"omitempty,max=100"`
 	ExpiresAt   *time.Time `json:"expires_at" binding:"omitempty"`
+	DomainID    *uint64    `json:"domain_id,omitempty"`
 }
 
 // ShortenURLResponse represents the response after creating a short URL
@@ -29,6 +27,8 @@ type ShortenURLResponse struct {
 	ShortCode   string     `json:"short_code"`
 	OriginalURL string     `json:"original_url"`
 	ShortURL    string     `json:"short_url"`
+	DomainID    uint64     `json:"domain_id,omitempty"`
+	DomainName  string     `json:"domain_name,omitempty"`
 	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
@@ -40,19 +40,9 @@ func CreateShortURL(c *gin.Context) {
 		return // Error response already sent in the validation function
 	}
 
-	// Check for custom slug - only allowed for authenticated users
-	if request.ShortCode != "" {
-		// Get user from context (if authenticated)
-		_, exists := c.Get("userID")
-		if !exists {
-			utils.FullyResponse(c, http.StatusUnauthorized, "custom slugs require authentication", utils.ErrUnauthorized, nil)
-			return
-		}
-	}
-
 	shortCode, err := getShortCode(c, request)
 	if err != nil {
-		return // Error response already sent in the function
+		return
 	}
 
 	// Get user ID if authenticated
@@ -60,24 +50,42 @@ func CreateShortURL(c *gin.Context) {
 	if userID, exists := c.Get("userID"); exists {
 		id := userID.(uint64)
 		userIDPtr = &id
-		fmt.Println("User ID:", id)
 	}
 
-	urlModel := createURLModel(request, shortCode, userIDPtr)
+	// Get workspace ID if authenticated
+	var workspaceIDPtr *uint64
+	if workspaceID, exists := c.Get("workspaceID"); exists {
+		id := workspaceID.(uint64)
+		workspaceIDPtr = &id
+	}
+
+	urlModel := createURLModel(request, shortCode, workspaceIDPtr, userIDPtr)
 
 	if err := saveURLToDatabase(c, urlModel); err != nil {
-		return // Error response already sent in the save function
+		return
 	}
 
-	// Construct the full short URL
-	shortDomain := os.Getenv("SHORT_DOMAIN")
-	if shortDomain == "" {
-		shortDomain = "http://localhost:8080" // Default for local development
+	// Get domain info if a domain ID was provided
+	var domainName string
+	if urlModel.DomainID > 0 {
+		domain, result := queries.GetDomainByID(urlModel.DomainID)
+		if result.Error == nil && domain.Verified {
+			domainName = domain.Domain
+		}
 	}
+
+	// Construct the full short URL using the utility function
+	shortURL := utils.GetFullShortURL(domainName, shortCode)
+
+	// Get normalized domain name for response
+	normalizedDomain, _ := utils.NormalizeDomainName(domainName)
+
 	response := ShortenURLResponse{
 		ShortCode:   shortCode,
 		OriginalURL: request.OriginalURL,
-		ShortURL:    shortDomain + shortCode,
+		ShortURL:    shortURL,
+		DomainID:    urlModel.DomainID,
+		DomainName:  normalizedDomain,
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   urlModel.CreatedAt,
 	}
@@ -93,18 +101,14 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 		return nil, err
 	}
 
-	// Check if this is the custom endpoint (which already requires auth through middleware)
-	isCustomEndpoint := c.FullPath() == "/api/v1/url/custom"
-
-	// For the custom endpoint, a custom slug is required
-	if isCustomEndpoint && request.ShortCode == "" {
-		errMsg := "custom slug is required for this endpoint"
-		utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
-		return nil, errors.New(errMsg)
-	}
-
 	// Validate custom slug if present
 	if request.ShortCode != "" {
+		_, exists := c.Get("userID")
+		if !exists {
+			utils.FullyResponse(c, http.StatusUnauthorized, "custom slugs require authentication", utils.ErrUnauthorized, nil)
+			return nil, errors.New("custom slugs require authentication")
+		}
+
 		if !isValidCustomSlug(request.ShortCode) {
 			errMsg := "custom slug must contain only alphanumeric characters and hyphens, and cannot start or end with a hyphen"
 			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
@@ -112,7 +116,7 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 		}
 
 		// Check if the slug already exists in the database
-		exists, err := checkSlugExists(request.ShortCode)
+		exists, err := checkSlugExists(request.ShortCode, request.DomainID)
 		if err != nil {
 			utils.ServerErrorResponse(c, http.StatusInternalServerError, "error checking custom slug", utils.ErrGetData, err)
 			return nil, err
@@ -124,20 +128,42 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 		}
 	}
 
-	return &request, nil
-}
+	// Validate domain ID if provided
+	if request.DomainID != nil && *request.DomainID > 0 {
+		// Check if domain exists and is verified
+		domain, result := queries.GetDomainByID(*request.DomainID)
+		if result.Error != nil {
+			errMsg := "invalid domain ID"
+			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
+			return nil, errors.New(errMsg)
+		}
 
-// isValidCustomSlug checks if a custom slug meets all requirements
-func isValidCustomSlug(slug string) bool {
-	// Length check (3-20 characters)
-	if len(slug) < 3 || len(slug) > 20 {
-		return false
+		// Ensure domain is verified
+		if !domain.Verified {
+			errMsg := "domain has not been verified yet"
+			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
+			return nil, errors.New(errMsg)
+		}
+
+		// Check if user has permission for this domain
+		_, userExists := c.Get("userID")
+		workspaceID, workspaceExists := c.Get("workspaceID")
+
+		if !userExists {
+			errMsg := "authentication required to use custom domains"
+			utils.FullyResponse(c, http.StatusUnauthorized, errMsg, utils.ErrUnauthorized, nil)
+			return nil, errors.New(errMsg)
+		}
+
+		// If domain belongs to a workspace, ensure user has access
+		if domain.WorkspaceID != nil && workspaceExists && *domain.WorkspaceID != workspaceID.(uint64) {
+			errMsg := "you don't have permission to use this domain"
+			utils.FullyResponse(c, http.StatusForbidden, errMsg, utils.ErrForbidden, nil)
+			return nil, errors.New(errMsg)
+		}
 	}
 
-	// Regex pattern: allow alphanumeric and hyphens, but no consecutive hyphens
-	// and cannot start or end with a hyphen
-	pattern := regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$`)
-	return pattern.MatchString(slug)
+	return &request, nil
 }
 
 // getShortCode generates or validates a short code for the URL
@@ -175,22 +201,36 @@ func generateRandomShortCode(length int) (string, error) {
 }
 
 // checkSlugExists checks if a custom slug is already in use
-func checkSlugExists(slug string) (bool, error) {
-	return queries.CheckShortCodeExists(slug)
+func checkSlugExists(slug string, domainID *uint64) (bool, error) {
+	if domainID == nil {
+		// Check for default domain (where domainID = 0)
+		return queries.CheckShortCodeExistsByDomain(slug, 0)
+	}
+	// Check for specific domain
+	return queries.CheckShortCodeExistsByDomain(slug, *domainID)
 }
 
 // createURLModel creates a new URL model with the request data
-func createURLModel(request *ShortenURLRequest, shortCode string, userID *uint64) models.URL {
+func createURLModel(request *ShortenURLRequest, shortCode string, workspaceID *uint64, userID *uint64) models.URL {
 	return models.URL{
 		ID:          encryption.GenerateID(),
-		UserID:      userID,
+		WorkspaceID: workspaceID,
+		DomainID:    getDomainID(request.DomainID),
 		OriginalURL: request.OriginalURL,
 		ShortCode:   shortCode,
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		ClickCount:  0,
+		TotalClick:  0,
 	}
+}
+
+// getDomainID returns 0 if domainID is nil, otherwise returns the value
+func getDomainID(domainID *uint64) uint64 {
+	if domainID == nil {
+		return 0
+	}
+	return *domainID
 }
 
 // saveURLToDatabase saves the new URL to the database

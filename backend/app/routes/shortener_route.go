@@ -8,18 +8,20 @@ import (
 
 // ShortenerRoute sets up routes for URL shortener functionality
 func ShortenerRoute(r *gin.RouterGroup) {
-	// Public routes
-	r.GET("/:shortCode", shortener.RedirectURL) // Redirect to original URL (direct with shortcode)
+	// Route to /api/vX/shortcode is handled at root level in main.go
 
 	r.Use(middleware.GetContextUserID())
-
-	r.POST("/url", shortener.CreateShortURL) // Create short URL (anonymous users without custom slug)
+	// Public routes (anonymous users)
+	r.POST("/url", shortener.CreateShortURL)                   // Create short URL (anonymous users without custom slug)
+	r.POST("/check-shortcode", shortener.CheckShortCodeExists) // Check if short code exists
 
 	// Protected routes (require authentication)
-	protected := r.Group("/url")
+	protected := r.Group("/url/:workspaceID")
+	protected.Use(middleware.CheckWorkspaceRoleAndStore())
 
-	protected.GET("/list", shortener.GetUserURLs)                     // Get all URLs created by user
-	protected.GET("/:shortCode/analytics", shortener.GetURLAnalytics) // Get analytics for a URL
-	protected.PUT("/:shortCode", shortener.UpdateURL)                 // Update an existing URL (authenticated users only)
-	protected.DELETE("/:shortCode", shortener.DeleteURL)              // Delete an existing URL (authenticated users only)
+	protected.GET("/list", shortener.GetUserURLs)                          // Get all URLs created by user
+	protected.GET("/:shortCode/analytics", shortener.GetURLAnalytics)      // Get analytics for a URL with time range
+	protected.GET("/:shortCode/metrics", shortener.GetPaginatedURLMetrics) // Get paginated metrics of a specific type
+	protected.PUT("/:shortCode", shortener.UpdateURL)                      // Update an existing URL (authenticated users only)
+	protected.DELETE("/:shortCode", shortener.DeleteURL)                   // Delete an existing URL (authenticated users only)
 }

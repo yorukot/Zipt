@@ -324,14 +324,21 @@ Deletes an existing shortened URL.
 
 ### Get URL Analytics
 
-Retrieves analytics for a specific shortened URL.
+Retrieves analytics data for a specific URL.
 
-**Endpoint:** `GET /url/:shortCode/analytics`
+**Endpoint:** `GET /url/:workspaceID/:shortCode/analytics`
 
 **Authentication:** Required
 
-**Path Parameters:**
-- `shortCode`: The short code of the URL
+**Query Parameters:**
+- `days` (optional): Number of days to include in the time range (e.g., `?days=7` for data from the last 7 days)
+- `hours` (optional): Number of hours to include in the time range (e.g., `?hours=24` for data from the last 24 hours)
+- `mins` (optional): Number of minutes to include in the time range (e.g., `?mins=30` for data from the last 30 minutes)
+- `months` (optional): Number of months to include in the time range (e.g., `?months=3` for data from the last 3 months)
+- `years` (optional): Number of years to include in the time range (e.g., `?years=1` for data from the last year)
+
+You can combine these parameters to create custom time ranges (e.g., `?months=1&days=15` for data from the last 1 month and 15 days).
+If no parameters are provided, data from the last 24 hours will be returned.
 
 **Response (200 OK):**
 ```json
@@ -341,44 +348,134 @@ Retrieves analytics for a specific shortened URL.
   "code": null,
   "data": {
     "url": {
-      "id": "12345678",
-      "original_url": "https://example.com/path/to/resource",
       "short_code": "abc123",
-      "click_count": 42,
+      "original_url": "https://example.com/path/to/resource",
+      "total_clicks": 42,
       "created_at": "2024-03-01T10:30:00Z",
-      "updated_at": "2024-03-01T10:30:00Z",
       "expires_at": "2024-12-31T23:59:59Z"
     },
     "analytics": {
       "total_clicks": 42,
-      "browsers": [
-        {"browser": "Chrome", "count": 28},
-        {"browser": "Firefox", "count": 10},
-        {"browser": "Safari", "count": 4}
+      "top_referrers": [
+        {
+          "metric_type": "referrer",
+          "metric_value": "google.com",
+          "click_count": 15
+        },
+        {
+          "metric_type": "referrer",
+          "metric_value": "facebook.com",
+          "click_count": 10
+        }
       ],
-      "devices": [
-        {"device": "Desktop", "count": 30},
-        {"device": "Mobile", "count": 10},
-        {"device": "Tablet", "count": 2}
+      "top_countries": [
+        {
+          "metric_type": "country",
+          "metric_value": "US",
+          "click_count": 20
+        },
+        {
+          "metric_type": "country",
+          "metric_value": "UK",
+          "click_count": 8
+        }
       ],
-      "referrers": [
-        {"referrer": "https://google.com", "count": 15},
-        {"referrer": "https://twitter.com", "count": 12},
-        {"referrer": "https://facebook.com", "count": 8}
+      "top_cities": [
+        {
+          "metric_type": "city",
+          "metric_value": "New York",
+          "click_count": 10
+        },
+        {
+          "metric_type": "city",
+          "metric_value": "London",
+          "click_count": 5
+        }
       ],
-      "countries": [
-        {"country": "US", "count": 20},
-        {"country": "DE", "count": 10},
-        {"country": "JP", "count": 8}
-      ]
+      "clicks_over_day": [
+        {
+          "metric_type": "clicks",
+          "metric_value": "total",
+          "bucket_time": "2024-03-01T10:00:00Z",
+          "click_count": 5
+        },
+        {
+          "metric_type": "clicks",
+          "metric_value": "total",
+          "bucket_time": "2024-03-01T11:00:00Z",
+          "click_count": 8
+        }
+      ],
+      "date_range": {
+        "start": "2024-02-28T10:30:00Z",
+        "end": "2024-03-01T10:30:00Z"
+      }
     }
   }
 }
 ```
 
 **Error Responses:**
+- `400 Bad Request`: Invalid time range parameters
 - `401 Unauthorized`: Missing or invalid authentication
-- `403 Forbidden`: Not authorized to view this URL's analytics
+- `403 Forbidden`: URL belongs to a different user
+- `404 Not Found`: URL not found
+- `500 Internal Server Error`: Server-side error
+
+### Get Paginated URL Metrics
+
+Retrieves paginated metrics of a specific type for a URL.
+
+**Endpoint:** `GET /url/:workspaceID/:shortCode/metrics`
+
+**Authentication:** Required
+
+**Query Parameters:**
+- `type` (optional): Type of metric to retrieve (default: `referrer`). Valid values: `referrer`, `country`, `city`, `clicks`
+- `page` (optional): Page number (default: `1`)
+- `pageSize` (optional): Number of items per page (default: `10`, max: `100`)
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Metrics retrieved successfully",
+  "code": null,
+  "data": {
+    "url": {
+      "short_code": "abc123",
+      "original_url": "https://example.com/path/to/resource"
+    },
+    "metrics": {
+      "type": "referrer",
+      "data": [
+        {
+          "metric_type": "referrer",
+          "metric_value": "google.com",
+          "click_count": 15
+        },
+        {
+          "metric_type": "referrer",
+          "metric_value": "facebook.com",
+          "click_count": 10
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "page_size": 10,
+        "offset": 0
+      },
+      "total_count": 25,
+      "total_pages": 3
+    }
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid metric type or pagination parameters
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: URL belongs to a different user
 - `404 Not Found`: URL not found
 - `500 Internal Server Error`: Server-side error
 
@@ -436,3 +533,380 @@ Rate limiting information is included in the response headers:
 
 We provide official client libraries for:
 - JavaScript/TypeScript
+
+## Workspace Operations
+
+### Create Workspace
+
+Creates a new workspace.
+
+**Endpoint:** `POST /workspace`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "name": "My Workspace"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "status": "success",
+  "message": "Workspace created successfully",
+  "code": null,
+  "data": {
+    "id": 12345,
+    "name": "My Workspace",
+    "created_at": "2024-03-01T10:30:00Z",
+    "updated_at": "2024-03-01T10:30:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid request data
+- `401 Unauthorized`: Missing or invalid authentication
+- `500 Internal Server Error`: Server-side error
+
+### Get Workspace
+
+Retrieves workspace details.
+
+**Endpoint:** `GET /workspace/:workspaceID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `workspaceID`: The ID of the workspace
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Workspace retrieved successfully",
+  "code": null,
+  "data": {
+    "id": 12345,
+    "name": "My Workspace",
+    "created_at": "2024-03-01T10:30:00Z",
+    "updated_at": "2024-03-01T10:30:00Z",
+    "users": [
+      {
+        "id": 67890,
+        "email": "user@example.com",
+        "display_name": "John Doe",
+        "role": "admin"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to access this workspace
+- `404 Not Found`: Workspace not found
+- `500 Internal Server Error`: Server-side error
+
+### Update Workspace
+
+Updates workspace details.
+
+**Endpoint:** `PUT /workspace/:workspaceID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `workspaceID`: The ID of the workspace
+
+**Request Body:**
+```json
+{
+  "name": "Updated Workspace Name"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Workspace updated successfully",
+  "code": null,
+  "data": {
+    "id": 12345,
+    "name": "Updated Workspace Name",
+    "created_at": "2024-03-01T10:30:00Z",
+    "updated_at": "2024-03-01T11:30:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid request data
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to update this workspace
+- `404 Not Found`: Workspace not found
+- `500 Internal Server Error`: Server-side error
+
+### Delete Workspace
+
+Deletes a workspace.
+
+**Endpoint:** `DELETE /workspace/:workspaceID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `workspaceID`: The ID of the workspace
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Workspace deleted successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to delete this workspace
+- `404 Not Found`: Workspace not found
+- `500 Internal Server Error`: Server-side error
+
+### Add User to Workspace
+
+Adds a user to a workspace.
+
+**Endpoint:** `POST /workspace/:workspaceID/users`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `workspaceID`: The ID of the workspace
+
+**Request Body:**
+```json
+{
+  "user_id": 67890
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "User added to workspace successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid user ID
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to add users to this workspace
+- `404 Not Found`: Workspace or user not found
+- `500 Internal Server Error`: Server-side error
+
+### Update User Role in Workspace
+
+Updates a user's role in a workspace.
+
+**Endpoint:** `PUT /workspace/:workspaceID/users/:userID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `workspaceID`: The ID of the workspace
+- `userID`: The ID of the user
+
+**Request Body:**
+```json
+{
+  "role": "admin"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "User role updated successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid role (must be "admin" or "member")
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to update roles in this workspace
+- `404 Not Found`: Workspace, user, or user-workspace relationship not found
+- `500 Internal Server Error`: Server-side error
+
+### Remove User from Workspace
+
+Removes a user from a workspace.
+
+**Endpoint:** `DELETE /workspace/:workspaceID/users/:userID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `workspaceID`: The ID of the workspace
+- `userID`: The ID of the user
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "User removed from workspace successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to remove users from this workspace
+- `404 Not Found`: Workspace, user, or user-workspace relationship not found
+- `500 Internal Server Error`: Server-side error
+
+## Domain Operations
+
+### Add Domain
+
+Adds a new domain to a workspace.
+
+**Endpoint:** `POST /domain`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "domain": "example.com"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "status": "success",
+  "message": "Domain added successfully",
+  "code": null,
+  "data": {
+    "id": 12345,
+    "workspace_id": 67890,
+    "domain": "example.com",
+    "verified": false,
+    "verify_token": "abcdef123456",
+    "created_at": "2024-03-01T10:30:00Z",
+    "updated_at": "2024-03-01T10:30:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid domain format
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to add domains
+- `500 Internal Server Error`: Server-side error
+
+### Get Domain
+
+Retrieves domain details.
+
+**Endpoint:** `GET /domain/:domainID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `domainID`: The ID of the domain
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Domain retrieved successfully",
+  "code": null,
+  "data": {
+    "id": 12345,
+    "workspace_id": 67890,
+    "domain": "example.com",
+    "verified": true,
+    "verified_at": "2024-03-01T11:30:00Z",
+    "created_at": "2024-03-01T10:30:00Z",
+    "updated_at": "2024-03-01T11:30:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to access this domain
+- `404 Not Found`: Domain not found
+- `500 Internal Server Error`: Server-side error
+
+### Delete Domain
+
+Deletes a domain from a workspace.
+
+**Endpoint:** `DELETE /domain/:domainID`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `domainID`: The ID of the domain
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Domain deleted successfully",
+  "code": null
+}
+```
+
+**Error Responses:**
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to delete this domain
+- `404 Not Found`: Domain not found
+- `500 Internal Server Error`: Server-side error
+
+### Verify Domain
+
+Verifies ownership of a domain using a DNS TXT record.
+
+**Endpoint:** `POST /domain/:domainID/verify`
+
+**Authentication:** Required
+
+**Path Parameters:**
+- `domainID`: The ID of the domain
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Domain verified successfully",
+  "code": null,
+  "data": {
+    "id": 12345,
+    "workspace_id": 67890,
+    "domain": "example.com",
+    "verified": true,
+    "verified_at": "2024-03-01T11:30:00Z",
+    "created_at": "2024-03-01T10:30:00Z",
+    "updated_at": "2024-03-01T11:30:00Z"
+  }
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Verification failed (DNS record not found or incorrect)
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: Not authorized to verify this domain
+- `404 Not Found`: Domain not found
+- `500 Internal Server Error`: Server-side error

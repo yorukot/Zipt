@@ -7,49 +7,37 @@ import (
 )
 
 func init() {
-	db.GetDB().AutoMigrate(&URLAnalytics{})
-	db.GetDB().AutoMigrate(&URLReferrer{})
-	db.GetDB().AutoMigrate(&URLEngagement{})
-	db.GetDB().AutoMigrate(&URLCountryAnalytics{})
+	// Only auto-migrate URLMetric, removing the old tables
+	db.GetDB().AutoMigrate(&URLMetric{})
+
+	// Enable TimescaleDB for analytics if available
+	if db.IsTimescaleEnabled {
+		db.InitializeTimescale()
+	}
 }
 
-// URLReferrer tracks referrers separately to optimize storage
-type URLReferrer struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	Referrer   string    `json:"referrer" gorm:"index"`
-	Country    string    `json:"country" gorm:"size:2;index"` // ISO country code (2 characters)
-	ClickCount int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+// ==================================================
+// Analytics time granularities:
+// - 2 mins record for 12 hours
+// - 1 hour record for 14 days
+// - 1 day record for 365 days
+// - 1 month record for 100 years
+// ==================================================
+
+// URLMetric stores analytics data in time-based buckets
+// This table is optimized for TimescaleDB and will be converted to a hypertable
+type URLMetric struct {
+	URLID       uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
+	MetricType  string    `json:"metric_type" gorm:"primaryKey;index;not null"` // referrer, country, city, clicks
+	MetricValue string    `json:"metric_value" gorm:"primaryKey;not null"`      // The actual value being tracked
+	Granularity string    `json:"granularity" gorm:"primaryKey;index;not null"` // 2min, hour, day, month
+	BucketTime  time.Time `json:"bucket_time" gorm:"primaryKey;index;not null"` // The timestamp of the bucket
+	ClickCount  int64     `json:"click_count" gorm:"default:0"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-// URLCountryAnalytics tracks visitors by country
-type URLCountryAnalytics struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	Country    string    `json:"country" gorm:"size:2;index"` // ISO country code (2 characters)
-	ClickCount int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-}
-
-// URLAnalytics stores analytics data for URL clicks
-type URLAnalytics struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	ClickCount int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-}
-
-// URLEngagement tracks the total click count every hour
-type URLEngagement struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	Engagement int64     `json:"engagement" gorm:"default:0"`
-	TimeStart  time.Time `json:"time_start"`
-	TimeEnd    time.Time `json:"time_end"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+// TableName overrides the table name for URLMetric
+func (URLMetric) TableName() string {
+	return "url_metrics"
 }

@@ -2,6 +2,7 @@ package shortener
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/queries"
@@ -11,10 +12,18 @@ import (
 // DeleteURL handles the deletion of a shortened URL
 // This endpoint requires authentication and only allows users to delete their own URLs
 func DeleteURL(c *gin.Context) {
-	// Verify authentication
-	userID, exists := c.Get("userID")
+	// Get user ID from context (set by middleware)
+	_, exists := c.Get("userID")
 	if !exists {
 		utils.FullyResponse(c, http.StatusUnauthorized, "Authentication required", utils.ErrUnauthorized, nil)
+		return
+	}
+
+	// Get workspace ID from path parameter
+	workspaceIDStr := c.Param("workspaceID")
+	workspaceID, err := strconv.ParseUint(workspaceIDStr, 10, 64)
+	if err != nil {
+		utils.FullyResponse(c, http.StatusBadRequest, "Invalid workspace ID", utils.ErrBadRequest, nil)
 		return
 	}
 
@@ -32,11 +41,14 @@ func DeleteURL(c *gin.Context) {
 		return
 	}
 
-	// Verify ownership - only the URL owner can delete it
-	if url.UserID == nil || *url.UserID != userID.(uint64) {
-		utils.FullyResponse(c, http.StatusForbidden, "You don't have permission to delete this URL", utils.ErrForbidden, nil)
+	// Check if URL belongs to the specified workspace
+	if url.WorkspaceID == nil || *url.WorkspaceID != workspaceID {
+		utils.FullyResponse(c, http.StatusForbidden, "URL does not belong to this workspace", utils.ErrForbidden, nil)
 		return
 	}
+
+	// Workspace permission is already verified by middleware.CheckWorkspaceRoleAndStore()
+	// The middleware ensures the user has appropriate permissions for the workspace
 
 	// Delete the URL
 	result = queries.DeleteURLQueue(shortCode)

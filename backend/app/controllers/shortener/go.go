@@ -6,8 +6,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/app/queries"
+	"github.com/yorukot/zipt/pkg/geoip"
+	"github.com/yorukot/zipt/pkg/logger"
 	"github.com/yorukot/zipt/pkg/utils"
+	"gorm.io/gorm"
 )
 
 // RedirectURL handles redirecting a user to the original URL
@@ -18,8 +22,31 @@ func RedirectURL(c *gin.Context) {
 		return
 	}
 
+	// Check if we're on a custom domain
+	host := c.Request.Host
+	domainID := uint64(0) // Default to no domain
+
+	// If not on default domain, check if custom domain is registered
+	if host != utils.GetDefaultShortDomain() {
+		domain, result := queries.GetDomainByName(host)
+		if result.Error == nil && domain.Verified {
+			// Use this domain's ID for the URL lookup
+			domainID = domain.ID
+		}
+	}
+
 	// Get the URL from the database
-	url, result := queries.GetURLQueueByShortCode(shortCode)
+	var url models.URL
+	var result *gorm.DB
+
+	if domainID > 0 {
+		// For custom domains, get URL specific to this domain
+		url, result = queries.GetURLByShortCodeAndDomain(shortCode, domainID)
+	} else {
+		// For the default domain
+		url, result = queries.GetURLQueueByShortCode(shortCode)
+	}
+
 	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusNotFound, "Short URL not found", utils.ErrResourceNotFound, nil)
 		return
@@ -50,21 +77,19 @@ func trackURLAnalytics(c *gin.Context, urlID uint64) {
 		referrer = "direct"
 	}
 
-	// Get country from Cloudflare header
-	country := c.Request.Header.Get("CF-IPCountry")
+	// Get the IP address of the client
+	ipAddress := c.ClientIP()
 
-	// Track analytics with URL ID, referrer, and country
-	err := queries.TrackAllAnalytics(urlID, referrer, country)
+	// Look up geolocation
+	country, city := geoip.Lookup(ipAddress)
 
-	if err != nil {
+	// Track analytics with URL ID, referrer, country and city
+	result := queries.TrackAllAnalytics(urlID, referrer, ipAddress, country, city)
+
+	if result != nil && result.Error != nil {
 		// Just log the error but don't affect the user experience
-		c.Error(err)
+		logger.Log.Sugar().Errorf("Failed to track analytics: %v", result.Error)
 	}
-
-	// TODO: Implement more detailed analytics tracking in the future
-	// We're collecting the following data points for future use:
-	// - User agent info (browser, version, device type, OS)
-	// - Geographic info (country, city, region)
 }
 
 // sanitizeReferrer removes query parameters and fragments from URLs
