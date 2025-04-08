@@ -75,6 +75,8 @@
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
         -Server
+        # Set to no cache
+        Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     }
 
     # Short URL redirection (for all paths)

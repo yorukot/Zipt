@@ -221,7 +221,7 @@ func createURLModel(request *ShortenURLRequest, shortCode string, workspaceID *u
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		TotalClick:  0,
+		TotalClicks:  0,
 	}
 }
 

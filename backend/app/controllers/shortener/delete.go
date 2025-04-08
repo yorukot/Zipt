@@ -2,7 +2,6 @@ package shortener
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/queries"
@@ -20,22 +19,29 @@ func DeleteURL(c *gin.Context) {
 	}
 
 	// Get workspace ID from path parameter
-	workspaceIDStr := c.Param("workspaceID")
-	workspaceID, err := strconv.ParseUint(workspaceIDStr, 10, 64)
-	if err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid workspace ID", utils.ErrBadRequest, nil)
+	workspaceIDAny, exists := c.Get("workspaceID")
+	if !exists {
+		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
 		return
 	}
 
+	workspaceID := workspaceIDAny.(uint64)
+
 	// Get the URL ID from the route parameter
-	shortCode := c.Param("shortCode")
-	if shortCode == "" {
-		utils.FullyResponse(c, http.StatusBadRequest, "Short code is required", utils.ErrBadRequest, nil)
+	urlID := c.Param("urlID")
+	if urlID == "" {
+		utils.FullyResponse(c, http.StatusBadRequest, "URL ID is required", utils.ErrBadRequest, nil)
+		return
+	}
+
+	urlIDUint, err := utils.StrToUint64(urlID)
+	if err != nil {
+		utils.FullyResponse(c, http.StatusBadRequest, "Invalid URL ID", utils.ErrBadRequest, nil)
 		return
 	}
 
 	// Get the URL from database
-	url, result := queries.GetURLQueueByShortCode(shortCode)
+	url, result := queries.GetURLQueueByID(urlIDUint)
 	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusNotFound, "Short URL not found", utils.ErrResourceNotFound, nil)
 		return
@@ -51,7 +57,7 @@ func DeleteURL(c *gin.Context) {
 	// The middleware ensures the user has appropriate permissions for the workspace
 
 	// Delete the URL
-	result = queries.DeleteURLQueue(shortCode)
+	result = queries.DeleteURLQueueByID(url.ID)
 	if result.Error != nil {
 		utils.ServerErrorResponse(c, http.StatusInternalServerError, "Error deleting URL", utils.ErrSaveData, result.Error)
 		return

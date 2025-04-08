@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/controllers/shortener"
+	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/pkg/middleware"
 )
 
@@ -17,11 +18,16 @@ func ShortenerRoute(r *gin.RouterGroup) {
 
 	// Protected routes (require authentication)
 	protected := r.Group("/url/:workspaceID")
-	protected.Use(middleware.CheckWorkspaceRoleAndStore())
+	protected.Use(middleware.CheckWorkspaceRoleAndStore(models.RoleMember))
 
-	protected.GET("/list", shortener.GetUserURLs)                          // Get all URLs created by user
-	protected.GET("/:shortCode/analytics", shortener.GetURLAnalytics)      // Get analytics for a URL with time range
-	protected.GET("/:shortCode/metrics", shortener.GetPaginatedURLMetrics) // Get paginated metrics of a specific type
-	protected.PUT("/:shortCode", shortener.UpdateURL)                      // Update an existing URL (authenticated users only)
-	protected.DELETE("/:shortCode", shortener.DeleteURL)                   // Delete an existing URL (authenticated users only)
+	// Workspace-specific routes
+	protected.POST("", shortener.CreateShortURL)     // Create short URL within workspace
+	protected.GET("/list", shortener.GetUserURLs)    // Get all URLs created within workspace
+	protected.PUT("/:urlID", shortener.UpdateURL)    // Update an existing URL (authenticated users only)
+	protected.DELETE("/:urlID", shortener.DeleteURL) // Delete an existing URL (authenticated users only)
+
+	// URL-specific routes
+	analytics := protected.Group("/:urlID/analytics")
+	analytics.GET("", shortener.GetURLAnalytics)                 // Get analytics overview
+	analytics.GET("/timeseries", shortener.GetURLTimeSeriesData) // Get time series metrics of a specific type
 }

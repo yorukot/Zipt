@@ -6,6 +6,8 @@ import (
 
 	"github.com/yorukot/zipt/app/models"
 	db "github.com/yorukot/zipt/pkg/database"
+	"github.com/yorukot/zipt/pkg/encryption"
+	"gorm.io/gorm"
 )
 
 // Workspace roles
@@ -19,137 +21,138 @@ var (
 	ErrUnauthorized = errors.New("unauthorized action")
 )
 
-// CreateWorkspace creates a new workspace and assigns the creator as owner
-func CreateWorkspace(workspace models.Workspace, userID uint64) (models.Workspace, error) {
-	// Create the workspace in a transaction
-	tx := db.GetDB().Begin()
+// CreateWorkspaceQueue creates a new workspace in the database
+func CreateWorkspaceQueue(workspace models.Workspace) *gorm.DB {
+	result := db.GetDB().Create(&workspace)
+	return result
+}
 
-	if err := tx.Create(workspace).Error; err != nil {
-		tx.Rollback()
-		return models.Workspace{}, err
+// CreateWorkspaceUserQueue creates a new workspace user association
+func CreateWorkspaceUserQueue(workspaceUser models.WorkspaceUser) *gorm.DB {
+	result := db.GetDB().Create(&workspaceUser)
+	return result
+}
+
+// GetWorkspaceQueueByID retrieves a workspace by its ID
+func GetWorkspaceQueueByID(id uint64) (models.Workspace, *gorm.DB) {
+	var workspace models.Workspace
+	result := db.GetDB().First(&workspace, id)
+	return workspace, result
+}
+
+// GetWorkspaceUsersByWorkspaceID retrieves all users in a workspace
+func GetWorkspaceUsersByWorkspaceID(workspaceID uint64) ([]models.WorkspaceUser, *gorm.DB) {
+	var users []models.WorkspaceUser
+	result := db.GetDB().Where("workspace_id = ?", workspaceID).Find(&users)
+	return users, result
+}
+
+// GetWorkspaceUserQueue retrieves a workspace user association
+func GetWorkspaceUserQueue(workspaceID, userID uint64) (models.WorkspaceUser, *gorm.DB) {
+	var workspaceUser models.WorkspaceUser
+	result := db.GetDB().Where("workspace_id = ? AND user_id = ?", workspaceID, userID).First(&workspaceUser)
+	return workspaceUser, result
+}
+
+// UpdateWorkspaceQueue updates a workspace
+func UpdateWorkspaceQueue(workspace models.Workspace, updates map[string]interface{}) *gorm.DB {
+	updates["updated_at"] = time.Now()
+	result := db.GetDB().Model(&workspace).Updates(updates)
+	return result
+}
+
+// DeleteWorkspaceQueue deletes a workspace by its ID
+func DeleteWorkspaceQueue(workspaceID uint64) *gorm.DB {
+	result := db.GetDB().Delete(&models.Workspace{}, workspaceID)
+	return result
+}
+
+// DeleteWorkspaceUsersQueue deletes all workspace users by workspace ID
+func DeleteWorkspaceUsersQueue(workspaceID uint64) *gorm.DB {
+	result := db.GetDB().Where("workspace_id = ?", workspaceID).Delete(&models.WorkspaceUser{})
+	return result
+}
+
+// CheckWorkspaceUserExists checks if a user exists in a workspace
+func CheckWorkspaceUserExists(workspaceID, userID uint64) (bool, error) {
+	var count int64
+	result := db.GetDB().Model(&models.WorkspaceUser{}).Where("workspace_id = ? AND user_id = ?", workspaceID, userID).Count(&count)
+	return count > 0, result.Error
+}
+
+// UpdateWorkspaceUserRoleQueue updates a user's role in a workspace
+func UpdateWorkspaceUserRoleQueue(workspaceID, userID uint64, role string) *gorm.DB {
+	updates := map[string]interface{}{
+		"role":       role,
+		"updated_at": time.Now(),
+	}
+	result := db.GetDB().Model(&models.WorkspaceUser{}).Where("workspace_id = ? AND user_id = ?", workspaceID, userID).Updates(updates)
+	return result
+}
+
+// DeleteWorkspaceUserQueue removes a user from a workspace
+func DeleteWorkspaceUserQueue(workspaceID, userID uint64) *gorm.DB {
+	result := db.GetDB().Where("workspace_id = ? AND user_id = ?", workspaceID, userID).Delete(&models.WorkspaceUser{})
+	return result
+}
+
+// GetUserWorkspacesQueue returns all workspaces a user belongs to
+func GetUserWorkspacesQueue(userID uint64) ([]models.Workspace, *gorm.DB) {
+	var workspaces []models.Workspace
+	result := db.GetDB().Joins("JOIN workspace_users ON workspaces.id = workspace_users.workspace_id").
+		Where("workspace_users.user_id = ?", userID).
+		Find(&workspaces)
+	return workspaces, result
+}
+
+// CreateWorkspaceWithOwner creates a new workspace and assigns the creator as owner
+// This is a helper function that combines multiple queue operations
+func CreateWorkspaceWithOwner(workspace models.Workspace, userID uint64) (models.Workspace, error) {
+	// Create a copy of the workspace to prevent modifying the original
+	workspaceCopy := workspace
+
+	// Create the workspace directly
+	result := db.GetDB().Create(&workspaceCopy)
+	if result.Error != nil {
+		return models.Workspace{}, result.Error
 	}
 
 	// Create the workspace user association with owner role
 	workspaceUser := &models.WorkspaceUser{
-		WorkspaceID: workspace.ID,
+		ID:          encryption.GenerateID(),
+		WorkspaceID: workspaceCopy.ID,
 		UserID:      userID,
 		Role:        RoleOwner,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
 
-	if err := tx.Create(workspaceUser).Error; err != nil {
-		tx.Rollback()
-		return models.Workspace{}, err
+	result = db.GetDB().Create(workspaceUser)
+	if result.Error != nil {
+		// If creating the user association fails, consider deleting the workspace
+		// to maintain consistency, but this is optional based on your requirements
+		db.GetDB().Delete(&models.Workspace{}, workspaceCopy.ID)
+		return models.Workspace{}, result.Error
 	}
 
-	tx.Commit()
-	return workspace, nil
+	return workspaceCopy, nil
 }
 
-// GetWorkspace returns a workspace by ID
-func GetWorkspace(id uint64) (*models.Workspace, error) {
-	var workspace models.Workspace
-	if err := db.GetDB().First(&workspace, id).Error; err != nil {
-		return nil, err
-	}
-	return &workspace, nil
-}
-
-// GetWorkspaceUsers returns all users in a workspace
-func GetWorkspaceUsers(workspaceID uint64) ([]models.WorkspaceUser, error) {
-	var users []models.WorkspaceUser
-	if err := db.GetDB().Where("workspace_id = ?", workspaceID).Find(&users).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
-// GetWorkspaceRole returns the role of a user in a workspace
-func GetWorkspaceRole(workspaceID, userID uint64) (string, error) {
-	var workspaceUser models.WorkspaceUser
-	if err := db.GetDB().Where("workspace_id = ? AND user_id = ?", workspaceID, userID).First(&workspaceUser).Error; err != nil {
-		return "", err
-	}
-	return workspaceUser.Role, nil
-}
-
-// UpdateWorkspace updates a workspace (only owners can update)
-func UpdateWorkspace(workspaceID uint64, name string) error {
-	return db.GetDB().Model(&models.Workspace{}).Where("id = ?", workspaceID).Updates(map[string]interface{}{
-		"name":       name,
-		"updated_at": time.Now(),
-	}).Error
-}
-
-// DeleteWorkspace deletes a workspace (only owners can delete)
-func DeleteWorkspace(workspaceID, userID uint64) error {
-	// Delete in a transaction
-	tx := db.GetDB().Begin()
-
-	// Delete all workspace users
-	if err := tx.Where("workspace_id = ?", workspaceID).Delete(&models.WorkspaceUser{}).Error; err != nil {
-		tx.Rollback()
-		return err
+// DeleteWorkspaceComplete deletes a workspace and all associated users
+// This is a helper function that combines multiple queue operations
+func DeleteWorkspaceComplete(workspaceID uint64) error {
+	// Delete all workspace users first
+	result := db.GetDB().Where("workspace_id = ?", workspaceID).Delete(&models.WorkspaceUser{})
+	if result.Error != nil {
+		return result.Error
 	}
 
 	// Delete the workspace
-	if err := tx.Delete(&models.Workspace{}, workspaceID).Error; err != nil {
-		tx.Rollback()
-		return err
+	result = db.GetDB().Delete(&models.Workspace{}, workspaceID)
+	if result.Error != nil {
+		return result.Error
 	}
 
-	tx.Commit()
 	return nil
 }
 
-// CheckUserExists checks if a user exists in a workspace
-func CheckUserExists(workspaceID, userID uint64) (bool, error) {
-	var count int64
-	if err := db.GetDB().Model(&models.WorkspaceUser{}).Where("workspace_id = ? AND user_id = ?", workspaceID, userID).Count(&count).Error; err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
-// AddUserToWorkspace adds a user to a workspace (both owners and members can add users)
-func AddUserToWorkspace(workspaceID, targetUserID uint64) error {
-
-	// Add the user to the workspace
-	workspaceUser := &models.WorkspaceUser{
-		WorkspaceID: workspaceID,
-		UserID:      targetUserID,
-		Role:        RoleMember,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-
-	return db.GetDB().Create(workspaceUser).Error
-}
-
-// UpdateUserWorkspaceRole updates a user's role in a workspace (only owners can update roles)
-func UpdateUserWorkspaceRole(workspaceID, userID, targetUserID uint64, newRole string) error {
-	// Update the user's role
-	return db.GetDB().Model(&models.WorkspaceUser{}).Where("workspace_id = ? AND user_id = ?", workspaceID, targetUserID).
-		Updates(map[string]interface{}{
-			"role":       newRole,
-			"updated_at": time.Now(),
-		}).Error
-}
-
-// RemoveUserFromWorkspace removes a user from a workspace (only owners can remove users)
-func RemoveUserFromWorkspace(workspaceID, targetUserID uint64) error {
-	// Remove the user from the workspace
-	return db.GetDB().Where("workspace_id = ? AND user_id = ?", workspaceID, targetUserID).Delete(&models.WorkspaceUser{}).Error
-}
-
-// GetUserWorkspaces returns all workspaces a user belongs to
-func GetUserWorkspaces(userID uint64) ([]models.Workspace, error) {
-	var workspaces []models.Workspace
-	if err := db.GetDB().Joins("JOIN workspace_users ON workspaces.id = workspace_users.workspace_id").
-		Where("workspace_users.user_id = ?", userID).
-		Find(&workspaces).Error; err != nil {
-		return nil, err
-	}
-	return workspaces, nil
-}

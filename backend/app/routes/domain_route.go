@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/controllers/domain"
+	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/pkg/middleware"
 )
 
@@ -11,7 +12,7 @@ func DomainRoute(r *gin.RouterGroup) {
 	// All domain routes require authentication and workspace membership
 	// /api/v1/workspace/:workspaceID/domain
 	domainRoutes := r.Group("/workspace/:workspaceID/domain")
-	domainRoutes.Use(middleware.CheckWorkspaceRoleAndStore())
+	domainRoutes.Use(middleware.CheckWorkspaceRoleAndStore(models.RoleMember))
 	{
 		// Get all domains for a workspace
 		domainRoutes.GET("", domain.GetDomains)

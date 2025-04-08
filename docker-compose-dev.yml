@@ -84,7 +84,7 @@ services:
       - "3001:3001"
     volumes:
       - type: bind
-        source: ./docker/caddy/Caddyfile
+        source: ./docker/caddy/Caddyfile.dev
         target: /etc/caddy/Caddyfile
         read_only: true
       - caddy_data:/data

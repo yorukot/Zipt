@@ -3,20 +3,25 @@ package workspace
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/app/queries"
+	"github.com/yorukot/zipt/pkg/encryption"
 	"github.com/yorukot/zipt/pkg/utils"
 	"gorm.io/gorm"
 )
 
 // AddUser adds a user to a workspace
 func AddUser(c *gin.Context) {
-	workspaceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid workspace ID", utils.ErrBadRequest, nil)
+	workspaceIDAny, exists := c.Get("workspaceID")
+	if !exists {
+		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
 		return
 	}
+
+	workspaceID := workspaceIDAny.(uint64)
 
 	var req AddUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -26,7 +31,7 @@ func AddUser(c *gin.Context) {
 		return
 	}
 
-	userExists, err := queries.CheckUserExists(workspaceID, req.UserID)
+	userExists, err := queries.CheckWorkspaceUserExists(workspaceID, req.UserID)
 	if err != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to check if user exists", utils.ErrGetData, map[string]interface{}{
 			"details": err.Error(),
@@ -40,10 +45,19 @@ func AddUser(c *gin.Context) {
 	}
 
 	// Add the user to the workspace (only admins can add users)
-	err = queries.AddUserToWorkspace(workspaceID, req.UserID)
-	if err != nil {
+	workspaceUser := models.WorkspaceUser{
+		ID:          encryption.GenerateID(),
+		WorkspaceID: workspaceID,
+		UserID:      req.UserID,
+		Role:        models.RoleMember,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	result := queries.CreateWorkspaceUserQueue(workspaceUser)
+	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to add user to workspace", utils.ErrSaveData, map[string]interface{}{
-			"details": err.Error(),
+			"details": result.Error.Error(),
 		})
 		return
 	}
@@ -53,11 +67,13 @@ func AddUser(c *gin.Context) {
 
 // RemoveUser removes a user from a workspace
 func RemoveUser(c *gin.Context) {
-	workspaceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid workspace ID", utils.ErrBadRequest, nil)
+	workspaceIDAny, exists := c.Get("workspaceID")
+	if !exists {
+		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
 		return
 	}
+
+	workspaceID := workspaceIDAny.(uint64)
 
 	targetUserID, err := strconv.ParseUint(c.Param("userId"), 10, 64)
 	if err != nil {
@@ -72,21 +88,21 @@ func RemoveUser(c *gin.Context) {
 		return
 	}
 
-	if workspaceRole != queries.RoleOwner {
+	if workspaceRole != models.RoleOwner {
 		utils.FullyResponse(c, http.StatusForbidden, "You don't have permission to remove users from this workspace", utils.ErrForbidden, nil)
 		return
 	}
 
-	// Remove the user from the workspace (only admins can remove users)
-	err = queries.RemoveUserFromWorkspace(workspaceID, targetUserID)
-	if err == gorm.ErrRecordNotFound {
+	// Remove the user from the workspace (only owners can remove users)
+	result := queries.DeleteWorkspaceUserQueue(workspaceID, targetUserID)
+	if result.Error == gorm.ErrRecordNotFound || result.RowsAffected == 0 {
 		utils.FullyResponse(c, http.StatusNotFound, "User not found in workspace", utils.ErrResourceNotFound, nil)
 		return
 	}
 
-	if err != nil {
+	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to remove user from workspace", utils.ErrSaveData, map[string]interface{}{
-			"details": err.Error(),
+			"details": result.Error.Error(),
 		})
 		return
 	}

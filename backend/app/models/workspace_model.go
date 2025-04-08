@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	db.GetDB().AutoMigrate(&User{})
+	db.GetDB().AutoMigrate(&Workspace{}, &WorkspaceUser{})
 }
 
 // Workspace roles
@@ -18,17 +18,17 @@ const (
 
 // Users data type / table
 type Workspace struct {
-	ID          uint64    `json:"id,string" gorm:"primaryKey" binding:"required"`
-	Name        string    `json:"name" binding:"required"`
-	CreatedAt   time.Time `json:"created_at" gorm:"autoUpdateTime" binding:"required"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"autoCreateTime" binding:"required"`
+	ID        uint64    `json:"id,string" gorm:"primaryKey"`
+	Name      string    `json:"name" binding:"required"`
+	CreatedAt time.Time `json:"created_at" gorm:"autoUpdateTime"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"autoCreateTime"`
 }
 
 type WorkspaceUser struct {
-	ID          uint64    `json:"id,string" gorm:"primaryKey" binding:"required"`
+	ID          uint64    `json:"id,string" gorm:"primaryKey"`
 	WorkspaceID uint64    `json:"workspace_id,string" binding:"required"`
 	Role        string    `json:"role" binding:"required"`
 	UserID      uint64    `json:"user_id,string" binding:"required"`
-	CreatedAt   time.Time `json:"created_at" gorm:"autoUpdateTime" binding:"required"`
-	UpdatedAt   time.Time `json:"updated_at" gorm:"autoCreateTime" binding:"required"`
+	CreatedAt   time.Time `json:"created_at" gorm:"autoUpdateTime"`
+	UpdatedAt   time.Time `json:"updated_at" gorm:"autoCreateTime"`
 }

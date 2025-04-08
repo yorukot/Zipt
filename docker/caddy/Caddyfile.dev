@@ -1,0 +1,103 @@
+# Development configuration - will work on localhost
+:2000 {
+    # Configure compression
+    encode zstd gzip
+
+    # Common headers for security
+    header {
+        # Security headers
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        X-XSS-Protection "1; mode=block"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # API routes, making sure API calls to /api/* are routed to backend
+    handle_path /api/* {
+        rewrite * /api{uri}  # Rewrite the path to keep the /api prefix
+        reverse_proxy backend:8080 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Static assets with longer cache time
+    @static path /_next* /favicon.ico /robots.txt /sitemap.xml /manifest.json
+    handle @static {
+        reverse_proxy website:3000 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+        header Cache-Control "public, max-age=2592000, immutable" # 30 days + immutable for better caching
+    }
+
+    # Frontend routes
+    handle {
+        reverse_proxy website:3000 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Handle errors with custom pages
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}" {http.error.status_code}
+    }
+
+    # Logging
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}
+
+# Short URL service on a separate port
+:3001 {
+    # Configure compression
+    encode zstd gzip
+
+    # Common headers for security
+    header {
+        # Security headers
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        X-XSS-Protection "1; mode=block"
+        Content-Security-Policy "default-src 'self'"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+        # Set to no cache
+        Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    }
+
+    # Short URL redirection (for all paths)
+    handle /* {
+        reverse_proxy backend:8080 {
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Shortener-Domain true
+        }
+    }
+
+    # Handle errors with custom pages
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}" {http.error.status_code}
+    }
+
+    # Logging
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}

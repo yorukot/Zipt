@@ -31,14 +31,20 @@ func UpdateURL(c *gin.Context) {
 	}
 
 	// Get the URL ID from the route parameter
-	shortCode := c.Param("shortCode")
-	if shortCode == "" {
-		utils.FullyResponse(c, http.StatusBadRequest, "Short code is required", utils.ErrBadRequest, nil)
+	urlID := c.Param("urlID")
+	if urlID == "" {
+		utils.FullyResponse(c, http.StatusBadRequest, "URL ID is required", utils.ErrBadRequest, nil)
+		return
+	}
+
+	urlIDUint, err := utils.StrToUint64(urlID)
+	if err != nil {
+		utils.FullyResponse(c, http.StatusBadRequest, "Invalid URL ID", utils.ErrBadRequest, nil)
 		return
 	}
 
 	// Get the URL from database
-	url, result := queries.GetURLQueueByShortCode(shortCode)
+	url, result := queries.GetURLQueueByID(urlIDUint)
 	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusNotFound, "Short URL not found", utils.ErrResourceNotFound, nil)
 		return

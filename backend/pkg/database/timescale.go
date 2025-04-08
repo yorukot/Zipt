@@ -1,207 +1,175 @@
 package db
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/yorukot/zipt/pkg/logger"
 )
+
+// Define model structs for the aggregated analytics tables
+// URLAnalyticsHourly represents hourly aggregated analytics data
+type URLAnalyticsHourly struct {
+	URLID      uint64    `gorm:"primaryKey;index;not null"`
+	Referrer   string    `gorm:"primaryKey;index;not null"`
+	Country    string    `gorm:"primaryKey;index;not null"`
+	City       string    `gorm:"primaryKey;index;not null"`
+	Device     string    `gorm:"primaryKey;index;not null"`
+	Browser    string    `gorm:"primaryKey;index;not null"`
+	OS         string    `gorm:"primaryKey;index;not null"`
+	ClickCount int64     `gorm:"default:0"`
+	BucketTime time.Time `gorm:"primaryKey;index;not null"`
+}
+
+// URLAnalyticsDaily represents daily aggregated analytics data
+type URLAnalyticsDaily struct {
+	URLID      uint64    `gorm:"primaryKey;index;not null"`
+	Referrer   string    `gorm:"primaryKey;index;not null"`
+	Country    string    `gorm:"primaryKey;index;not null"`
+	City       string    `gorm:"primaryKey;index;not null"`
+	Device     string    `gorm:"primaryKey;index;not null"`
+	Browser    string    `gorm:"primaryKey;index;not null"`
+	OS         string    `gorm:"primaryKey;index;not null"`
+	ClickCount int64     `gorm:"default:0"`
+	BucketTime time.Time `gorm:"primaryKey;index;not null"`
+}
+
+// URLAnalyticsMonthly represents monthly aggregated analytics data
+type URLAnalyticsMonthly struct {
+	URLID      uint64    `gorm:"primaryKey;index;not null"`
+	Referrer   string    `gorm:"primaryKey;index;not null"`
+	Country    string    `gorm:"primaryKey;index;not null"`
+	City       string    `gorm:"primaryKey;index;not null"`
+	Device     string    `gorm:"primaryKey;index;not null"`
+	Browser    string    `gorm:"primaryKey;index;not null"`
+	OS         string    `gorm:"primaryKey;index;not null"`
+	ClickCount int64     `gorm:"default:0"`
+	BucketTime time.Time `gorm:"primaryKey;index;not null"`
+}
 
 // InitializeTimescale sets up TimescaleDB hypertables and continuous aggregation policies
 // This should be called after all models are auto-migrated
 func InitializeTimescale() error {
 	logger.Log.Sugar().Info("Initializing TimescaleDB for analytics")
 
-	// Create hypertable for URLMetric
-	if err := createHypertable("url_metrics", "bucket_time"); err != nil {
+	// Auto-migrate the aggregated tables
+	if err := DB.AutoMigrate(&URLAnalyticsHourly{}, &URLAnalyticsDaily{}, &URLAnalyticsMonthly{}); err != nil {
 		return err
 	}
 
-	// Setup continuous aggregations for different time granularities
-	if err := setupContinuousAggregations(); err != nil {
-		return err
+	// Execute raw SQL to:
+	// 1. Convert URL analytics tables to hypertables
+	// 2. Create continuous aggregates for each granularity
+	// 3. Set up retention policies
+
+	// Convert URLAnalytics to hypertable with 2-minute intervals
+	rawResult := DB.Exec(`
+		-- Create the raw analytics hypertable (partitioning on BucketTime)
+		SELECT create_hypertable('url_analytics', 'bucket_time', if_not_exists => TRUE);
+		
+		-- Create hourly continuous aggregate with real-time capabilities
+		CREATE MATERIALIZED VIEW IF NOT EXISTS url_analytics_hourly
+		WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+		SELECT
+			url_id,
+			referrer,
+			country,
+			city,
+			device,
+			browser,
+			os,
+			time_bucket('1 hour', bucket_time) AS bucket_time,
+			SUM(click_count) AS click_count
+		FROM url_analytics
+		GROUP BY url_id, referrer, country, city, device, browser, os, time_bucket('1 hour', bucket_time);
+		
+		-- Create daily continuous aggregate with real-time capabilities
+		CREATE MATERIALIZED VIEW IF NOT EXISTS url_analytics_daily
+		WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+		SELECT
+			url_id,
+			referrer,
+			country,
+			city,
+			device,
+			browser,
+			os,
+			time_bucket('1 day', bucket_time) AS bucket_time,
+			SUM(click_count) AS click_count
+		FROM url_analytics_hourly
+		GROUP BY url_id, referrer, country, city, device, browser, os, time_bucket('1 day', bucket_time);
+		
+		-- Create monthly continuous aggregate with real-time capabilities
+		CREATE MATERIALIZED VIEW IF NOT EXISTS url_analytics_monthly
+		WITH (timescaledb.continuous, timescaledb.materialized_only = false) AS
+		SELECT
+			url_id,
+			referrer,
+			country,
+			city,
+			device,
+			browser,
+			os,
+			time_bucket('30 days', bucket_time) AS bucket_time,
+			SUM(click_count) AS click_count
+		FROM url_analytics_daily
+		GROUP BY url_id, referrer, country, city, device, browser, os, time_bucket('30 days', bucket_time);
+	`)
+
+	if rawResult.Error != nil {
+		return rawResult.Error
 	}
 
-	// Setup retention policies
-	if err := setupRetentionPolicies(); err != nil {
-		return err
+	// Set up continuous aggregate policies for real-time updates
+	rawResult = DB.Exec(`
+		-- Configure real-time aggregation for hourly data
+		SELECT add_continuous_aggregate_policy('url_analytics_hourly',
+			start_offset => INTERVAL '3 hours',
+			end_offset => INTERVAL '1 minute',
+			schedule_interval => INTERVAL '5 minutes');
+			
+		-- Configure real-time aggregation for daily data
+		SELECT add_continuous_aggregate_policy('url_analytics_daily',
+			start_offset => INTERVAL '2 days',
+			end_offset => INTERVAL '1 hour',
+			schedule_interval => INTERVAL '30 minutes');
+			
+		-- Configure real-time aggregation for monthly data
+		SELECT add_continuous_aggregate_policy('url_analytics_monthly',
+			start_offset => INTERVAL '31 days',
+			end_offset => INTERVAL '1 day',
+			schedule_interval => INTERVAL '1 day');
+	`)
+
+	if rawResult.Error != nil {
+		return rawResult.Error
 	}
 
-	logger.Log.Sugar().Info("TimescaleDB initialization completed successfully")
+	// Set up retention policies for each time granularity
+	rawResult = DB.Exec(`
+		-- Raw data retention: 12 hours
+		SELECT add_retention_policy('url_analytics', INTERVAL '12 hours');
+		
+		-- Hourly data retention: 14 days
+		SELECT add_retention_policy('url_analytics_hourly', INTERVAL '14 days');
+		
+		-- Daily data retention: 365 days
+		SELECT add_retention_policy('url_analytics_daily', INTERVAL '365 days');
+		
+		-- Monthly data retention: 100 years
+		SELECT add_retention_policy('url_analytics_monthly', INTERVAL '100 years');
+	`)
+
+	if rawResult.Error != nil {
+		return rawResult.Error
+	}
+
+	logger.Log.Sugar().Info("TimescaleDB successfully configured with multi-level continuous aggregates")
 	return nil
 }
 
-// createHypertable converts a regular PostgreSQL table into a TimescaleDB hypertable
-func createHypertable(tableName, timeColumn string) error {
-	// Check if the table is already a hypertable
-	var count int64
-	query := fmt.Sprintf("SELECT count(*) FROM timescaledb_information.hypertables WHERE hypertable_name = '%s'", tableName)
-	if err := DB.Raw(query).Count(&count).Error; err != nil {
-		return fmt.Errorf("error checking if %s is a hypertable: %v", tableName, err)
-	}
-
-	if count > 0 {
-		logger.Log.Sugar().Infof("Table %s is already a hypertable", tableName)
-		return nil
-	}
-
-	// Convert to hypertable with 1 day chunks
-	sql := fmt.Sprintf(
-		"SELECT create_hypertable('%s', '%s', chunk_time_interval => INTERVAL '1 day')",
-		tableName, timeColumn,
-	)
-
-	if err := DB.Exec(sql).Error; err != nil {
-		return fmt.Errorf("failed to create hypertable for %s: %v", tableName, err)
-	}
-
-	logger.Log.Sugar().Infof("Created hypertable for %s", tableName)
-	return nil
-}
-
-// setupContinuousAggregations creates continuous aggregation policies for downsampling data
-func setupContinuousAggregations() error {
-	// Create hourly aggregation from 2-minute data
-	if err := createContinuousAggregation(
-		"url_metrics_hourly",
-		"url_metrics",
-		"time_bucket('1 hour', bucket_time) AS bucket_time",
-		"url_id, metric_type, metric_value",
-		"SUM(click_count) AS click_count",
-		"bucket_time >= NOW() - INTERVAL '14 days'",
-		"2 minutes",
-	); err != nil {
-		return err
-	}
-
-	// Create daily aggregation from hourly data
-	if err := createContinuousAggregation(
-		"url_metrics_daily",
-		"url_metrics_hourly",
-		"time_bucket('1 day', bucket_time) AS bucket_time",
-		"url_id, metric_type, metric_value",
-		"SUM(click_count) AS click_count",
-		"bucket_time >= NOW() - INTERVAL '365 days'",
-		"1 hour",
-	); err != nil {
-		return err
-	}
-
-	// Create monthly aggregation from daily data
-	if err := createContinuousAggregation(
-		"url_metrics_monthly",
-		"url_metrics_daily",
-		"time_bucket('30 days', bucket_time) AS bucket_time",
-		"url_id, metric_type, metric_value",
-		"SUM(click_count) AS click_count",
-		"bucket_time >= NOW() - INTERVAL '100 years'",
-		"1 day",
-	); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// createContinuousAggregation creates a continuous aggregation view and policy
-func createContinuousAggregation(
-	viewName string,
-	sourceTable string,
-	timeBucket string,
-	groupColumns string,
-	aggregates string,
-	whereClause string,
-	refreshInterval string,
-) error {
-	// Check if the view already exists
-	var count int64
-	if err := DB.Raw(fmt.Sprintf("SELECT count(*) FROM pg_views WHERE viewname = '%s'", viewName)).Count(&count).Error; err != nil {
-		return fmt.Errorf("error checking if view %s exists: %v", viewName, err)
-	}
-
-	// Create the materialized view if it doesn't exist
-	if count == 0 {
-		// Create the materialized view
-		createViewSQL := fmt.Sprintf(`
-			CREATE MATERIALIZED VIEW %s
-			WITH (timescaledb.continuous) AS
-			SELECT %s, %s, %s
-			FROM %s
-			WHERE %s
-			GROUP BY %s, %s;
-		`, viewName, timeBucket, groupColumns, aggregates, sourceTable, whereClause, timeBucket, groupColumns)
-
-		if err := DB.Exec(createViewSQL).Error; err != nil {
-			return fmt.Errorf("failed to create continuous aggregation view %s: %v", viewName, err)
-		}
-
-		// Set refresh policy
-		refreshSQL := fmt.Sprintf(`
-			SELECT add_continuous_aggregate_policy('%s',
-				start_offset => INTERVAL '1 month',
-				end_offset => INTERVAL '1 hour',
-				schedule_interval => INTERVAL '%s');
-		`, viewName, refreshInterval)
-
-		if err := DB.Exec(refreshSQL).Error; err != nil {
-			return fmt.Errorf("failed to set refresh policy for %s: %v", viewName, err)
-		}
-
-		logger.Log.Sugar().Infof("Created continuous aggregation view %s", viewName)
-	} else {
-		logger.Log.Sugar().Infof("Continuous aggregation view %s already exists", viewName)
-	}
-
-	return nil
-}
-
-// setupRetentionPolicies creates data retention policies for each time granularity
-func setupRetentionPolicies() error {
-	// For original data (2-minute intervals), keep for 12 hours
-	if err := createRetentionPolicy("url_metrics", "12 hours"); err != nil {
-		return err
-	}
-
-	// For hourly data, keep for 14 days
-	if err := createRetentionPolicy("url_metrics_hourly", "14 days"); err != nil {
-		return err
-	}
-
-	// For daily data, keep for 365 days
-	if err := createRetentionPolicy("url_metrics_daily", "365 days"); err != nil {
-		return err
-	}
-
-	// For monthly data, keep for 100 years (effectively forever)
-	if err := createRetentionPolicy("url_metrics_monthly", "3650 days"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// createRetentionPolicy sets up a data retention policy for a hypertable
-func createRetentionPolicy(tableName, retention string) error {
-	sql := fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s')", tableName, retention)
-
-	if err := DB.Exec(sql).Error; err != nil {
-		// Ignore errors about existing policies
-		if err.Error() != fmt.Sprintf("relation \"%s\" already has a retention policy", tableName) {
-			return fmt.Errorf("failed to create retention policy for %s: %v", tableName, err)
-		}
-		logger.Log.Sugar().Infof("Retention policy for %s already exists", tableName)
-	} else {
-		logger.Log.Sugar().Infof("Created retention policy for %s (%s)", tableName, retention)
-	}
-
-	return nil
-}
-
-// IsTimescaleDBEnabled checks if TimescaleDB extension is installed
+// IsTimescaleDBEnabled checks if TimescaleDB is enabled by querying for the extension
 func IsTimescaleDBEnabled() bool {
 	var count int64
-	if err := DB.Raw("SELECT count(*) FROM pg_extension WHERE extname = 'timescaledb'").Count(&count).Error; err != nil {
-		logger.Log.Sugar().Warnf("Error checking TimescaleDB extension: %v", err)
-		return false
-	}
-	return count > 0
+	result := DB.Raw("SELECT COUNT(*) FROM pg_extension WHERE extname = 'timescaledb'").Count(&count)
+	return result.Error == nil && count > 0
 }

@@ -8,7 +8,10 @@ import (
 
 func init() {
 	// Only auto-migrate URLMetric, removing the old tables
-	db.GetDB().AutoMigrate(&URLMetric{})
+	db.GetDB().AutoMigrate(&URLAnalytics{})
+	db.GetDB().AutoMigrate(&URLAnalyticsHourly{})
+	db.GetDB().AutoMigrate(&URLAnalyticsDaily{})
+	db.GetDB().AutoMigrate(&URLAnalyticsMonthly{})
 
 	// Enable TimescaleDB for analytics if available
 	if db.IsTimescaleEnabled {
@@ -24,20 +27,32 @@ func init() {
 // - 1 month record for 100 years
 // ==================================================
 
-// URLMetric stores analytics data in time-based buckets
+// URLAnalytics stores analytics data in time-based buckets
 // This table is optimized for TimescaleDB and will be converted to a hypertable
-type URLMetric struct {
-	URLID       uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
-	MetricType  string    `json:"metric_type" gorm:"primaryKey;index;not null"` // referrer, country, city, clicks
-	MetricValue string    `json:"metric_value" gorm:"primaryKey;not null"`      // The actual value being tracked
-	Granularity string    `json:"granularity" gorm:"primaryKey;index;not null"` // 2min, hour, day, month
-	BucketTime  time.Time `json:"bucket_time" gorm:"primaryKey;index;not null"` // The timestamp of the bucket
-	ClickCount  int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+type URLAnalytics struct {
+	URLID      uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
+	Referrer   string    `json:"referrer" gorm:"primaryKey;index;not null"`
+	Country    string    `json:"country" gorm:"primaryKey;index;not null"`
+	City       string    `json:"city" gorm:"primaryKey;index;not null"`
+	Device     string    `json:"device" gorm:"primaryKey;index;not null"`
+	Browser    string    `json:"browser" gorm:"primaryKey;index;not null"`
+	OS         string    `json:"os" gorm:"primaryKey;index;not null"`
+	ClickCount int64     `json:"click_count" gorm:"default:0"`
+	BucketTime time.Time `json:"bucket_time" gorm:"primaryKey;index;not null"`
 }
 
-// TableName overrides the table name for URLMetric
-func (URLMetric) TableName() string {
-	return "url_metrics"
+// Define model structs for the aggregated analytics tables
+// URLAnalyticsHourly represents hourly aggregated analytics data
+type URLAnalyticsHourly struct {
+	db.URLAnalyticsHourly
+}
+
+// URLAnalyticsDaily represents daily aggregated analytics data
+type URLAnalyticsDaily struct {
+	db.URLAnalyticsDaily
+}
+
+// URLAnalyticsMonthly represents monthly aggregated analytics data
+type URLAnalyticsMonthly struct {
+	db.URLAnalyticsMonthly
 }

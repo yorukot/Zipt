@@ -21,19 +21,21 @@ func CreateWorkspace(c *gin.Context) {
 	}
 
 	// Get user ID from context (set by auth middleware)
-	userID, exists := c.Get("userID")
+	userIDAny, exists := c.Get("userID")
 	if !exists {
 		utils.FullyResponse(c, http.StatusUnauthorized, "User not authenticated", utils.ErrUnauthorized, nil)
 		return
 	}
+
+	userID := userIDAny.(uint64)
 
 	workspace := models.Workspace{
 		ID:   encryption.GenerateID(),
 		Name: req.Name,
 	}
 
-	// Create workspace with admin role for creator
-	workspace, err := queries.CreateWorkspace(workspace, userID.(uint64))
+	// Create workspace with owner role for creator
+	workspace, err := queries.CreateWorkspaceWithOwner(workspace, userID)
 	if err != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to create workspace", utils.ErrSaveData, map[string]interface{}{
 			"details": err.Error(),

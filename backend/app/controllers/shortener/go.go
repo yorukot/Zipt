@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mileusna/useragent"
 	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/app/queries"
 	"github.com/yorukot/zipt/pkg/geoip"
@@ -32,6 +33,10 @@ func RedirectURL(c *gin.Context) {
 		if result.Error == nil && domain.Verified {
 			// Use this domain's ID for the URL lookup
 			domainID = domain.ID
+		}
+		if result.Error == nil && !domain.Verified {
+			utils.FullyResponse(c, http.StatusBadRequest, "Domain not verified", utils.ErrBadRequest, nil)
+			return
 		}
 	}
 
@@ -78,13 +83,32 @@ func trackURLAnalytics(c *gin.Context, urlID uint64) {
 	}
 
 	// Get the IP address of the client
-	ipAddress := c.ClientIP()
+	// ipAddress := c.ClientIP()
 
 	// Look up geolocation
-	country, city := geoip.Lookup(ipAddress)
+	country, city := geoip.Lookup("114.38.215.119")
+
+	if country == "" {
+		country = "Unknow"
+	}
+
+	if city == "" {
+		city = "Unknown"
+	}
+
+	// Get device information
+	device, browser, os := getDevice(c)
 
 	// Track analytics with URL ID, referrer, country and city
-	result := queries.TrackAllAnalytics(urlID, referrer, ipAddress, country, city)
+	result := queries.TrackAllAnalytics(models.URLAnalytics{
+		URLID:      urlID,
+		Referrer:   referrer,
+		Country:    country,
+		City:       city,
+		Device:     device,
+		Browser:    browser,
+		OS:         os,
+	})
 
 	if result != nil && result.Error != nil {
 		// Just log the error but don't affect the user experience
@@ -118,4 +142,26 @@ func sanitizeReferrer(referrer string) string {
 	}
 
 	return cleanReferrer
+}
+
+// getDevice returns the device, browser, and OS from the user agent
+func getDevice(c *gin.Context) (device string, browser string, os string) {
+	origin := c.Request.UserAgent()
+	ua := useragent.Parse(origin)
+	browser = ua.Name
+	os = ua.OS
+	device = ua.Device
+	if device == "" {
+		device = "Unknown"
+	}
+
+	if browser == "" {
+		browser = "Unknown"
+	}
+
+	if os == "" {
+		os = "Unknown"
+	}
+
+	return device, browser, os
 }

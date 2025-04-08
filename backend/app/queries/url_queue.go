@@ -32,6 +32,12 @@ func DeleteURLQueue(shortCode string) *gorm.DB {
 	return result
 }
 
+// DeleteURLQueueByID deletes a URL by its ID
+func DeleteURLQueueByID(id uint64) *gorm.DB {
+	result := db.GetDB().Where("id = ?", id).Delete(&models.URL{})
+	return result
+}
+
 // CheckShortCodeExists checks if a short code is already in use
 func CheckShortCodeExists(shortCode string) (bool, error) {
 	var count int64

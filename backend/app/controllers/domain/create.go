@@ -14,11 +14,13 @@ import (
 // CreateDomain handles domain creation for a workspace
 func CreateDomain(c *gin.Context) {
 	// Get workspace ID from context (set by middleware)
-	workspaceID, exists := c.Get("workspaceID")
+	workspaceIDAny, exists := c.Get("workspaceID")
 	if !exists {
 		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
 		return
 	}
+
+	workspaceID := workspaceIDAny.(uint64)
 
 	var req DomainRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,12 +44,11 @@ func CreateDomain(c *gin.Context) {
 
 	// Generate a verification token
 	verifyToken := "zipt_verify-" + encryption.GenerateTokenHex(32)
-	wsID := workspaceID.(uint64)
 
 	// Create the domain
 	domain := models.Domain{
 		ID:          encryption.GenerateID(),
-		WorkspaceID: &wsID,
+		WorkspaceID: &workspaceID,
 		Domain:      req.Domain,
 		Verified:    false,
 		VerifyToken: verifyToken,

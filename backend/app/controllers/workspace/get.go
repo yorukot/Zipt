@@ -2,7 +2,6 @@ package workspace
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/queries"
@@ -18,10 +17,10 @@ func GetWorkspaces(c *gin.Context) {
 		return
 	}
 
-	workspaces, err := queries.GetUserWorkspaces(userID.(uint64))
-	if err != nil {
+	workspaces, result := queries.GetUserWorkspacesQueue(userID.(uint64))
+	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to get workspaces", utils.ErrGetData, map[string]interface{}{
-			"details": err.Error(),
+			"details": result.Error.Error(),
 		})
 		return
 	}
@@ -31,25 +30,17 @@ func GetWorkspaces(c *gin.Context) {
 
 // GetWorkspace returns a single workspace by ID
 func GetWorkspace(c *gin.Context) {
-	workspaceID, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid workspace ID", utils.ErrBadRequest, nil)
-		return
-	}
-
-	workspaceRole, exists := c.Get("workspaceRole")
+	// Get workspace ID from context (set by middleware)
+	workspaceIDAny, exists := c.Get("workspaceID")
 	if !exists {
-		utils.FullyResponse(c, http.StatusForbidden, "You don't have permission to access this workspace", utils.ErrForbidden, nil)
+		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
 		return
 	}
 
-	if workspaceRole != queries.RoleOwner && workspaceRole != queries.RoleMember {
-		utils.FullyResponse(c, http.StatusForbidden, "You don't have permission to access this workspace", utils.ErrForbidden, nil)
-		return
-	}
+	workspaceID := workspaceIDAny.(uint64)
 
-	workspace, err := queries.GetWorkspace(workspaceID)
-	if err != nil {
+	workspace, result := queries.GetWorkspaceQueueByID(workspaceID)
+	if result.Error != nil {
 		utils.FullyResponse(c, http.StatusNotFound, "Workspace not found", utils.ErrResourceNotFound, nil)
 		return
 	}

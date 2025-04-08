@@ -21,7 +21,8 @@ type URL struct {
 	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 	CreatedAt   time.Time  `json:"created_at" gorm:"not null"`
 	UpdatedAt   time.Time  `json:"updated_at" gorm:"not null"`
-	TotalClick  int64      `json:"total_click" gorm:"default:0"`
+	TotalClicks int64      `json:"total_clicks" gorm:"default:0"`
+	Domain      *Domain    `json:"domain,omitempty" gorm:"foreignKey:DomainID"`
 }
 
 type Domain struct {
