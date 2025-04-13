@@ -20,8 +20,11 @@ func CreateDomain(c *gin.Context) {
 		return
 	}
 
-	workspaceID := workspaceIDAny.(uint64)
-
+	workspaceID, ok := workspaceIDAny.(uint64)
+	if !ok {
+		utils.FullyResponse(c, http.StatusInternalServerError, "Invalid workspace ID format", utils.ErrServerError, nil)
+		return
+	}
 	var req DomainRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FullyResponse(c, http.StatusBadRequest, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
