@@ -43,7 +43,11 @@ func CreateDomain(c *gin.Context) {
 	}
 
 	// Generate a verification token
-	verifyToken := "zipt_verify-" + encryption.GenerateTokenHex(32)
+	verifyToken, err := encryption.RandStringRunes(64, false)
+	if err != nil {
+		utils.ServerErrorResponse(c, http.StatusInternalServerError, "Failed to generate verification token", utils.ErrSaveData, err)
+		return
+	}
 
 	// Create the domain
 	domain := models.Domain{
