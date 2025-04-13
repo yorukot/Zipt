@@ -1,16 +1,17 @@
 {
   "info": {
+    "_postman_id": "58f9e5d5-72de-4f84-9acd-7e2d36a26d70",
     "name": "Zipt URL Shortener API",
-    "description": "API for shortening URLs and tracking analytics",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "12345678"
+    "description": "Complete API documentation for the Zipt URL Shortener service.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
       "name": "Authentication",
+      "description": "Authentication and user management endpoints",
       "item": [
         {
-          "name": "Register User",
+          "name": "Register",
           "request": {
             "method": "POST",
             "header": [
@@ -21,19 +22,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securePassword123\",\n    \"display_name\": \"John Doe\"\n}"
+              "raw": "{\n  \"display_name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
             },
-            "description": "Creates a new user account"
+            "description": "Create a new user account."
           },
           "response": []
         },
@@ -49,75 +45,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securePassword123\"\n}"
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
             },
-            "description": "Authenticates a user and returns a JWT token"
-          },
-          "response": []
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth/logout",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "logout"
-              ]
-            },
-            "description": "Logs out a user by invalidating their session"
-          },
-          "response": []
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"current_password\": \"oldSecurePassword123\",\n    \"new_password\": \"newSecurePassword456\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/change-password",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "change-password"
-              ]
-            },
-            "description": "Changes the user's password"
+            "description": "Authenticate user and get access token."
           },
           "response": []
         },
@@ -125,245 +60,90 @@
           "name": "Refresh Token",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{refresh_token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/auth/refresh",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "refresh"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
             },
-            "description": "Refreshes an expired JWT token"
+            "description": "Refresh an expired access token."
           },
           "response": []
-        }
-      ]
-    },
-    {
-      "name": "URL Operations",
-      "item": [
+        },
         {
-          "name": "Create Short URL",
+          "name": "Logout",
           "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Log out and invalidate tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}",
-                "description": "Optional for basic URL shortening, required for custom slugs"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"original_url\": \"https://example.com/very/long/url/that/needs/shortening\",\n    \"custom_slug\": \"my-custom-code\",\n    \"expires_at\": \"2024-12-31T23:59:59Z\"\n}"
+              "raw": "{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newPassword123\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/url",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "url"
-              ]
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
             },
-            "description": "Creates a new shortened URL"
-          },
-          "response": []
-        },
-        {
-          "name": "List User's URLs",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/url/list",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "url",
-                "list"
-              ]
-            },
-            "description": "Retrieves all URLs created by the authenticated user"
-          },
-          "response": []
-        },
-        {
-          "name": "Update URL",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"custom_slug\": \"updated-slug\",\n    \"original_url\": \"https://updated-example.com/new/url\",\n    \"expires_at\": \"2025-12-31T23:59:59Z\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/url/{{short_code}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "url",
-                "{{short_code}}"
-              ]
-            },
-            "description": "Updates an existing shortened URL"
-          },
-          "response": []
-        },
-        {
-          "name": "Delete URL",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/url/{{short_code}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "url",
-                "{{short_code}}"
-              ]
-            },
-            "description": "Deletes a shortened URL"
+            "description": "Change user password (requires authentication)."
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Analytics",
+      "name": "User",
+      "description": "User profile endpoints",
       "item": [
         {
-          "name": "Get URL Analytics",
+          "name": "Get User Profile",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/url/{{workspace_id}}/{{short_code}}/analytics?days=7",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "url",
-                "{{workspace_id}}",
-                "{{short_code}}",
-                "analytics"
-              ],
-              "query": [
+            "auth": {
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "days",
-                  "value": "7",
-                  "description": "Get data from the last 7 days"
-                },
-                {
-                  "key": "hours",
-                  "value": "12",
-                  "description": "Get data from the last 12 hours",
-                  "disabled": true
-                },
-                {
-                  "key": "mins",
-                  "value": "30",
-                  "description": "Get data from the last 30 minutes",
-                  "disabled": true
-                },
-                {
-                  "key": "months",
-                  "value": "1",
-                  "description": "Get data from the last month",
-                  "disabled": true
-                },
-                {
-                  "key": "years",
-                  "value": "1",
-                  "description": "Get data from the last year",
-                  "disabled": true
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
                 }
               ]
             },
-            "description": "Retrieves analytics data for a specific URL"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Paginated URL Metrics",
-          "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/url/{{workspace_id}}/{{short_code}}/metrics?type=referrer&page=1&pageSize=10",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "url",
-                "{{workspace_id}}",
-                "{{short_code}}",
-                "metrics"
-              ],
-              "query": [
-                {
-                  "key": "type",
-                  "value": "referrer",
-                  "description": "Type of metric to retrieve (referrer, country, city, clicks)"
-                },
-                {
-                  "key": "page",
-                  "value": "1",
-                  "description": "Page number"
-                },
-                {
-                  "key": "pageSize",
-                  "value": "10",
-                  "description": "Number of items per page"
-                }
-              ]
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
             },
-            "description": "Retrieves paginated metrics of a specific type for a URL"
+            "description": "Get the authenticated user's profile information."
           },
           "response": []
         }
@@ -371,208 +151,200 @@
     },
     {
       "name": "Workspace",
+      "description": "Workspace management endpoints",
       "item": [
         {
           "name": "Create Workspace",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"My Workspace\"\n}"
+              "raw": "{\n  \"name\": \"My Workspace\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/workspace",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["workspace"]
             },
-            "description": "Creates a new workspace"
+            "description": "Create a new workspace."
           },
           "response": []
         },
         {
-          "name": "Get Workspace",
+          "name": "Get Workspaces",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/workspace/{{workspace_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace",
-                "{{workspace_id}}"
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
               ]
             },
-            "description": "Retrieves workspace details"
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspaces",
+              "host": ["{{base_url}}"],
+              "path": ["workspaces"]
+            },
+            "description": "Get all workspaces for the authenticated user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Workspace Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}"]
+            },
+            "description": "Get details of a specific workspace."
           },
           "response": []
         },
         {
           "name": "Update Workspace",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Updated Workspace Name\"\n}"
+              "raw": "{\n  \"name\": \"Updated Workspace Name\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/workspace/{{workspace_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace",
-                "{{workspace_id}}"
-              ]
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}"]
             },
-            "description": "Updates workspace details"
+            "description": "Update workspace details (owner only)."
           },
           "response": []
         },
         {
           "name": "Delete Workspace",
           "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/workspace/{{workspace_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace",
-                "{{workspace_id}}"
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
               ]
             },
-            "description": "Deletes a workspace"
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}"]
+            },
+            "description": "Delete a workspace (owner only)."
           },
           "response": []
         },
         {
           "name": "Add User to Workspace",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"user_id\": 67890\n}"
+              "raw": "{\n  \"user_id\": \"123456789\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/workspace/{{workspace_id}}/users",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace",
-                "{{workspace_id}}",
-                "users"
-              ]
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "user"]
             },
-            "description": "Adds a user to a workspace"
-          },
-          "response": []
-        },
-        {
-          "name": "Update User Role",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"role\": \"admin\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/workspace/{{workspace_id}}/users/{{user_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace",
-                "{{workspace_id}}",
-                "users",
-                "{{user_id}}"
-              ]
-            },
-            "description": "Updates a user's role in a workspace"
+            "description": "Add a user to a workspace."
           },
           "response": []
         },
         {
           "name": "Remove User from Workspace",
           "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/workspace/{{workspace_id}}/users/{{user_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "workspace",
-                "{{workspace_id}}",
-                "users",
-                "{{user_id}}"
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
               ]
             },
-            "description": "Removes a user from a workspace"
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "user", "{{user_id}}"]
+            },
+            "description": "Remove a user from a workspace (owner only)."
           },
           "response": []
         }
@@ -580,108 +352,411 @@
     },
     {
       "name": "Domain",
+      "description": "Custom domain management endpoints",
       "item": [
         {
-          "name": "Add Domain",
+          "name": "Get Domains",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/domain",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "domain"]
+            },
+            "description": "Get all domains for a workspace."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Domain",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"domain\": \"example.com\"\n}"
+              "raw": "{\n  \"domain\": \"example.com\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/domain",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "domain"
-              ]
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/domain",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "domain"]
             },
-            "description": "Adds a new domain to a workspace"
+            "description": "Add a new custom domain to a workspace."
           },
           "response": []
         },
         {
-          "name": "Get Domain",
+          "name": "Get Domain Details",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/domain/{{domain_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "domain",
-                "{{domain_id}}"
-              ]
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/domain/{{domain_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "domain", "{{domain_id}}"]
             },
-            "description": "Retrieves domain details"
-          },
-          "response": []
-        },
-        {
-          "name": "Delete Domain",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/domain/{{domain_id}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "domain",
-                "{{domain_id}}"
-              ]
-            },
-            "description": "Deletes a domain from a workspace"
+            "description": "Get details for a specific domain."
           },
           "response": []
         },
         {
           "name": "Verify Domain",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/domain/{{domain_id}}/verify",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "domain", "{{domain_id}}", "verify"]
+            },
+            "description": "Verify domain ownership by checking DNS TXT record."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Domain",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/domain/{{domain_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "domain", "{{domain_id}}"]
+            },
+            "description": "Delete a domain from a workspace (owner only)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "URL Shortener",
+      "description": "URL shortening and management endpoints",
+      "item": [
+        {
+          "name": "Create Short URL (Public)",
+          "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{auth_token}}"
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_url\": \"https://example.com/very/long/url\"\n}"
+            },
             "url": {
-              "raw": "{{base_url}}/domain/{{domain_id}}/verify",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "domain",
-                "{{domain_id}}",
-                "verify"
+              "raw": "{{base_url}}/url",
+              "host": ["{{base_url}}"],
+              "path": ["url"]
+            },
+            "description": "Create a short URL without authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Shortcode Availability",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"short_code\": \"my-custom-code\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/check-shortcode",
+              "host": ["{{base_url}}"],
+              "path": ["check-shortcode"]
+            },
+            "description": "Check if a custom shortcode is available."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Short URL (Workspace)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
               ]
             },
-            "description": "Verifies ownership of a domain using a DNS TXT record"
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_url\": \"https://example.com/very/long/url\",\n  \"short_code\": \"my-custom-code\",\n  \"domain_id\": 123456789,\n  \"expires_at\": \"2023-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/url/{{workspace_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["url", "{{workspace_id}}"]
+            },
+            "description": "Create a short URL in a workspace (with optional custom code and domain)."
+          },
+          "response": []
+        },
+        {
+          "name": "List URLs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/url/{{workspace_id}}/list",
+              "host": ["{{base_url}}"],
+              "path": ["url", "{{workspace_id}}", "list"]
+            },
+            "description": "Get all URLs in a workspace."
+          },
+          "response": []
+        },
+        {
+          "name": "Update URL",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"original_url\": \"https://example.com/updated/url\",\n  \"custom_slug\": \"updated-code\",\n  \"expires_at\": \"2024-12-31T23:59:59Z\",\n  \"domain_id\": 123456789\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/url/{{workspace_id}}/{{url_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["url", "{{workspace_id}}", "{{url_id}}"]
+            },
+            "description": "Update an existing short URL."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete URL",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/url/{{workspace_id}}/{{url_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["url", "{{workspace_id}}", "{{url_id}}"]
+            },
+            "description": "Delete a short URL."
+          },
+          "response": []
+        },
+        {
+          "name": "Get URL Analytics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/url/{{workspace_id}}/{{url_id}}/analytics?start=1672531200&end=1675209600",
+              "host": ["{{base_url}}"],
+              "path": ["url", "{{workspace_id}}", "{{url_id}}", "analytics"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1672531200",
+                  "description": "Start timestamp (Unix)"
+                },
+                {
+                  "key": "end",
+                  "value": "1675209600",
+                  "description": "End timestamp (Unix)"
+                }
+              ]
+            },
+            "description": "Get analytics data for a specific URL."
+          },
+          "response": []
+        },
+        {
+          "name": "Get URL Time Series Data",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/url/{{workspace_id}}/{{url_id}}/analytics/timeseries?start=1672531200&end=1675209600&referrer=google.com&browser=chrome&country=US&device=desktop&os=windows",
+              "host": ["{{base_url}}"],
+              "path": ["url", "{{workspace_id}}", "{{url_id}}", "analytics", "timeseries"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "1672531200",
+                  "description": "Start timestamp (Unix)"
+                },
+                {
+                  "key": "end",
+                  "value": "1675209600",
+                  "description": "End timestamp (Unix)"
+                },
+                {
+                  "key": "referrer",
+                  "value": "google.com",
+                  "description": "Filter by referrer"
+                },
+                {
+                  "key": "browser",
+                  "value": "chrome",
+                  "description": "Filter by browser"
+                },
+                {
+                  "key": "country",
+                  "value": "US",
+                  "description": "Filter by country"
+                },
+                {
+                  "key": "device",
+                  "value": "desktop",
+                  "description": "Filter by device"
+                },
+                {
+                  "key": "os",
+                  "value": "windows",
+                  "description": "Filter by operating system"
+                }
+              ]
+            },
+            "description": "Get time series analytics data for a specific URL with optional filters."
+          },
+          "response": []
+        },
+        {
+          "name": "Redirect to Original URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{domain}}/{{short_code}}",
+              "host": ["{{domain}}"],
+              "path": ["{{short_code}}"]
+            },
+            "description": "Redirect a short code to the original URL."
           },
           "response": []
         }
@@ -712,37 +787,50 @@
     {
       "key": "base_url",
       "value": "http://localhost:8080/api/v1",
-      "type": "string"
+      "type": "string",
+      "description": "Base URL of the API, including version"
     },
     {
-      "key": "auth_token",
-      "value": "your_jwt_token_here",
-      "type": "string"
+      "key": "domain",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Domain for short URLs"
     },
     {
-      "key": "refresh_token",
-      "value": "your_refresh_token_here",
-      "type": "string"
+      "key": "access_token",
+      "value": "your_jwt_token",
+      "type": "string",
+      "description": "JWT access token for authenticated requests"
+    },
+    {
+      "key": "workspace_id",
+      "value": "workspace_id_here",
+      "type": "string",
+      "description": "Current workspace ID"
+    },
+    {
+      "key": "url_id",
+      "value": "url_id_here",
+      "type": "string",
+      "description": "URL ID for operations on specific URLs"
+    },
+    {
+      "key": "domain_id",
+      "value": "domain_id_here",
+      "type": "string",
+      "description": "Domain ID for operations on specific domains"
+    },
+    {
+      "key": "user_id",
+      "value": "user_id_here",
+      "type": "string",
+      "description": "User ID for user management operations"
     },
     {
       "key": "short_code",
       "value": "abc123",
-      "type": "string"
-    },
-    {
-      "key": "workspace_id",
-      "value": "12345",
-      "type": "string"
-    },
-    {
-      "key": "domain_id",
-      "value": "67890",
-      "type": "string"
-    },
-    {
-      "key": "user_id",
-      "value": "54321",
-      "type": "string"
+      "type": "string",
+      "description": "Short code for URL redirection"
     }
   ]
-} 
+}
