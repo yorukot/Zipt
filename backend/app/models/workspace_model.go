@@ -20,8 +20,8 @@ const (
 type Workspace struct {
 	ID        uint64    `json:"id,string" gorm:"primaryKey"`
 	Name      string    `json:"name" binding:"required"`
-	CreatedAt time.Time `json:"created_at" gorm:"autoUpdateTime"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"autoCreateTime"`
+	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 type WorkspaceUser struct {
