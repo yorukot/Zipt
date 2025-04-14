@@ -64,27 +64,9 @@ func validateSignupRequest(c *gin.Context) (*EmailAuthRequest, error) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		// Provide more specific error messages based on the validation failure
-		if strings.Contains(err.Error(), "Email") {
-			utils.FullyResponse(c, 400, "Invalid email format", utils.ErrBadRequest, map[string]interface{}{
-				"field": "email",
-				"error": "invalid_email_format",
-			})
-		} else if strings.Contains(err.Error(), "Password") {
-			utils.FullyResponse(c, 400, "Password must be at least 8 characters", utils.ErrBadRequest, map[string]interface{}{
-				"field": "password",
-				"error": "password_too_short",
-			})
-		} else if strings.Contains(err.Error(), "DisplayName") {
-			utils.FullyResponse(c, 400, "Display name is required", utils.ErrBadRequest, map[string]interface{}{
-				"field": "display_name",
-				"error": "display_name_required",
-			})
-		} else {
-			utils.FullyResponse(c, 400, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
-				"error":   "invalid_request_format",
-				"details": err.Error(),
-			})
-		}
+		utils.FullyResponse(c, 400, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
+			"details": err.Error(),
+		})
 		return nil, err
 	}
 
@@ -101,7 +83,6 @@ func checkEmailAvailability(c *gin.Context, email string) error {
 	if result.Error == nil {
 		utils.FullyResponse(c, 400, "Email already in use", utils.ErrEmailAlreadyUsed, map[string]interface{}{
 			"field": "email",
-			"error": "email_already_used",
 		})
 		return fmt.Errorf("email already in use")
 	} else if result.Error != gorm.ErrRecordNotFound {

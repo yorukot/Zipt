@@ -2,437 +2,435 @@
 
 ## Overview
 
-The Zipt URL Shortener API allows you to create short URLs, track their analytics, and manage your shortened links. This API supports both authenticated and unauthenticated access with different privileges.
+Zipt is a URL shortener service that allows users to create and manage short URLs. This document provides complete details about the API endpoints for interacting with the Zipt service.
 
-Base URL: `https://yourdomain.com/api/v1`
+Base URL: `http://localhost:8080/api/v1` (or your deployed API URL)
 
 ## Authentication
 
-Most endpoints require authentication using JWT (JSON Web Token). 
+Most endpoints require authentication using a JWT token. After login, include the token in the Authorization header:
 
-**How to authenticate:**
-1. Obtain a JWT token by logging in via the `/auth/login` endpoint
-2. Include the token in the `Authorization` header of your requests:
-   ```
-   Authorization: Bearer your_jwt_token
-   ```
+```
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
 
-### Authentication Endpoints
+### Register
 
-#### User Registration
+Create a new user account.
 
-Creates a new user account.
+- **URL**: `/auth/register`
+- **Method**: `POST`
+- **Auth Required**: No
+- **Content-Type**: `application/json`
 
-**Endpoint:** `POST /auth/register`
+**Request Body**:
 
-**Authentication:** None
-
-**Request Body:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "securePassword123",
-  "display_name": "John Doe"
+  "display_name": "Test User",
+  "email": "test@example.com",
+  "password": "password123"
 }
 ```
 
-**Response (200 OK):**
+**Response**: Returns user details and authentication tokens.
+
+### Login
+
+Authenticate user and get access token.
+
+- **URL**: `/auth/login`
+- **Method**: `POST`
+- **Auth Required**: No
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "status": "success",
-  "message": "Signup successful",
-  "code": null,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "user_123456",
-      "email": "user@example.com",
-      "display_name": "John Doe",
-      "created_at": "2024-03-01T10:30:00Z"
-    }
-  }
+  "email": "test@example.com",
+  "password": "password123"
 }
 ```
 
-**Error Responses:**
-- `400 Bad Request`: Invalid registration data or email already in use
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns authentication tokens.
 
-#### User Login
+### Refresh Token
 
-Authenticates a user and returns a JWT token.
+Refresh an expired access token.
 
-**Endpoint:** `POST /auth/login`
+- **URL**: `/auth/refresh`
+- **Method**: `POST`
+- **Auth Required**: Yes (Refresh token)
 
-**Authentication:** None
+**Response**: Returns a new access token.
 
-**Request Body:**
+### Logout
+
+Log out and invalidate tokens.
+
+- **URL**: `/auth/logout`
+- **Method**: `POST`
+- **Auth Required**: Yes
+
+**Response**: Confirmation of successful logout.
+
+### Change Password
+
+Change user password.
+
+- **URL**: `/auth/change-password`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "email": "user@example.com",
-  "password": "securePassword123"
+  "current_password": "password123",
+  "new_password": "newPassword123"
 }
 ```
 
-**Response (200 OK):**
+**Response**: Confirmation of password change.
+
+## User
+
+### Get User Profile
+
+Get the authenticated user's profile information.
+
+- **URL**: `/users/profile`
+- **Method**: `GET`
+- **Auth Required**: Yes
+
+**Response**: Returns user profile information.
+
+## Workspace
+
+### Create Workspace
+
+Create a new workspace.
+
+- **URL**: `/workspace`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "status": "success",
-  "message": "Login successful",
-  "code": null,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "user_123456",
-      "email": "user@example.com",
-      "display_name": "John Doe",
-      "created_at": "2024-03-01T10:30:00Z"
-    }
-  }
+  "name": "My Workspace"
 }
 ```
 
-**Error Responses:**
-- `400 Bad Request`: Invalid login credentials format
-- `401 Unauthorized`: Incorrect email or password
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns the created workspace details.
 
-#### User Logout
+### Get Workspaces
 
-Logs out a user by invalidating their session.
+Get all workspaces for the authenticated user.
 
-**Endpoint:** `POST /auth/logout`
+- **URL**: `/workspaces`
+- **Method**: `GET`
+- **Auth Required**: Yes
 
-**Authentication:** None (but requires active session)
+**Response**: Returns a list of workspaces.
 
-**Request Body:** None
+### Get Workspace Details
 
-**Response (200 OK):**
+Get details of a specific workspace.
+
+- **URL**: `/workspace/{workspace_id}`
+- **Method**: `GET`
+- **Auth Required**: Yes
+
+**Response**: Returns the workspace details.
+
+### Update Workspace
+
+Update workspace details (owner only).
+
+- **URL**: `/workspace/{workspace_id}`
+- **Method**: `PUT`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "status": "success",
-  "message": "Logged out successfully",
-  "code": null
+  "name": "Updated Workspace Name"
 }
 ```
 
-**Error Responses:**
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns the updated workspace details.
 
-#### Change Password
+### Delete Workspace
 
-Changes the user's password.
+Delete a workspace (owner only).
 
-**Endpoint:** `POST /auth/change-password`
+- **URL**: `/workspace/{workspace_id}`
+- **Method**: `DELETE`
+- **Auth Required**: Yes
 
-**Authentication:** Required
+**Response**: Confirmation of workspace deletion.
 
-**Request Body:**
+### Add User to Workspace
+
+Add a user to a workspace.
+
+- **URL**: `/workspace/{workspace_id}/user`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "current_password": "oldSecurePassword123",
-  "new_password": "newSecurePassword456"
+  "user_id": "123456789"
 }
 ```
 
-**Response (200 OK):**
+**Response**: Confirmation of user addition to workspace.
+
+### Remove User from Workspace
+
+Remove a user from a workspace (owner only).
+
+- **URL**: `/workspace/{workspace_id}/user/{user_id}`
+- **Method**: `DELETE`
+- **Auth Required**: Yes
+
+**Response**: Confirmation of user removal from workspace.
+
+## Domain
+
+### Get Domains
+
+Get all domains for a workspace.
+
+- **URL**: `/workspace/{workspace_id}/domain`
+- **Method**: `GET`
+- **Auth Required**: Yes
+
+**Response**: Returns a list of domains associated with the workspace.
+
+### Create Domain
+
+Add a new custom domain to a workspace.
+
+- **URL**: `/workspace/{workspace_id}/domain`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "status": "success",
-  "message": "Password changed successfully",
-  "code": null
+  "domain": "example.com"
 }
 ```
 
-**Error Responses:**
-- `400 Bad Request`: Invalid password format or new password same as current
-- `401 Unauthorized`: Missing or invalid authentication
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns the created domain details.
 
-#### Refresh Token
+### Get Domain Details
 
-Refreshes an expired JWT token.
+Get details for a specific domain.
 
-**Endpoint:** `POST /auth/refresh`
+- **URL**: `/workspace/{workspace_id}/domain/{domain_id}`
+- **Method**: `GET`
+- **Auth Required**: Yes
 
-**Authentication:** Required (Using refresh token)
+**Response**: Returns the domain details.
 
-**Request Headers:**
-```
-Authorization: Bearer your_refresh_token
-```
+### Verify Domain
 
-**Response (200 OK):**
+Verify domain ownership by checking DNS TXT record.
+
+- **URL**: `/workspace/{workspace_id}/domain/{domain_id}/verify`
+- **Method**: `POST`
+- **Auth Required**: Yes
+
+**Response**: Returns verification status.
+
+### Delete Domain
+
+Delete a domain from a workspace (owner only).
+
+- **URL**: `/workspace/{workspace_id}/domain/{domain_id}`
+- **Method**: `DELETE`
+- **Auth Required**: Yes
+
+**Response**: Confirmation of domain deletion.
+
+## URL Shortener
+
+### Create Short URL (Public)
+
+Create a short URL without authentication.
+
+- **URL**: `/url`
+- **Method**: `POST`
+- **Auth Required**: No
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "status": "success",
-  "message": "Token refreshed successfully",
-  "code": null,
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
+  "original_url": "https://example.com/very/long/url"
 }
 ```
 
-**Error Responses:**
-- `401 Unauthorized`: Invalid or expired refresh token
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns the created short URL details.
 
-## URL Operations
+### Check Shortcode Availability
 
-### Create Short URL
+Check if a custom shortcode is available.
 
-Creates a new shortened URL.
+- **URL**: `/check-shortcode`
+- **Method**: `POST`
+- **Auth Required**: No
+- **Content-Type**: `application/json`
 
-**Endpoint:** `POST /url`
+**Request Body**:
 
-**Authentication:** Optional (Required for custom slugs)
-
-**Request Body:**
 ```json
 {
-  "original_url": "https://example.com/very/long/url/that/needs/shortening",
-  "custom_slug": "my-custom-code",  // Optional, authenticated users only
-  "expires_at": "2024-12-31T23:59:59Z"  // Optional
+  "short_code": "my-custom-code"
 }
 ```
 
-**Response (201 Created):**
+**Response**: Returns availability status.
+
+### Create Short URL (Workspace)
+
+Create a short URL in a workspace (with optional custom code and domain).
+
+- **URL**: `/url/{workspace_id}`
+- **Method**: `POST`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
+
+**Request Body**:
+
 ```json
 {
-  "status": "success",
-  "message": "Short URL created successfully",
-  "code": null,
-  "result": {
-    "short_code": "abc123",
-    "original_url": "https://example.com/very/long/url/that/needs/shortening",
-    "short_url": "https://yourdomain.com/abc123",
-    "expires_at": "2024-12-31T23:59:59Z",
-    "created_at": "2024-03-01T10:30:00Z"
-  }
+  "original_url": "https://example.com/very/long/url",
+  "short_code": "my-custom-code",
+  "domain_id": 123456789,
+  "expires_at": "2023-12-31T23:59:59Z"
 }
 ```
 
-**Error Responses:**
-- `400 Bad Request`: Invalid URL or custom slug already in use
-- `401 Unauthorized`: Custom slug requested without authentication
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns the created short URL details.
 
-### List User's URLs
+### List URLs
 
-Retrieves all URLs created by the authenticated user.
+Get all URLs in a workspace.
 
-**Endpoint:** `GET /url/list`
+- **URL**: `/url/{workspace_id}/list`
+- **Method**: `GET`
+- **Auth Required**: Yes
 
-**Authentication:** Required
-
-**Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "URLs retrieved successfully",
-  "code": null,
-  "result": {
-    "urls": [
-      {
-        "id": "12345678",
-        "original_url": "https://example.com/path/to/resource",
-        "short_code": "abc123",
-        "click_count": 42,
-        "expires_at": "2024-12-31T23:59:59Z",
-        "created_at": "2024-03-01T10:30:00Z",
-        "updated_at": "2024-03-01T10:30:00Z",
-        "user_id": "user_123456"
-      }
-    ]
-  }
-}
-```
-
-**Error Responses:**
-- `401 Unauthorized`: Missing or invalid authentication
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns a list of URLs in the workspace.
 
 ### Update URL
 
-Updates an existing shortened URL.
+Update an existing short URL.
 
-**Endpoint:** `PUT /url/:shortCode`
+- **URL**: `/url/{workspace_id}/{url_id}`
+- **Method**: `PUT`
+- **Auth Required**: Yes
+- **Content-Type**: `application/json`
 
-**Authentication:** Required
+**Request Body**:
 
-**Path Parameters:**
-- `shortCode`: The short code of the URL to update
-
-**Request Body:**
 ```json
 {
-  "original_url": "https://example.com/updated/destination/url",  // Optional
-  "custom_slug": "new-custom-slug",  // Optional
-  "expires_at": "2024-12-31T23:59:59Z"  // Optional
+  "original_url": "https://example.com/updated/url",
+  "custom_slug": "updated-code",
+  "expires_at": "2024-12-31T23:59:59Z",
+  "domain_id": 123456789
 }
 ```
 
-**Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "URL updated successfully",
-  "code": null,
-  "result": {
-    "short_code": "new-custom-slug",
-    "original_url": "https://example.com/updated/destination/url",
-    "short_url": "https://yourdomain.com/new-custom-slug",
-    "expires_at": "2024-12-31T23:59:59Z",
-    "created_at": "2024-03-01T10:30:00Z"
-  }
-}
-```
-
-**Error Responses:**
-- `400 Bad Request`: Invalid URL or custom slug already in use
-- `401 Unauthorized`: Missing or invalid authentication
-- `403 Forbidden`: Not authorized to update this URL
-- `404 Not Found`: URL not found
-- `500 Internal Server Error`: Server-side error
+**Response**: Returns the updated URL details.
 
 ### Delete URL
 
-Deletes an existing shortened URL.
+Delete a short URL.
 
-**Endpoint:** `DELETE /url/:shortCode`
+- **URL**: `/url/{workspace_id}/{url_id}`
+- **Method**: `DELETE`
+- **Auth Required**: Yes
 
-**Authentication:** Required
-
-**Path Parameters:**
-- `shortCode`: The short code of the URL to delete
-
-**Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "URL deleted successfully",
-  "code": null
-}
-```
-
-**Error Responses:**
-- `401 Unauthorized`: Missing or invalid authentication
-- `403 Forbidden`: Not authorized to delete this URL
-- `404 Not Found`: URL not found
-- `500 Internal Server Error`: Server-side error
+**Response**: Confirmation of URL deletion.
 
 ### Get URL Analytics
 
-Retrieves analytics for a specific shortened URL.
+Get analytics data for a specific URL.
 
-**Endpoint:** `GET /url/:shortCode/analytics`
+- **URL**: `/url/{workspace_id}/{url_id}/analytics`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Query Parameters**:
+  - `start`: Start timestamp (Unix)
+  - `end`: End timestamp (Unix)
 
-**Authentication:** Required
+**Response**: Returns analytics data for the URL.
 
-**Path Parameters:**
-- `shortCode`: The short code of the URL
+### Get URL Time Series Data
 
-**Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Analytics retrieved successfully",
-  "code": null,
-  "data": {
-    "url": {
-      "id": "12345678",
-      "original_url": "https://example.com/path/to/resource",
-      "short_code": "abc123",
-      "click_count": 42,
-      "created_at": "2024-03-01T10:30:00Z",
-      "updated_at": "2024-03-01T10:30:00Z",
-      "expires_at": "2024-12-31T23:59:59Z"
-    },
-    "analytics": {
-      "total_clicks": 42,
-      "browsers": [
-        {"browser": "Chrome", "count": 28},
-        {"browser": "Firefox", "count": 10},
-        {"browser": "Safari", "count": 4}
-      ],
-      "devices": [
-        {"device": "Desktop", "count": 30},
-        {"device": "Mobile", "count": 10},
-        {"device": "Tablet", "count": 2}
-      ],
-      "referrers": [
-        {"referrer": "https://google.com", "count": 15},
-        {"referrer": "https://twitter.com", "count": 12},
-        {"referrer": "https://facebook.com", "count": 8}
-      ],
-      "countries": [
-        {"country": "US", "count": 20},
-        {"country": "DE", "count": 10},
-        {"country": "JP", "count": 8}
-      ]
-    }
-  }
-}
-```
+Get time series analytics data for a specific URL with optional filters.
 
-**Error Responses:**
-- `401 Unauthorized`: Missing or invalid authentication
-- `403 Forbidden`: Not authorized to view this URL's analytics
-- `404 Not Found`: URL not found
-- `500 Internal Server Error`: Server-side error
+- **URL**: `/url/{workspace_id}/{url_id}/analytics/timeseries`
+- **Method**: `GET`
+- **Auth Required**: Yes
+- **Query Parameters**:
+  - `start`: Start timestamp (Unix)
+  - `end`: End timestamp (Unix)
+  - `referrer`: Filter by referrer
+  - `browser`: Filter by browser
+  - `country`: Filter by country
+  - `device`: Filter by device
+  - `os`: Filter by operating system
+
+**Response**: Returns time series analytics data.
 
 ### Redirect to Original URL
 
-Redirects to the original URL associated with the short code.
+Redirect a short code to the original URL.
 
-**Endpoint:** `GET /:shortCode`
+- **URL**: `/{short_code}`
+- **Method**: `GET`
+- **Auth Required**: No
 
-**Authentication:** None
+**Response**: HTTP 302 redirect to the original URL.
 
-**Path Parameters:**
-- `shortCode`: The short code of the URL
+## Error Responses
 
-**Response:**
-- `301 Moved Permanently`: Redirects to the original URL
-- `404 Not Found`: Short URL not found
-- `410 Gone`: Short URL has expired
+All API endpoints return appropriate HTTP status codes:
 
-## Error Format
+- `200 OK`: Request succeeded
+- `201 Created`: Resource created successfully
+- `400 Bad Request`: Invalid request parameters
+- `401 Unauthorized`: Authentication required
+- `403 Forbidden`: Insufficient permissions
+- `404 Not Found`: Resource not found
+- `429 Too Many Requests`: Rate limit exceeded
+- `500 Internal Server Error`: Server error
 
-All API errors follow a standard format:
+Error responses include a JSON body with error details:
 
 ```json
 {
   "status": "error",
-  "message": "Human-readable error message",
-  "code": "error_code",
-  "data": null
+  "message": "Error description",
+  "code": "ERROR_CODE"
 }
 ```
-
-Common error codes:
-- `bad_request`: Invalid request parameters
-- `unauthorized`: Authentication required or invalid
-- `forbidden`: Not authorized to access the resource
-- `resource_not_found`: The requested resource was not found
-- `resource_expired`: The requested URL has expired
-- `resource_already_exists`: Custom slug already in use
-- `error_save_data`: Error saving data to the database
-- `error_get_data`: Error retrieving data from the database
-
-## Rate Limiting
-
-The API implements rate limiting to prevent abuse:
-- Anonymous users: 10 requests per minute
-- Authenticated users: 60 requests per minute
-
-Rate limiting information is included in the response headers:
-- `X-RateLimit-Limit`: Maximum number of requests per minute
-- `X-RateLimit-Remaining`: Number of requests remaining in the current minute
-- `X-RateLimit-Reset`: Time in seconds until the rate limit resets
-
-## Client Libraries
-
-We provide official client libraries for:
-- JavaScript/TypeScript

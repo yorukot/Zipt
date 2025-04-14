@@ -16,6 +16,9 @@ import (
 // DB is the global GORM database instance
 var DB *gorm.DB
 
+// IsTimescaleEnabled tracks whether TimescaleDB is enabled
+var IsTimescaleEnabled bool
+
 //-----------------------------------------------------------------------------
 // Database Types and Configuration
 //-----------------------------------------------------------------------------
@@ -44,6 +47,7 @@ const DefaultAppName = "zipt"
 //   - DATABASE_MAX_IDLE_CONNS: Maximum number of idle connections
 //   - DATABASE_MAX_OPEN_CONNS: Maximum number of open connections
 //   - DATABASE_CONN_MAX_LIFETIME: Maximum lifetime of connections in minutes
+//   - ENABLE_TIMESCALE: Enable TimescaleDB for time-series data (default: false)
 
 func init() {
 	// Get database type from environment
@@ -63,6 +67,18 @@ func init() {
 	case PostgreSQL:
 		logger.Log.Sugar().Info("Initializing PostgreSQL connection")
 		DB, err = initPostgreSQL()
+
+		// Check if TimescaleDB is requested
+		if err == nil && strings.ToLower(os.Getenv("ENABLE_TIMESCALE")) == "true" {
+			if err := enableTimescaleExtension(); err != nil {
+				logger.Log.Sugar().Warnf("Failed to enable TimescaleDB extension: %v", err)
+			} else {
+				IsTimescaleEnabled = IsTimescaleDBEnabled()
+				if IsTimescaleEnabled {
+					logger.Log.Sugar().Info("TimescaleDB extension is enabled")
+				}
+			}
+		}
 	case MySQL, MariaDB:
 		logger.Log.Sugar().Infof("Initializing %s connection", dbType)
 		DB, err = initMySQL()
@@ -372,4 +388,33 @@ func CloseDatabase() {
 		logger.Log.Sugar().Fatal("Failed to close database connection:", err)
 	}
 	logger.Log.Info("Successfully disconnected from database")
+}
+
+// Initialize sets up the database and initializes all required components
+func Initialize() {
+	// This function can be called explicitly to initialize the database
+	// It's useful for cases where you want to control when the database is initialized
+	// For most cases, the init() function is sufficient
+	logger.Log.Sugar().Info("Explicitly initializing database connection")
+
+	// If TimescaleDB is enabled, initialize it
+	if IsTimescaleEnabled {
+		if err := InitializeTimescale(); err != nil {
+			logger.Log.Sugar().Warnf("Failed to initialize TimescaleDB: %v", err)
+		}
+	}
+}
+
+// enableTimescaleExtension enables the TimescaleDB extension on PostgreSQL
+func enableTimescaleExtension() error {
+	logger.Log.Sugar().Info("Attempting to enable TimescaleDB extension")
+
+	// Try to create the extension if it doesn't exist
+	result := DB.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE")
+	if result.Error != nil {
+		return fmt.Errorf("failed to create TimescaleDB extension: %v", result.Error)
+	}
+
+	logger.Log.Sugar().Info("TimescaleDB extension enabled successfully")
+	return nil
 }

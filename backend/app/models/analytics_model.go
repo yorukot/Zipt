@@ -7,49 +7,52 @@ import (
 )
 
 func init() {
+	// Only auto-migrate URLMetric, removing the old tables
 	db.GetDB().AutoMigrate(&URLAnalytics{})
-	db.GetDB().AutoMigrate(&URLReferrer{})
-	db.GetDB().AutoMigrate(&URLEngagement{})
-	db.GetDB().AutoMigrate(&URLCountryAnalytics{})
+	db.GetDB().AutoMigrate(&URLAnalyticsHourly{})
+	db.GetDB().AutoMigrate(&URLAnalyticsDaily{})
+	db.GetDB().AutoMigrate(&URLAnalyticsMonthly{})
+
+	// Enable TimescaleDB for analytics if available
+	if db.IsTimescaleEnabled {
+		db.InitializeTimescale()
+	}
 }
 
-// URLReferrer tracks referrers separately to optimize storage
-type URLReferrer struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	Referrer   string    `json:"referrer" gorm:"index"`
-	Country    string    `json:"country" gorm:"size:2;index"` // ISO country code (2 characters)
-	ClickCount int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-}
+// ==================================================
+// Analytics time granularities:
+// - 2 mins record for 12 hours
+// - 1 hour record for 14 days
+// - 1 day record for 365 days
+// - 1 month record for 100 years
+// ==================================================
 
-// URLCountryAnalytics tracks visitors by country
-type URLCountryAnalytics struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	Country    string    `json:"country" gorm:"size:2;index"` // ISO country code (2 characters)
-	ClickCount int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-}
-
-// URLAnalytics stores analytics data for URL clicks
+// URLAnalytics stores analytics data in time-based buckets
+// This table is optimized for TimescaleDB and will be converted to a hypertable
 type URLAnalytics struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
+	URLID      uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
+	Referrer   string    `json:"referrer" gorm:"primaryKey;index;not null"`
+	Country    string    `json:"country" gorm:"primaryKey;index;not null"`
+	City       string    `json:"city" gorm:"primaryKey;index;not null"`
+	Device     string    `json:"device" gorm:"primaryKey;index;not null"`
+	Browser    string    `json:"browser" gorm:"primaryKey;index;not null"`
+	OS         string    `json:"os" gorm:"primaryKey;index;not null"`
 	ClickCount int64     `json:"click_count" gorm:"default:0"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	BucketTime time.Time `json:"bucket_time" gorm:"primaryKey;index;not null"`
 }
 
-// URLEngagement tracks the total click count every hour
-type URLEngagement struct {
-	ID         uint64    `json:"id" gorm:"primary_key"`
-	URLID      uint64    `json:"url_id" gorm:"index;not null"`
-	Engagement int64     `json:"engagement" gorm:"default:0"`
-	TimeStart  time.Time `json:"time_start"`
-	TimeEnd    time.Time `json:"time_end"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+// Define model structs for the aggregated analytics tables
+// URLAnalyticsHourly represents hourly aggregated analytics data
+type URLAnalyticsHourly struct {
+	db.URLAnalyticsHourly
+}
+
+// URLAnalyticsDaily represents daily aggregated analytics data
+type URLAnalyticsDaily struct {
+	db.URLAnalyticsDaily
+}
+
+// URLAnalyticsMonthly represents monthly aggregated analytics data
+type URLAnalyticsMonthly struct {
+	db.URLAnalyticsMonthly
 }

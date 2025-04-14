@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +19,8 @@ func FullyResponse(c *gin.Context, statusCode int, message string, errorCode int
 	// Prepare the response payload
 	response := gin.H{"message": message}
 	if data != nil {
+		response["result"] = data
+	} else if statusCode == http.StatusOK && c.Request.Method == "GET" {
 		response["result"] = data
 	}
 

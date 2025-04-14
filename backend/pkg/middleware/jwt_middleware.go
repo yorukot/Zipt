@@ -47,7 +47,7 @@ func IsAuthorized() gin.HandlerFunc {
 	}
 }
 
-// IsAuthorized is a middleware to check if the user is authorized
+// GetContextUserID is a middleware to get the user ID from the JWT token
 func GetContextUserID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Retrieve the JWT token from the cookie

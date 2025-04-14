@@ -12,6 +12,7 @@ import (
 	// _ "github.com/yorukot/zipt/pkg/oauth" uncomment this to use oauth
 
 	_ "github.com/yorukot/zipt/pkg/database"
+	"github.com/yorukot/zipt/pkg/geoip"
 	"github.com/yorukot/zipt/pkg/logger"
 	"github.com/yorukot/zipt/pkg/middleware"
 
@@ -19,6 +20,15 @@ import (
 )
 
 func main() {
+	// Initialize GeoIP database
+	geoip.Init()
+
+	// Setup gin engine
+	gin.SetMode(gin.ReleaseMode)
+	if os.Getenv("GIN_MODE") == "debug" {
+		gin.SetMode(gin.DebugMode)
+	}
+
 	root := gin.New()
 
 	config := cors.DefaultConfig()
@@ -39,12 +49,12 @@ func main() {
 	root.Use(middleware.CustomLogger())
 	root.Use(middleware.ErrorLoggerMiddleware())
 
+	// Configure redirect routes at the root level
+	root.GET("/:shortCode", routes.RedirectRoute)
+
 	r := root.Group("/api/v" + os.Getenv("VERSION"))
 
 	route(r)
-
-	// Configure redirect routes at the root level
-	root.GET("/:shortCode", routes.RedirectRoute)
 
 	printAppInfo()
 
@@ -74,4 +84,6 @@ func route(r *gin.RouterGroup) {
 	routes.AuthRoute(r)
 	routes.UserRoute(r)
 	routes.ShortenerRoute(r)
+	routes.WorkspaceRoute(r)
+	routes.DomainRoute(r)
 }

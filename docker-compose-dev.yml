@@ -21,7 +21,7 @@ services:
       - SHORT_DOMAIN=http://localhost:3001
 
       - DATABASE_TYPE=postgres
-      - DATABASE_HOST=postgres
+      - DATABASE_HOST=timescaledb
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=p0stgr3s
       - DATABASE_DBNAME=zipt
@@ -46,7 +46,7 @@ services:
     networks:
       - dev
     depends_on:
-      - postgres
+      - timescaledb
     logging:
       options:
         max-size: "100kb"
@@ -84,7 +84,7 @@ services:
       - "3001:3001"
     volumes:
       - type: bind
-        source: ./docker/caddy/Caddyfile
+        source: ./docker/caddy/Caddyfile.dev
         target: /etc/caddy/Caddyfile
         read_only: true
       - caddy_data:/data
@@ -96,8 +96,8 @@ services:
     networks:
       - dev
 
-  postgres:
-    image: postgres:15-alpine
+  timescaledb:
+    image: timescale/timescaledb:latest-pg17
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=p0stgr3s
@@ -105,7 +105,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - timescaledb-data:/var/lib/postgresql/data
     networks:
       - dev
     restart: unless-stopped
@@ -116,6 +116,6 @@ services:
       retries: 5
 
 volumes:
-  postgres-data:
+  timescaledb-data:
   caddy_data:
   caddy_config:
