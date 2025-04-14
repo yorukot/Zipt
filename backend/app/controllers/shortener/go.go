@@ -83,10 +83,10 @@ func trackURLAnalytics(c *gin.Context, urlID uint64) {
 	}
 
 	// Get the IP address of the client
-	// ipAddress := c.ClientIP()
+	ipAddress := c.ClientIP()
 
 	// Look up geolocation
-	country, city := geoip.Lookup("114.38.215.119")
+	country, city := geoip.Lookup(ipAddress)
 
 	if country == "" {
 		country = "Unknow"
