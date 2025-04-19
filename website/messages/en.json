@@ -1,5 +1,154 @@
 {
     "HomePage": {
       "title": "Hello world!"
+    },
+    "Header": {
+      "home": "Home",
+      "about": "About",
+      "services": "Services",
+      "contact": "Contact",
+      "login": "Log In",
+      "signup": "Sign Up",
+      "language": "Language",
+      "theme": {
+        "light": "Light Mode",
+        "dark": "Dark Mode",
+        "system": "System"
+      }
+    },
+    "Auth": {
+      "email": "Email",
+      "password": "Password",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Your name",
+      "confirmPassword": "Confirm Password",
+      "login": {
+        "title": "Welcome back",
+        "description": "Enter your email to login to your account",
+        "submit": "Login",
+        "noAccount": "Don't have an account?",
+        "createAccount": "Sign up"
+      },
+      "register": {
+        "title": "Create an account",
+        "description": "Enter your details to create your account",
+        "submit": "Sign Up",
+        "haveAccount": "Already have an account?",
+        "login": "Login"
+      }
+    },
+    "Workspace": {
+      "create": {
+        "title": "Set up your workspace",
+        "description": "Create a workspace for your team",
+        "submit": "Create Workspace",
+        "success": "Workspace created successfully!",
+        "nameLabel": "Workspace Name",
+        "namePlaceholder": "My Awesome Team",
+        "inviteLabel": "Invite Team Members",
+        "invitePlaceholder": "Email address",
+        "skipForNow": "Skip for now"
+      }
+    },
+    "Dashboard": {
+      "sidebar": {
+        "links": "Links",
+        "analytics": "Analytics",
+        "settings": "Settings",
+        "selectWorkspace": "Select workspace",
+        "newWorkspace": "Create new workspace"
+      },
+      "account": {
+        "title": "Account",
+        "profile": "Profile",
+        "settings": "Settings", 
+        "logout": "Log out"
+      },
+      "stats": {
+        "totalLinks": "Total Links",
+        "totalClicks": "Total Clicks",
+        "clickRate": "Avg. Clicks Per Link"
+      },
+      "links": {
+        "create": "Create Link",
+        "createDescription": "Shorten a long URL for easy sharing",
+        "recent": "Recent Links",
+        "recentDescription": "Your recently created links",
+        "longUrl": "Long URL",
+        "customSlug": "Custom Path",
+        "shorten": "Shorten URL",
+        "shortUrl": "Short URL",
+        "originalUrl": "Original URL",
+        "clicks": "Clicks",
+        "created": "Created",
+        "actions": "Actions",
+        "copy": "Copy",
+        "analytics": "Analytics",
+        "settings": "Settings",
+        "created": "Link shortened successfully!",
+        "copied": "Copied to clipboard!",
+        "error": "An error occurred. Please try again."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "selectPeriod": "Select period",
+        "last24Hours": "Last 24 hours",
+        "last7Days": "Last 7 days",
+        "last30Days": "Last 30 days",
+        "last90Days": "Last 90 days",
+        "allTime": "All time",
+        "export": "Export data",
+        "totalClicks": "Total Clicks",
+        "totalClicksDesc": "Number of clicks across all links",
+        "uniqueVisitors": "Unique Visitors",
+        "uniqueVisitorsDesc": "Number of unique visitors",
+        "clicksOverTime": "Clicks Over Time",
+        "visitorsOverTime": "Visitors Over Time",
+        "topCountries": "Top Countries",
+        "topDevices": "Device Types",
+        "topBrowsers": "Top Browsers",
+        "clicksMap": "Clicks by Location",
+        "clicksMapDesc": "Geographical distribution of clicks",
+        "worldMap": "World Map"
+      },
+      "settings": {
+        "title": "Settings",
+        "general": "General",
+        "domain": "Domain",
+        "members": "Team Members",
+        "integrations": "Integrations",
+        "generalSettings": "Workspace Settings",
+        "generalDescription": "Manage your workspace settings and preferences",
+        "workspaceName": "Workspace Name",
+        "workspaceNameDesc": "This is the name displayed throughout your workspace",
+        "linkDefaults": "Link Settings",
+        "utmParams": "UTM Parameters",
+        "utmParamsDesc": "Automatically add UTM parameters to shortened links",
+        "passwordProtection": "Password Protection",
+        "passwordProtectionDesc": "Enable password protection for all links by default",
+        "saveChanges": "Save Changes",
+        "domainSettings": "Domain Settings",
+        "domainDescription": "Manage your custom domains for short links",
+        "currentDomain": "Current Domain",
+        "upgrade": "Upgrade Plan",
+        "customDomainUpgrade": "Upgrade to a paid plan to use custom domains for your links",
+        "teamMembers": "Team Members",
+        "teamMembersDescription": "Manage who has access to this workspace",
+        "inviteEmail": "Enter email address",
+        "inviteMember": "Invite Member",
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "memberOptions": "Member options",
+        "integrationsDescription": "Connect your workspace with other services",
+        "googleAnalyticsDesc": "Track link performance in your GA account",
+        "slackDesc": "Get notifications in your Slack workspace",
+        "discordDesc": "Get notifications in your Discord server",
+        "savedWorkspace": "Workspace settings saved!",
+        "savedDomain": "Domain settings saved!",
+        "integrationEnabled": "{integration} integration enabled",
+        "integrationDisabled": "{integration} integration disabled",
+        "error": "An error occurred. Please try again."
+      }
     }
   }
