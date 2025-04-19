@@ -23,10 +23,10 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden">
       {/* Sidebar - fixed on desktop, sliding on mobile */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 shrink-0 transform transition-transform duration-200 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         md:relative md:translate-x-0 md:z-0
       `}>
@@ -34,7 +34,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content area */}
-      <div className="flex w-full flex-col">
+      <div className="relative flex-1 min-w-0 flex flex-col w-full">
         {/* Mobile header with menu button on right */}
         <div className="flex items-center justify-between border-b p-4 md:hidden">
           <span className="text-xl font-bold">Zipt</span>
@@ -50,7 +50,7 @@ export default function DashboardLayout({
 
         {/* Scrollable content */}
         <main className="flex-1 overflow-auto">
-          <div className="container px-4 py-6 md:px-6 md:py-8">
+          <div className="h-full w-full mx-auto px-4 py-6 md:px-6 md:py-8 max-w-full md:max-w-7xl overflow-x-auto">
             {children}
           </div>
         </main>
