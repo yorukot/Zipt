@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageSelector } from "@/components/language-selector"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,10 +38,11 @@ interface SidebarProps {
     name: string;
     email: string;
     avatar?: string;
-  }
+  };
+  onClose?: () => void;
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, onClose }: SidebarProps) {
   const t = useTranslations("Dashboard")
   const pathname = usePathname()
   const params = useParams()
@@ -66,15 +68,35 @@ export function Sidebar({ user }: SidebarProps) {
   ]
 
   return (
-    <aside className="flex h-screen border-r">
-      <div className="flex w-64 flex-col gap-2">
+    <aside className="flex h-full flex-col border-r bg-background">
+      <div className="flex h-full flex-col">
+        {/* Fixed header section with close button on mobile */}
         <div className="border-b p-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <Icon icon="lucide:scissors" className="h-6 w-6" />
               <span className="text-xl font-bold">Zipt</span>
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              {/* Language selector */}
+              <LanguageSelector variant="icon-only" />
+              
+              {/* Theme toggle */}
+              <ThemeToggle />
+              
+              {/* Close button on mobile */}
+              {onClose && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={onClose}
+                  className="md:hidden"
+                >
+                  <Icon icon="lucide:x" className="h-5 w-5" />
+                  <span className="sr-only">Close sidebar</span>
+                </Button>
+              )}
+            </div>
           </div>
           <div className="mt-4">
             <Select 
@@ -83,16 +105,16 @@ export function Sidebar({ user }: SidebarProps) {
                 window.location.href = `/dashboard/${value}`;
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full select-none">
                 <SelectValue placeholder={t("sidebar.selectWorkspace")} />
               </SelectTrigger>
               <SelectContent>
                 {mockWorkspaces.map((workspace) => (
-                  <SelectItem key={workspace.id} value={workspace.id}>
+                  <SelectItem key={workspace.id} value={workspace.id} className="select-none">
                     {workspace.name}
                   </SelectItem>
                 ))}
-                <SelectItem value="new" className="text-primary">
+                <SelectItem value="new" className="text-primary select-none">
                   <div className="flex items-center gap-2">
                     <Icon icon="lucide:plus" className="h-4 w-4" />
                     {t("sidebar.newWorkspace")}
@@ -102,7 +124,9 @@ export function Sidebar({ user }: SidebarProps) {
             </Select>
           </div>
         </div>
-        <div className="flex-1 overflow-auto py-2">
+        
+        {/* Scrollable navigation section */}
+        <div className="flex-1 overflow-y-auto py-2">
           <nav className="grid gap-1 px-2">
             {routes.map((route) => (
               <Link
@@ -123,7 +147,9 @@ export function Sidebar({ user }: SidebarProps) {
             ))}
           </nav>
         </div>
-        <div className="mt-auto border-t p-4">
+        
+        {/* Fixed footer section */}
+        <div className="border-t p-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="w-full justify-start gap-2">

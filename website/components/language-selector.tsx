@@ -16,7 +16,11 @@ import { setUserLocale } from "@/lib/local";
 import { useTransition } from "react";
 import { Locale } from "@/i18n/settings";
 
-export function LanguageSelector() {
+interface LanguageSelectorProps {
+  variant?: "default" | "icon-only";
+}
+
+export function LanguageSelector({ variant = "default" }: LanguageSelectorProps) {
   const t = useTranslations("Header");
   const locale = useLocale();
   const router = useRouter();
@@ -33,10 +37,17 @@ export function LanguageSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="flex items-center gap-1">
-          <Icon icon="lucide:globe" className="h-4 w-4" />
-          <span className="hidden sm:inline">{t("language")}</span>
-        </Button>
+        {variant === "icon-only" ? (
+          <Button variant="ghost" size="icon" className="h-9 w-9">
+            <Icon icon="lucide:globe" className="h-[1.2rem] w-[1.2rem]" />
+            <span className="sr-only">{t("language")}</span>
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" className="flex items-center gap-1">
+            <Icon icon="lucide:globe" className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("language")}</span>
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
