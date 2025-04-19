@@ -1,0 +1,40 @@
+{
+  "HomePage": {
+    "title": "你好，世界！"
+  },
+  "Header": {
+    "home": "首頁",
+    "about": "關於",
+    "services": "服務",
+    "contact": "聯絡我們",
+    "login": "登入",
+    "signup": "註冊",
+    "language": "語言",
+    "theme": {
+      "light": "亮色模式",
+      "dark": "暗色模式",
+      "system": "系統"
+    }
+  },
+  "Auth": {
+    "email": "電子郵件",
+    "password": "密碼",
+    "displayName": "顯示名稱",
+    "displayNamePlaceholder": "你的名字",
+    "confirmPassword": "確認密碼",
+    "login": {
+      "title": "歡迎回來",
+      "description": "輸入您的電子郵件以登入您的帳戶",
+      "submit": "登入",
+      "noAccount": "還沒有帳戶？",
+      "createAccount": "註冊"
+    },
+    "register": {
+      "title": "創建帳戶",
+      "description": "輸入您的資料以創建您的帳戶",
+      "submit": "註冊",
+      "haveAccount": "已有帳戶？",
+      "login": "登入"
+    }
+  }
+} 
