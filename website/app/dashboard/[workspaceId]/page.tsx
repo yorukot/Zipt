@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -105,7 +104,7 @@ export default function DashboardPage() {
       
       // Show success message
       toast.success(t("links.created"))
-    } catch (error) {
+    } catch {
       toast.error(t("links.error"))
     } finally {
       setIsLoading(false)
@@ -216,51 +215,53 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("links.shortUrl")}</TableHead>
-                <TableHead className="hidden md:table-cell">{t("links.originalUrl")}</TableHead>
-                <TableHead>{t("links.clicks")}</TableHead>
-                <TableHead>{t("links.created")}</TableHead>
-                <TableHead className="w-[100px]">{t("links.actions")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {links.map((link) => (
-                <TableRow key={link.id}>
-                  <TableCell className="font-medium">
-                    {link.shortUrl}
-                  </TableCell>
-                  <TableCell className="hidden max-w-[200px] truncate md:table-cell">
-                    {link.originalUrl}
-                  </TableCell>
-                  <TableCell>{link.clicks}</TableCell>
-                  <TableCell>{link.createdAt}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        size="icon" 
-                        variant="ghost"
-                        onClick={() => copyToClipboard(link.shortUrl)}
-                      >
-                        <Icon icon="lucide:copy" className="h-4 w-4" />
-                        <span className="sr-only">{t("links.copy")}</span>
-                      </Button>
-                      <Button size="icon" variant="ghost">
-                        <Icon icon="lucide:bar-chart-2" className="h-4 w-4" />
-                        <span className="sr-only">{t("links.analytics")}</span>
-                      </Button>
-                      <Button size="icon" variant="ghost">
-                        <Icon icon="lucide:settings" className="h-4 w-4" />
-                        <span className="sr-only">{t("links.settings")}</span>
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="table-responsive">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("links.shortUrl")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("links.originalUrl")}</TableHead>
+                  <TableHead>{t("links.clicks")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("links.created")}</TableHead>
+                  <TableHead className="w-[100px]">{t("links.actions")}</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {links.map((link) => (
+                  <TableRow key={link.id}>
+                    <TableCell className="font-medium">
+                      {link.shortUrl}
+                    </TableCell>
+                    <TableCell className="hidden max-w-[200px] truncate md:table-cell">
+                      {link.originalUrl}
+                    </TableCell>
+                    <TableCell>{link.clicks}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{link.createdAt}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="icon" 
+                          variant="ghost"
+                          onClick={() => copyToClipboard(link.shortUrl)}
+                        >
+                          <Icon icon="lucide:copy" className="h-4 w-4" />
+                          <span className="sr-only">{t("links.copy")}</span>
+                        </Button>
+                        <Button size="icon" variant="ghost" className="hidden sm:flex">
+                          <Icon icon="lucide:bar-chart-2" className="h-4 w-4" />
+                          <span className="sr-only">{t("links.analytics")}</span>
+                        </Button>
+                        <Button size="icon" variant="ghost" className="hidden sm:flex">
+                          <Icon icon="lucide:settings" className="h-4 w-4" />
+                          <span className="sr-only">{t("links.settings")}</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
