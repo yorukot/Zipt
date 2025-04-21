@@ -62,7 +62,15 @@
         "title": "Account",
         "profile": "Profile",
         "settings": "Settings", 
-        "logout": "Log out"
+        "logout": "Log out",
+        "inviteMembers": "Invite Team Members",
+        "invitations": "Pending Invitations",
+        "pendingInvitations": "Pending Invitations",
+        "invitedBy": "Invited by",
+        "accept": "Accept",
+        "reject": "Reject",
+        "inviteAccepted": "Invitation accepted successfully!",
+        "inviteRejected": "Invitation rejected"
       },
       "stats": {
         "totalLinks": "Total Links",
@@ -80,14 +88,21 @@
         "shortUrl": "Short URL",
         "originalUrl": "Original URL",
         "clicks": "Clicks",
-        "created": "Created",
-        "actions": "Actions",
-        "copy": "Copy",
-        "analytics": "Analytics",
-        "settings": "Settings",
         "created": "Link shortened successfully!",
         "copied": "Copied to clipboard!",
-        "error": "An error occurred. Please try again."
+        "error": "An error occurred. Please try again.",
+        "analytics": "Analytics",
+        "settings": "Settings",
+        "statistics": "Statistics",
+        "delete": "Delete Link",
+        "actions": "Actions",
+        "copy": "Copy"
+      },
+      "common": {
+        "close": "Close",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete"
       },
       "analytics": {
         "title": "Analytics",

@@ -49,8 +49,8 @@ export default function DashboardLayout({
         </div>
 
         {/* Scrollable content */}
-        <main className="flex-1 overflow-auto">
-          <div className="h-full w-full mx-auto px-4 py-6 md:px-6 md:py-8 max-w-full md:max-w-7xl overflow-x-auto">
+        <main className="flex-1 h-full overflow-auto">
+          <div className="h-full w-full mx-auto px-4 py-6 md:px-6 md:py-8 max-w-full md:max-w-7xl">
             {children}
           </div>
         </main>
