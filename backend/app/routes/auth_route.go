@@ -14,6 +14,7 @@ func AuthRoute(r *gin.RouterGroup) {
 	authGroup.POST("/login", authCtrl.Login)
 	authGroup.POST("/refresh", authCtrl.RefreshToken)
 	authGroup.POST("/logout", authCtrl.Logout)
+	authGroup.GET("/check", middleware.GetContextUserID(), authCtrl.Check)
 
 	// Protected auth routes (require authentication)
 	protected := authGroup.Group("")
