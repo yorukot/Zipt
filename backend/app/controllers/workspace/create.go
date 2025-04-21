@@ -14,9 +14,7 @@ import (
 func CreateWorkspace(c *gin.Context) {
 	var req WorkspaceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
-			"details": err.Error(),
-		})
+		utils.FullyResponse(c, http.StatusBadRequest, "Invalid request format", utils.ErrBadRequest, nil)
 		return
 	}
 
@@ -37,9 +35,7 @@ func CreateWorkspace(c *gin.Context) {
 	// Create workspace with owner role for creator
 	workspace, err := queries.CreateWorkspaceWithOwner(workspace, userID)
 	if err != nil {
-		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to create workspace", utils.ErrSaveData, map[string]interface{}{
-			"details": err.Error(),
-		})
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to create workspace", utils.ErrSaveData, nil)
 		return
 	}
 

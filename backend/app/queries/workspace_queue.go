@@ -156,3 +156,54 @@ func DeleteWorkspaceComplete(workspaceID uint64) error {
 	return nil
 }
 
+// CreateWorkspaceInvitation creates an invitation to join a workspace
+func CreateWorkspaceInvitation(invitation models.WorkspaceInvitation) *gorm.DB {
+	result := db.GetDB().Create(&invitation)
+	return result
+}
+
+// GetWorkspaceInvitationByID retrieves a workspace invitation by its ID
+func GetWorkspaceInvitationByID(id uint64) (models.WorkspaceInvitation, *gorm.DB) {
+	var invitation models.WorkspaceInvitation
+	result := db.GetDB().First(&invitation, id)
+	return invitation, result
+}
+
+// GetWorkspaceInvitationsByUserID retrieves all workspace invitations for a user
+func GetWorkspaceInvitationsByUserID(userID uint64) ([]models.WorkspaceInvitation, *gorm.DB) {
+	var invitations []models.WorkspaceInvitation
+	result := db.GetDB().Where("user_id = ? AND status = ?", userID, models.StatusPending).Find(&invitations)
+	return invitations, result
+}
+
+// GetWorkspaceInvitationsByWorkspaceID retrieves all workspace invitations for a workspace
+func GetWorkspaceInvitationsByWorkspaceID(workspaceID uint64) ([]models.WorkspaceInvitation, *gorm.DB) {
+	var invitations []models.WorkspaceInvitation
+	result := db.GetDB().Where("workspace_id = ?", workspaceID).Find(&invitations)
+	return invitations, result
+}
+
+// UpdateWorkspaceInvitationStatus updates the status of a workspace invitation
+func UpdateWorkspaceInvitationStatus(invitationID uint64, status string) *gorm.DB {
+	updates := map[string]interface{}{
+		"status":     status,
+		"updated_at": time.Now(),
+	}
+	result := db.GetDB().Model(&models.WorkspaceInvitation{}).Where("id = ?", invitationID).Updates(updates)
+	return result
+}
+
+// CheckWorkspaceInvitationExists checks if a pending invitation exists for a user in a workspace
+func CheckWorkspaceInvitationExists(workspaceID, userID uint64) (bool, error) {
+	var count int64
+	result := db.GetDB().Model(&models.WorkspaceInvitation{}).
+		Where("workspace_id = ? AND user_id = ? AND status = ?", workspaceID, userID, models.StatusPending).
+		Count(&count)
+	return count > 0, result.Error
+}
+
+// DeleteWorkspaceInvitation deletes a workspace invitation by its ID
+func DeleteWorkspaceInvitation(id uint64) *gorm.DB {
+	result := db.GetDB().Delete(&models.WorkspaceInvitation{}, id)
+	return result
+}

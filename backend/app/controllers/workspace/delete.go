@@ -46,9 +46,7 @@ func DeleteWorkspace(c *gin.Context) {
 	// Delete the workspace (only owners can delete)
 	err := queries.DeleteWorkspaceComplete(workspaceID)
 	if err != nil {
-		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to delete workspace", utils.ErrSaveData, map[string]interface{}{
-			"details": err.Error(),
-		})
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to delete workspace", utils.ErrSaveData, nil)
 		return
 	}
 
