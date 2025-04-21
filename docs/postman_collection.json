@@ -292,7 +292,7 @@
           "response": []
         },
         {
-          "name": "Add User to Workspace",
+          "name": "Invite User to Workspace",
           "request": {
             "auth": {
               "type": "bearer",
@@ -316,11 +316,92 @@
               "raw": "{\n  \"user_id\": \"123456789\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/workspace/{{workspace_id}}/user",
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/invite",
               "host": ["{{base_url}}"],
-              "path": ["workspace", "{{workspace_id}}", "user"]
+              "path": ["workspace", "{{workspace_id}}", "invite"]
             },
-            "description": "Add a user to a workspace."
+            "description": "Invite a user to join a workspace. User will need to accept the invitation."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Invitations",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["invitations"]
+            },
+            "description": "Get all pending invitations for the current user."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Workspace Invitations",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/workspace/{{workspace_id}}/invitations",
+              "host": ["{{base_url}}"],
+              "path": ["workspace", "{{workspace_id}}", "invitations"]
+            },
+            "description": "Get all invitations for a specific workspace."
+          },
+          "response": []
+        },
+        {
+          "name": "Accept/Reject Invitation",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"accepted\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/invitation/{{invitation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invitation", "{{invitation_id}}"]
+            },
+            "description": "Accept or reject a workspace invitation. Status can be 'accepted' or 'rejected'."
           },
           "response": []
         },
@@ -825,6 +906,12 @@
       "value": "user_id_here",
       "type": "string",
       "description": "User ID for user management operations"
+    },
+    {
+      "key": "invitation_id",
+      "value": "invitation_id_here",
+      "type": "string",
+      "description": "Invitation ID for invitation management operations"
     },
     {
       "key": "short_code",

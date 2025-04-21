@@ -9,12 +9,10 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -24,15 +22,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = React.useState(false)
@@ -73,7 +62,7 @@ export default function SettingsPage() {
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       toast.success(t("settings.savedWorkspace"))
-    } catch (error) {
+    } catch {
       toast.error(t("settings.error"))
     } finally {
       setIsLoading(false)
@@ -88,7 +77,7 @@ export default function SettingsPage() {
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       toast.success(t("settings.savedDomain"))
-    } catch (error) {
+    } catch {
       toast.error(t("settings.error"))
     } finally {
       setIsLoading(false)
@@ -104,7 +93,7 @@ export default function SettingsPage() {
       toast.success(value 
         ? t("settings.integrationEnabled", { integration }) 
         : t("settings.integrationDisabled", { integration }))
-    } catch (error) {
+    } catch {
       toast.error(t("settings.error"))
     } finally {
       setIsLoading(false)

@@ -21,9 +21,7 @@ func UpdateWorkspace(c *gin.Context) {
 
 	var req WorkspaceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.FullyResponse(c, http.StatusBadRequest, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
-			"details": err.Error(),
-		})
+		utils.FullyResponse(c, http.StatusBadRequest, "Invalid request format", utils.ErrBadRequest, nil)
 		return
 	}
 

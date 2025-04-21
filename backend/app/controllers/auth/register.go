@@ -64,9 +64,7 @@ func validateSignupRequest(c *gin.Context) (*EmailAuthRequest, error) {
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		// Provide more specific error messages based on the validation failure
-		utils.FullyResponse(c, 400, "Invalid request format", utils.ErrBadRequest, map[string]interface{}{
-			"details": err.Error(),
-		})
+		utils.FullyResponse(c, 400, "Invalid request format", utils.ErrBadRequest, nil)
 		return nil, err
 	}
 
