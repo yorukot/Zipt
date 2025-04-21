@@ -151,7 +151,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # local env files
-.env*.local
+# env files (can opt-in for committing if needed)
+.env*
+# Except .env.example
+!.env.example
 
 # vercel
 .vercel
