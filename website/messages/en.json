@@ -34,7 +34,19 @@
         "description": "Enter your details to create your account",
         "submit": "Sign Up",
         "haveAccount": "Already have an account?",
-        "login": "Login"
+        "login": "Login",
+        "success": "Account created successfully!"
+      },
+      "errors": {
+        "emailAlreadyUsed": "This email is already registered",
+        "invalidEmail": "Please enter a valid email address",
+        "invalidPassword": "Password must be at least 8 characters",
+        "invalidDisplayName": "Display name must be between 1 and 32 characters",
+        "invalidRegistration": "Invalid registration data",
+        "registrationFailed": "Registration failed",
+        "unexpectedError": "An unexpected error occurred. Please try again.",
+        "invalidCredentials": "Invalid email or password",
+        "loginFailed": "An error occurred during login"
       }
     },
     "Workspace": {

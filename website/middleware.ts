@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import API_URLS from "./lib/api-urls";
 
+
+// FIXME: This middleware is not working as expected.
+// It should let user in when they have a valid session cookie.
+// But it doesn't work.
 export default async function middleware(req: NextRequest) {
     // Skip middleware for public resources
     if (isPublicResource(req.nextUrl.pathname)) {
         return NextResponse.next();
     }
     
-    const accessToken = req.cookies.get("accessToken")?.value;
+    // Check if the user has a session cookie
+    const sessionCookie = req.cookies.get("session")?.value;
     
-    // If there's no access token and the user is trying to access a protected route,
-    // first check if they're already logged in (cookies might be missing)
-    if (!accessToken && isProtectedRoute(req.nextUrl.pathname)) {
+    // If there's no session and the user is trying to access a protected route,
+    // check if they're logged in through the check endpoint
+    if (!sessionCookie && isProtectedRoute(req.nextUrl.pathname)) {
         try {
-            // Use the new check endpoint to verify login status
+            // Use the check endpoint to verify login status
             const checkResponse = await fetch(API_URLS.AUTH.CHECK, {
                 credentials: 'include',
                 headers: {
@@ -33,29 +38,25 @@ export default async function middleware(req: NextRequest) {
         }
     }
 
-    // Clone the request and set the Authorization header if the access token exists
-    const requestHeaders = new Headers(req.headers);
-    if (accessToken) {
-        requestHeaders.set("Authorization", `Bearer ${accessToken}`);
-    }
-
-    // For API requests, we need to handle authentication
+    // For API requests, we may need to handle token refresh
     if (req.nextUrl.pathname.startsWith('/api')) {
-        // Create the modified request with the updated headers
-        const originalRequest = new Request(req.url, {
-            method: req.method,
-            headers: requestHeaders,
-            body: req.body,
-            redirect: 'manual',  // Prevent auto-redirects
-        });
-
         try {
+            // Create the request with the original cookies
+            const originalRequest = new Request(req.url, {
+                method: req.method,
+                headers: req.headers,
+                body: req.body,
+                redirect: 'manual',  // Prevent auto-redirects
+                credentials: 'include'
+            });
+
+            // Make the request
             const response = await fetch(originalRequest);
             
             // Handle 401 Unauthorized by refreshing the token
             if (response.status === 401) {
-                // Try to refresh the token
-                const refreshedResponse = await refreshToken(req);
+                // Try to refresh the session
+                const refreshedResponse = await refreshSession(req);
                 
                 if (refreshedResponse) {
                     // Successfully refreshed, return the modified response
@@ -74,15 +75,15 @@ export default async function middleware(req: NextRequest) {
         }
     }
     
-    // For non-API requests to protected routes, just check if the user is authenticated
+    // For non-API requests to protected routes, check if the user is authenticated
     if (isProtectedRoute(req.nextUrl.pathname)) {
-        if (!accessToken) {
+        if (!sessionCookie) {
             try {
-                // Try to refresh the token if there's no access token
-                const refreshedResponse = await refreshToken(req);
+                // Try to refresh the session if there's no session cookie
+                const refreshedResponse = await refreshSession(req);
                 
                 if (refreshedResponse) {
-                    // Token refreshed, continue with the request
+                    // Session refreshed, continue with the request
                     return NextResponse.next();
                 } else {
                     // Redirect to login
@@ -99,8 +100,8 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
 }
 
-// Helper function to refresh the token
-async function refreshToken(req: NextRequest): Promise<NextResponse | null> {
+// Helper function to refresh the session
+async function refreshSession(req: NextRequest): Promise<NextResponse | null> {
     try {
         const refreshResponse = await fetch(API_URLS.AUTH.REFRESH, {
             method: 'POST',
@@ -112,33 +113,22 @@ async function refreshToken(req: NextRequest): Promise<NextResponse | null> {
         });
 
         if (refreshResponse.ok) {
-            const data = await refreshResponse.json();
+            const response = NextResponse.next();
             
-            // Extract the new token from the response based on API documentation
-            const newAccessToken = data.data?.token?.access_token;
-            
-            if (newAccessToken) {
-                // Create a new response
-                const response = NextResponse.next();
-                
-                // Set the new access token cookie
-                response.cookies.set({
-                    name: "accessToken",
-                    value: newAccessToken,
-                    path: "/",
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    sameSite: "strict"
-                });
-                
-                return response;
+            // The refresh endpoint will set the necessary cookies in its response,
+            // but we need to copy those cookies to our response
+            const setCookieHeader = refreshResponse.headers.get('Set-Cookie');
+            if (setCookieHeader) {
+                response.headers.set('Set-Cookie', setCookieHeader);
             }
+            
+            return response;
         }
         
-        // If we reach here, token refresh failed
+        // If we reach here, session refresh failed
         return null;
     } catch (err) {
-        console.error("Token refresh error:", err);
+        console.error("Session refresh error:", err);
         return null;
     }
 }
@@ -149,12 +139,7 @@ function redirectToLogin(req: NextRequest): NextResponse {
     url.pathname = "/login";
     url.search = `?returnUrl=${encodeURIComponent(req.nextUrl.pathname)}`;
     
-    const response = NextResponse.redirect(url);
-    
-    // Clear the access token cookie
-    response.cookies.delete("accessToken");
-    
-    return response;
+    return NextResponse.redirect(url);
 }
 
 // Helper function to check if a route should be protected
