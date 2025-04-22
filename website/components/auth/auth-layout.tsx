@@ -39,14 +39,14 @@ export function AuthLayout({ children, type }: AuthLayoutProps) {
             {type === "login" ? (
               <>
                 {t("login.noAccount")}{" "}
-                <a href="/auth/register" className="text-primary hover:underline">
+                <a href="/register" className="text-primary hover:underline">
                   {t("login.createAccount")}
                 </a>
               </>
             ) : (
               <>
                 {t("register.haveAccount")}{" "}
-                <a href="/auth/login" className="text-primary hover:underline">
+                <a href="/login" className="text-primary hover:underline">
                   {t("register.login")}
                 </a>
               </>
