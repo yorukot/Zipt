@@ -9,12 +9,25 @@ const API_ENDPOINT = (() => {
 })();
 
 export const API_URLS = {
+  ENDPOINT: API_ENDPOINT,
   AUTH: {
     LOGIN: `${API_ENDPOINT}/auth/login`,
     SIGNUP: `${API_ENDPOINT}/auth/register`,
     LOGOUT: `${API_ENDPOINT}/auth/logout`,
     REFRESH: `${API_ENDPOINT}/auth/refresh`,
     CHECK: `${API_ENDPOINT}/auth/check`,
+  },
+  WORKSPACE: {
+    LIST: `${API_ENDPOINT}/workspaces`,
+    CREATE: `${API_ENDPOINT}/workspace`,
+    GET: (id: string) => `${API_ENDPOINT}/workspace/${id}`,
+    UPDATE: (id: string) => `${API_ENDPOINT}/workspace/${id}`,
+    DELETE: (id: string) => `${API_ENDPOINT}/workspace/${id}`,
+    INVITE: (id: string) => `${API_ENDPOINT}/workspace/${id}/invite`,
+    WORKSPACE_INVITATIONS: (id: string) => `${API_ENDPOINT}/workspace/${id}/invitations`,
+    USER_INVITATIONS: (id: string) => `${API_ENDPOINT}/invitations`,
+    _INVITATION: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
+    REJECT_INVITATION: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
   },
 };
 
