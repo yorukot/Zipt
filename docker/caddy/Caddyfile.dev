@@ -19,7 +19,7 @@
     # API routes, making sure API calls to /api/* are routed to backend
     handle_path /api/* {
         rewrite * /api{uri}  # Rewrite the path to keep the /api prefix
-        reverse_proxy backend:8080 {
+        reverse_proxy host.containers.internal:8080 {
             header_up X-Forwarded-For {remote_host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
@@ -29,7 +29,7 @@
     # Static assets with longer cache time
     @static path /_next* /favicon.ico /robots.txt /sitemap.xml /manifest.json
     handle @static {
-        reverse_proxy website:3000 {
+        reverse_proxy host.containers.internal:3000 {
             header_up X-Forwarded-For {remote_host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
@@ -39,7 +39,7 @@
 
     # Frontend routes
     handle {
-        reverse_proxy website:3000 {
+        reverse_proxy host.containers.internal:3000 {
             header_up X-Forwarded-For {remote_host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
@@ -81,7 +81,7 @@
 
     # Short URL redirection (for all paths)
     handle /* {
-        reverse_proxy backend:8080 {
+        reverse_proxy host.containers.internal:8080 {
             header_up X-Forwarded-For {remote_host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}

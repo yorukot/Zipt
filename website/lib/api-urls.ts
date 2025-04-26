@@ -17,6 +17,10 @@ export const API_URLS = {
     REFRESH: `${API_ENDPOINT}/auth/refresh`,
     CHECK: `${API_ENDPOINT}/auth/check`,
   },
+  USER: {
+    PROFILE: `${API_ENDPOINT}/users/profile`,
+    SEARCH: `${API_ENDPOINT}/users/search`,
+  },
   WORKSPACE: {
     LIST: `${API_ENDPOINT}/workspaces`,
     CREATE: `${API_ENDPOINT}/workspace`,

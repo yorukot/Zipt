@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl"
 
 interface WorkspaceLayoutProps {
   children: ReactNode
-  type: "create"
+  type: "create" | "invite"
 }
 
 export function WorkspaceLayout({ children, type }: WorkspaceLayoutProps) {

@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Icon } from "@iconify/react"
 import { useTranslations } from "next-intl"
 import * as z from "zod"
+import API_URLS from "@/lib/api-urls"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -25,23 +27,15 @@ const workspaceSchema = z.object({
   }),
 })
 
-// Email validation schema
-const emailSchema = z.string().email({
-  message: "Please enter a valid email address",
-})
-
 // Type for workspace creation values
 export type WorkspaceValues = z.infer<typeof workspaceSchema>
 
 interface CreateWorkspaceFormProps {
-  onSubmit: (values: WorkspaceValues & { invitedEmails: string[] }) => Promise<void> | void
+  onSuccess: (workspaceId: string) => Promise<void> | void
 }
 
-export function CreateWorkspaceForm({ onSubmit }: CreateWorkspaceFormProps) {
+export function CreateWorkspaceForm({ onSuccess }: CreateWorkspaceFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
-  const [invitedEmails, setInvitedEmails] = useState<string[]>([])
-  const [emailError, setEmailError] = useState<string | null>(null)
   const t = useTranslations("Workspace.create")
   
   const form = useForm<WorkspaceValues>({
@@ -54,55 +48,51 @@ export function CreateWorkspaceForm({ onSubmit }: CreateWorkspaceFormProps) {
   async function handleSubmit(values: WorkspaceValues) {
     setIsLoading(true)
     try {
-      await onSubmit({
-        ...values,
-        invitedEmails
+      // Create the workspace
+      const response = await fetch(API_URLS.WORKSPACE.CREATE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+        }),
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || t("errors.createFailed"))
+      }
+
+      const workspace = await response.json()
+      console.log("workspace", workspace);
+      // Call the success callback with the new workspace ID
+      await onSuccess(workspace.result.id)
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error(t("errors.unexpected"))
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  function handleInvite(e: React.FormEvent) {
-    e.preventDefault()
-    
-    try {
-      const validatedEmail = emailSchema.parse(inviteEmail)
-      
-      // Check if email is already in the list
-      if (invitedEmails.includes(validatedEmail)) {
-        setEmailError("This email has already been invited")
-        return
-      }
-      
-      // Add email to the list
-      setInvitedEmails([...invitedEmails, validatedEmail])
-      setInviteEmail("")
-      setEmailError(null)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setEmailError(error.errors[0].message)
-      }
-    }
-  }
-
-  function removeInvitedEmail(email: string) {
-    setInvitedEmails(invitedEmails.filter(e => e !== email))
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("nameLabel")}</FormLabel>
+              <FormLabel className="text-base font-medium">{t("nameLabel")}</FormLabel>
               <FormControl>
                 <Input
                   placeholder={t("namePlaceholder")}
                   disabled={isLoading}
+                  className="h-10"
                   {...field}
                 />
               </FormControl>
@@ -111,63 +101,16 @@ export function CreateWorkspaceForm({ onSubmit }: CreateWorkspaceFormProps) {
           )}
         />
         
-        <div className="space-y-3">
-          <FormLabel>{t("inviteLabel")}</FormLabel>
-          <div className="flex gap-2">
-            <Input
-              type="email"
-              placeholder={t("invitePlaceholder")}
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              disabled={isLoading}
-              className="flex-grow"
-            />
-            <Button 
-              type="button" 
-              onClick={handleInvite} 
-              disabled={isLoading || !inviteEmail}
-              variant="secondary"
-            >
-              Invite
-            </Button>
-          </div>
-          {emailError && (
-            <p className="text-sm font-medium text-destructive">{emailError}</p>
-          )}
-          
-          {invitedEmails.length > 0 && (
-            <div className="mt-3">
-              <p className="text-sm text-muted-foreground mb-2">Invited team members:</p>
-              <div className="space-y-2">
-                {invitedEmails.map((email) => (
-                  <div 
-                    key={email} 
-                    className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-                  >
-                    <span>{email}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeInvitedEmail(email)}
-                      className="h-6 w-6"
-                    >
-                      <Icon icon="lucide:x" className="h-4 w-4" />
-                      <span className="sr-only">Remove</span>
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
         <div className="pt-2">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full h-11 text-base"
+            disabled={isLoading}
+          >
             {isLoading && (
-              <Icon icon="lucide:loader-2" className="mr-2 h-4 w-4 animate-spin" />
+              <Icon icon="lucide:loader-2" className="mr-2 h-5 w-5 animate-spin" />
             )}
-            {t("submit")}
+            {isLoading ? t("creating") : t("submit")}
           </Button>
         </div>
       </form>
