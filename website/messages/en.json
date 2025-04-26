@@ -59,7 +59,51 @@
         "namePlaceholder": "My Awesome Team",
         "inviteLabel": "Invite Team Members",
         "invitePlaceholder": "Email address",
-        "skipForNow": "Skip for now"
+        "inviteButton": "Invite",
+        "invitedMembers": "Invited team members:",
+        "statusPending": "Pending",
+        "statusReady": "Ready",
+        "statusError": "Error",
+        "removeButton": "Remove",
+        "creating": "Creating Workspace...",
+        "inviteReady": "User {email} will be invited when workspace is created",
+        "inviteSuccess": "Successfully sent {count} invitations.",
+        "invitePartialSuccess": "{sent} out of {total} invitations were sent successfully.",
+        "errors": {
+          "createFailed": "Failed to create workspace",
+          "unexpected": "An unexpected error occurred",
+          "alreadyInvited": "This email has already been invited",
+          "userNotFound": "User with email {email} not found",
+          "cannotInvite": "Cannot invite this user",
+          "inviteFailed": "Failed to invite {email}",
+          "inviteError": "Error inviting user"
+        }
+      },
+      "invite": {
+        "title": "Invite Team Members",
+        "description": "Invite your team members to collaborate in your workspace.",
+        "inviteLabel": "Invite by Email",
+        "invitePlaceholder": "Enter email address",
+        "inviteButton": "Invite",
+        "skipButton": "Skip for now",
+        "finishButton": "Finish & Go to Dashboard",
+        "finishSuccess": "All set! Welcome to your workspace.",
+        "invitedMembers": "Invited team members:",
+        "statusPending": "Pending",
+        "statusReady": "Ready",
+        "statusError": "Error",
+        "removeButton": "Remove",
+        "userReady": "User {email} ready for invitation",
+        "inviteSuccess": "Successfully sent {count} invitations.",
+        "invitePartialSuccess": "{sent} out of {total} invitations were sent successfully.",
+        "errors": {
+          "unexpected": "An unexpected error occurred",
+          "alreadyInvited": "This email has already been invited",
+          "userNotFound": "User with email {email} not found",
+          "cannotInvite": "Cannot invite this user",
+          "inviteFailed": "Failed to invite {email}",
+          "inviteError": "Error inviting user"
+        }
       }
     },
     "Dashboard": {
