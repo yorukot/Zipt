@@ -40,9 +40,16 @@ func InviteUser(c *gin.Context) {
 		return
 	}
 
+	// Check if user exists
+	_, err := queries.GetUserQueueByID(req.UserID)
+	if err.Error != nil {
+		utils.FullyResponse(c, http.StatusBadRequest, "User not found", utils.ErrBadRequest, nil)
+		return
+	}
+
 	// Check if user already exists in the workspace
 	userExists, err := queries.CheckWorkspaceUserExists(workspaceID, req.UserID)
-	if err != nil {
+	if err.Error != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to check if user exists", utils.ErrGetData, nil)
 		return
 	}
@@ -54,7 +61,7 @@ func InviteUser(c *gin.Context) {
 
 	// Check if invitation already exists
 	invitationExists, err := queries.CheckWorkspaceInvitationExists(workspaceID, req.UserID)
-	if err != nil {
+	if err.Error != nil {
 		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to check if invitation exists", utils.ErrGetData, nil)
 		return
 	}

@@ -17,7 +17,7 @@ type UpdateRoleRequest struct {
 
 // InviteUserRequest represents a request to invite a user to a workspace
 type InviteUserRequest struct {
-	UserID uint64 `json:"user_id" binding:"required"`
+	UserID uint64 `json:"user_id,string" binding:"required"`
 }
 
 // InvitationResponse is a structure returned when fetching invitation details

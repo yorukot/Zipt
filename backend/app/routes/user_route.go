@@ -11,4 +11,7 @@ func UserRoute(r *gin.RouterGroup) {
 	userGroup.Use(middleware.IsAuthorized())
 
 	userGroup.GET("/profile", userCtrl.GetProfile)
+
+	// Add search endpoint
+	userGroup.GET("/search", userCtrl.SearchByEmail)
 }
