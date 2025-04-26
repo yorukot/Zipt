@@ -74,10 +74,10 @@ func DeleteWorkspaceUsersQueue(workspaceID uint64) *gorm.DB {
 }
 
 // CheckWorkspaceUserExists checks if a user exists in a workspace
-func CheckWorkspaceUserExists(workspaceID, userID uint64) (bool, error) {
+func CheckWorkspaceUserExists(workspaceID, userID uint64) (bool, *gorm.DB) {
 	var count int64
 	result := db.GetDB().Model(&models.WorkspaceUser{}).Where("workspace_id = ? AND user_id = ?", workspaceID, userID).Count(&count)
-	return count > 0, result.Error
+	return count > 0, result
 }
 
 // UpdateWorkspaceUserRoleQueue updates a user's role in a workspace
@@ -194,12 +194,12 @@ func UpdateWorkspaceInvitationStatus(invitationID uint64, status string) *gorm.D
 }
 
 // CheckWorkspaceInvitationExists checks if a pending invitation exists for a user in a workspace
-func CheckWorkspaceInvitationExists(workspaceID, userID uint64) (bool, error) {
+func CheckWorkspaceInvitationExists(workspaceID, userID uint64) (bool, *gorm.DB) {
 	var count int64
 	result := db.GetDB().Model(&models.WorkspaceInvitation{}).
 		Where("workspace_id = ? AND user_id = ? AND status = ?", workspaceID, userID, models.StatusPending).
 		Count(&count)
-	return count > 0, result.Error
+	return count > 0, result
 }
 
 // DeleteWorkspaceInvitation deletes a workspace invitation by its ID
