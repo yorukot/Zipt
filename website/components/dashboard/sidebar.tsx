@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useParams, usePathname } from "next/navigation"
 import { Icon } from "@iconify/react"
 import { useTranslations } from "next-intl"
-import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -26,28 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { InvitationsPanel, InvitationCount } from "@/components/dashboard/invitations"
 
 // Mock data for workspaces - replace with API call later
 const mockWorkspaces = [
   { id: "workspace-1", name: "My Personal Workspace" },
   { id: "workspace-2", name: "Marketing Team" },
   { id: "workspace-3", name: "Development" },
-]
-
-// Mock data for invitations
-const mockInvitations = [
-  { 
-    id: "inv-1",
-    workspaceName: "Design Team", 
-    inviter: "Jane Smith", 
-    inviterEmail: "jane@example.com"
-  },
-  { 
-    id: "inv-2", 
-    workspaceName: "Sales Department", 
-    inviter: "Mike Johnson", 
-    inviterEmail: "mike@example.com"
-  }
 ]
 
 interface SidebarProps {
@@ -64,7 +48,6 @@ export function Sidebar({ user, onClose }: SidebarProps) {
   const pathname = usePathname()
   const params = useParams()
   const workspaceId = params.workspaceId as string
-  const [invitations, setInvitations] = React.useState(mockInvitations)
 
   const routes = [
     {
@@ -85,18 +68,6 @@ export function Sidebar({ user, onClose }: SidebarProps) {
     },
   ]
 
-  const handleAcceptInvite = (inviteId: string) => {
-    // Mock API call to accept invitation
-    toast.success(t("account.inviteAccepted"))
-    setInvitations(invitations.filter(inv => inv.id !== inviteId))
-  }
-
-  const handleRejectInvite = (inviteId: string) => {
-    // Mock API call to reject invitation
-    toast.success(t("account.inviteRejected"))
-    setInvitations(invitations.filter(inv => inv.id !== inviteId))
-  }
-
   return (
     <aside className="flex h-full flex-col border-r bg-background">
       <div className="flex h-full flex-col">
@@ -104,7 +75,7 @@ export function Sidebar({ user, onClose }: SidebarProps) {
         <div className="border-b p-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <Icon icon="lucide:scissors" className="h-6 w-6" />
+              <Icon icon="lucide:scissors" className="h-6 w-6 text-primary" />
               <span className="text-xl font-bold">Zipt</span>
             </Link>
             <div className="flex items-center gap-2">
@@ -157,39 +128,8 @@ export function Sidebar({ user, onClose }: SidebarProps) {
         
         {/* Scrollable navigation section */}
         <div className="flex-1 overflow-y-auto py-2">
-          {/* Show pending invitations if any */}
-          {invitations.length > 0 && (
-            <div className="mb-4 px-3">
-              <h3 className="mb-2 px-2 text-sm font-medium text-muted-foreground">
-                {t("account.pendingInvitations")}
-              </h3>
-              <div className="space-y-2">
-                {invitations.map((invitation) => (
-                  <div key={invitation.id} className="rounded-md border bg-card p-3 text-sm">
-                    <div className="mb-1 font-medium">{invitation.workspaceName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {t("account.invitedBy")}: {invitation.inviter}
-                    </div>
-                    <div className="mt-3 flex justify-end space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleRejectInvite(invitation.id)}
-                      >
-                        {t("account.reject")}
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleAcceptInvite(invitation.id)}
-                      >
-                        {t("account.accept")}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Show pending invitations */}
+          <InvitationsPanel />
 
           <nav className="grid gap-1 px-2">
             {routes.map((route) => (
@@ -245,15 +185,11 @@ export function Sidebar({ user, onClose }: SidebarProps) {
                 <Icon icon="lucide:settings" className="mr-2 h-4 w-4" />
                 {t("account.settings")}
               </DropdownMenuItem>
-              {invitations.length > 0 && (
-                <DropdownMenuItem>
-                  <Icon icon="lucide:mail" className="mr-2 h-4 w-4" />
-                  {t("account.invitations")}
-                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                    {invitations.length}
-                  </span>
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem>
+                <Icon icon="lucide:mail" className="mr-2 h-4 w-4" />
+                {t("account.invitations")}
+                <InvitationCount />
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <Icon icon="lucide:log-out" className="mr-2 h-4 w-4" />
