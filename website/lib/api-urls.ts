@@ -29,9 +29,8 @@ export const API_URLS = {
     DELETE: (id: string) => `${API_ENDPOINT}/workspace/${id}`,
     INVITE: (id: string) => `${API_ENDPOINT}/workspace/${id}/invite`,
     WORKSPACE_INVITATIONS: (id: string) => `${API_ENDPOINT}/workspace/${id}/invitations`,
-    USER_INVITATIONS: (id: string) => `${API_ENDPOINT}/invitations`,
-    _INVITATION: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
-    REJECT_INVITATION: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
+    USER_INVITATIONS: `${API_ENDPOINT}/invitations`,
+    INVITATION_PROCESS: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
   },
 };
 

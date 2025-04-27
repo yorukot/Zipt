@@ -1,19 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { redirect } from "next/navigation";
+import { useRouter, redirect } from "next/navigation";
 import { toast } from "sonner";
-import { WorkspaceProvider, useWorkspace } from "@/lib/context/workspace-context";
+import {
+  WorkspaceProvider,
+  useWorkspace,
+} from "@/lib/context/workspace-context";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { workspaces, isLoading, error } = useWorkspace();
-
-  console.log(workspaces);
+  const router = useRouter();
 
   // Simple redirect when no workspaces
   useEffect(() => {
     if (!isLoading && (!workspaces || workspaces.length === 0)) {
       redirect("/workspace/create");
+    } else if (!isLoading && workspaces && workspaces.length > 0) {
+      router.push(`/dashboard/${workspaces[0].id}`);
     }
   }, [isLoading, workspaces]);
 
