@@ -32,6 +32,16 @@ export const API_URLS = {
     USER_INVITATIONS: `${API_ENDPOINT}/invitations`,
     INVITATION_PROCESS: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
   },
+  URL: {
+    CREATE: (workspaceId: string) => `${API_ENDPOINT}/url/${workspaceId}`,
+    LIST: (workspaceId: string) => `${API_ENDPOINT}/url/${workspaceId}/list`,
+    GET: (workspaceId: string, urlId: string) => `${API_ENDPOINT}/url/${workspaceId}/${urlId}`,
+    UPDATE: (workspaceId: string, urlId: string) => `${API_ENDPOINT}/url/${workspaceId}/${urlId}`,
+    DELETE: (workspaceId: string, urlId: string) => `${API_ENDPOINT}/url/${workspaceId}/${urlId}`,
+    ANALYTICS: (workspaceId: string, urlId: string) => `${API_ENDPOINT}/url/${workspaceId}/${urlId}/analytics`,
+    TIMESERIES: (workspaceId: string, urlId: string) => `${API_ENDPOINT}/url/${workspaceId}/${urlId}/analytics/timeseries`,
+    CHECK_SHORTCODE: `${API_ENDPOINT}/url/check-shortcode`,
+  },
 };
 
 export default API_URLS;

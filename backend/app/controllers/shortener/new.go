@@ -132,7 +132,7 @@ func validateShortenRequest(c *gin.Context) (*ShortenURLRequest, error) {
 	if request.DomainID != nil && *request.DomainID > 0 {
 		// Check if domain exists and is verified
 		domain, result := queries.GetDomainByID(*request.DomainID)
-		if result.Error != nil {
+		if result.Error != nil || domain == nil {
 			errMsg := "invalid domain ID"
 			utils.FullyResponse(c, http.StatusBadRequest, errMsg, utils.ErrBadRequest, nil)
 			return nil, errors.New(errMsg)
@@ -221,7 +221,7 @@ func createURLModel(request *ShortenURLRequest, shortCode string, workspaceID *u
 		ExpiresAt:   request.ExpiresAt,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
-		TotalClicks:  0,
+		TotalClicks: 0,
 	}
 }
 
@@ -230,12 +230,26 @@ func getDomainID(domainID *uint64) uint64 {
 	if domainID == nil {
 		return 0
 	}
-	return *domainID
+
+	// If a domain ID is provided, check if it exists
+	if *domainID > 0 {
+		domain, result := queries.GetDomainByID(*domainID)
+		if result.Error != nil || domain == nil {
+			// If domain doesn't exist, use default domain
+			return 0
+		}
+		// Domain exists, use it
+		return *domainID
+	}
+
+	// Use default domain
+	return 0
 }
 
 // saveURLToDatabase saves the new URL to the database
 func saveURLToDatabase(c *gin.Context, urlModel models.URL) error {
 	result := queries.CreateURLQueue(urlModel)
+
 	if result.Error != nil || result.RowsAffected == 0 {
 		utils.ServerErrorResponse(c, http.StatusInternalServerError, "Error creating short URL", utils.ErrSaveData, result.Error)
 		return result.Error

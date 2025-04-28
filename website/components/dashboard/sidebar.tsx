@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useParams, usePathname } from "next/navigation"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import { Icon } from "@iconify/react"
 import { useTranslations } from "next-intl"
 
@@ -26,13 +26,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { InvitationsPanel, InvitationCount } from "@/components/dashboard/invitations"
+import { useWorkspace } from "@/lib/context/workspace-context"
 
-// Mock data for workspaces - replace with API call later
-const mockWorkspaces = [
-  { id: "workspace-1", name: "My Personal Workspace" },
-  { id: "workspace-2", name: "Marketing Team" },
-  { id: "workspace-3", name: "Development" },
-]
+// Remove mock data as we'll use the context data instead
 
 interface SidebarProps {
   user: {
@@ -47,6 +43,8 @@ export function Sidebar({ user, onClose }: SidebarProps) {
   const t = useTranslations("Dashboard")
   const pathname = usePathname()
   const params = useParams()
+  const router = useRouter()
+  const { workspaces, isLoading } = useWorkspace()
   const workspaceId = params.workspaceId as string
 
   const routes = [
@@ -103,14 +101,19 @@ export function Sidebar({ user, onClose }: SidebarProps) {
             <Select 
               defaultValue={workspaceId}
               onValueChange={(value) => {
-                window.location.href = `/dashboard/${value}`;
+                if (value === "new") {
+                  router.push("/workspace/create");
+                } else {
+                  router.push(`/dashboard/${value}`);
+                }
               }}
+              disabled={isLoading}
             >
               <SelectTrigger className="w-full select-none">
-                <SelectValue placeholder={t("sidebar.selectWorkspace")} />
+                <SelectValue placeholder={isLoading ? t("sidebar.loading") : t("sidebar.selectWorkspace")} />
               </SelectTrigger>
               <SelectContent>
-                {mockWorkspaces.map((workspace) => (
+                {workspaces && workspaces.map((workspace) => (
                   <SelectItem key={workspace.id} value={workspace.id} className="select-none">
                     {workspace.name}
                   </SelectItem>

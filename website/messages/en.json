@@ -112,7 +112,8 @@
         "analytics": "Analytics",
         "settings": "Settings",
         "selectWorkspace": "Select workspace",
-        "newWorkspace": "Create new workspace"
+        "newWorkspace": "Create new workspace",
+        "loading": "Loading workspaces..."
       },
       "account": {
         "title": "Account",
@@ -147,12 +148,18 @@
         "created": "Link shortened successfully!",
         "copied": "Copied to clipboard!",
         "error": "An error occurred. Please try again.",
+        "fetchError": "Failed to fetch your links",
+        "empty": "No links yet",
+        "emptyDescription": "Create your first shortened link to get started",
+        "deleted": "Link deleted successfully",
+        "deleteError": "Failed to delete link",
         "analytics": "Analytics",
         "settings": "Settings",
         "statistics": "Statistics",
         "delete": "Delete Link",
         "actions": "Actions",
-        "copy": "Copy"
+        "copy": "Copy",
+        "stats": "Link Statistics"
       },
       "common": {
         "close": "Close",

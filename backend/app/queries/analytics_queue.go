@@ -158,15 +158,28 @@ func GetTotalClicks(urlID uint64) (int64, error) {
 func GetURLsByWorkspaceID(workspaceID uint64) ([]models.URL, error) {
 	var urls []models.URL
 
+	// Use a more explicit join for preloading domains
 	result := db.GetDB().
-		Preload("Domain"). // Preload the domain information
-		Where("workspace_id = ?", workspaceID).
-		Order("created_at DESC").
+		Joins("LEFT JOIN domains ON urls.domain_id = domains.id").
+		Preload("Domain").
+		Where("urls.workspace_id = ?", workspaceID).
+		Order("urls.created_at DESC").
 		Find(&urls)
 
 	if result.Error != nil {
 		logger.Log.Error(fmt.Sprintf("Error retrieving URLs for workspace: %v", result.Error))
 		return nil, result.Error
+	}
+
+	// Add fallback for domain ID 0 which might not be properly preloaded
+	for i := range urls {
+		if urls[i].Domain == nil && urls[i].DomainID == 0 {
+			// Try to get the default domain (ID 0)
+			var domain models.Domain
+			if err := db.GetDB().First(&domain, 0).Error; err == nil {
+				urls[i].Domain = &domain
+			}
+		}
 	}
 
 	return urls, nil
