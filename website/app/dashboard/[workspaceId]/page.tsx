@@ -38,6 +38,7 @@ interface LinkData {
   short_code: string;
   original_url: string;
   short_url: string;
+  domain_name: string;
   clicks: number;
   created_at: string;
   expires_at?: string;
@@ -120,6 +121,7 @@ export default function DashboardPage() {
           short_code: link.short_code,
           original_url: link.original_url,
           short_url: link.short_url,
+          domain_name: link.domain_name,
           clicks: link.total_clicks || 0,
           created_at: new Date(link.created_at).toISOString().split("T")[0],
           expires_at: link.expires_at
@@ -280,7 +282,7 @@ export default function DashboardPage() {
                       url={link.original_url}
                       className="h-5 w-5 flex-shrink-0"
                     />
-                    <h3 className="font-medium truncate">{link.short_url}</h3>
+                    <h3 className="font-medium truncate">{link.domain_name + "/" + link.short_code}</h3>
                   </div>
                   <div className="ml-2 flex-shrink-0 flex items-center">
                     <Button
