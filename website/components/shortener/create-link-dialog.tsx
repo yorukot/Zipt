@@ -48,6 +48,7 @@ interface LinkData {
   short_code: string;
   original_url: string;
   short_url: string;
+  domain_name: string;
   clicks: number;
   created_at: string;
   expires_at?: string;
@@ -203,6 +204,7 @@ export function LinkDialog({
             original_url: data.url,
             short_code: responseData.result?.short_code || initialData.short_code,
             short_url: responseData.result?.short_url || initialData.short_url,
+            domain_name: responseData.result?.domain_name || initialData.domain_name,
             expires_at: data.enableExpiration && data.expirationDate 
               ? data.expirationDate.toISOString() 
               : undefined,
@@ -212,6 +214,7 @@ export function LinkDialog({
             short_code: responseData.result.short_code,
             original_url: responseData.result.original_url,
             short_url: responseData.result.short_url,
+            domain_name: responseData.result?.domain_name || "",
             clicks: 0,
             created_at: new Date().toISOString().split("T")[0],
             expires_at: responseData.result.expires_at,
@@ -354,7 +357,7 @@ export function LinkDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="0">Default domain</SelectItem>
+                      <SelectItem value="0">{process.env.NEXT_PUBLIC_DEFAULT_DOMAIN}</SelectItem>
                       {domains
                         .filter((domain) => domain.verified)
                         .map((domain) => (
