@@ -189,6 +189,28 @@
         "clicksMapDesc": "Geographical distribution of clicks",
         "worldMap": "World Map"
       },
+      "urlAnalytics": {
+        "title": "Link Analytics",
+        "overviewTitle": "Overview",
+        "clicksOverTime": "Clicks Over Time",
+        "totalClicks": "Total Clicks",
+        "avgClicksPerDay": "Avg. Daily Clicks",
+        "topReferrer": "Top Referrer",
+        "topCountry": "Top Country",
+        "topCountries": "Top Countries",
+        "topCities": "Top Cities",
+        "topReferrers": "Top Referrers",
+        "devices": "Devices",
+        "browsers": "Browsers",
+        "operatingSystems": "Operating Systems",
+        "clickDetails": "Click Details",
+        "clickDetailsDesc": "Detailed breakdown of clicks over time",
+        "clicksChartDesc": "This chart shows the frequency of clicks over the selected time period.",
+        "filterData": "Filter Data",
+        "linkInfo": "Link Information",
+        "createdOn": "Created on",
+        "expiresOn": "Expires on"
+      },
       "settings": {
         "title": "Settings",
         "general": "General",
@@ -226,7 +248,9 @@
         "savedDomain": "Domain settings saved!",
         "integrationEnabled": "{integration} integration enabled",
         "integrationDisabled": "{integration} integration disabled",
-        "error": "An error occurred. Please try again."
+        "error": "An error occurred. Please try again.",
+        "typeToConfirm": "Type the workspace name to confirm",
+        "workspaceDeleted": "Workspace has been permanently deleted"
       }
     }
   }
