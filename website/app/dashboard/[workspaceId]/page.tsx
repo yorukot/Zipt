@@ -5,15 +5,11 @@ import { useParams } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -24,103 +20,135 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UrlFavicon } from "@/components/url-favicon";
+import API_URLS from "@/lib/api-urls";
+import { useWorkspace } from "@/lib/context/workspace-context";
+import { LinkDialog } from "@/components/shortener/create-link-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormDescription,
+} from "@/components/ui/form";
 
-// Mock data for links - replace with API call later
-const mockLinks = [
-  {
-    id: "1",
-    shortUrl: "zipt.sh/abc123",
-    originalUrl:
-      "https://example.com/very/long/url/that/needs/shortening/for/social/media/marketing/campaign",
-    clicks: 245,
-    createdAt: "2023-08-15",
-  },
-  {
-    id: "2",
-    shortUrl: "zipt.sh/def456",
-    originalUrl: "https://another-example.com/some/long/path",
-    clicks: 128,
-    createdAt: "2023-08-14",
-  },
-  {
-    id: "3",
-    shortUrl: "zipt.sh/ghi789",
-    originalUrl: "https://yet-another-example.com/very/long/url",
-    clicks: 57,
-    createdAt: "2023-08-13",
-  },
-];
+// Define interfaces for our data
+interface LinkData {
+  id: string;
+  short_code: string;
+  original_url: string;
+  short_url: string;
+  clicks: number;
+  created_at: string;
+  expires_at?: string;
+}
+
+interface DomainData {
+  id: string;
+  domain: string;
+  verified: boolean;
+}
 
 export default function DashboardPage() {
-  const [url, setUrl] = React.useState("");
-  const [customSlug, setCustomSlug] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [links, setLinks] = React.useState(mockLinks);
+  const [links, setLinks] = React.useState<LinkData[]>([]);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = React.useState(false);
   const [selectedLinkId, setSelectedLinkId] = React.useState<string | null>(
     null
   );
+  const [isLoadingLinks, setIsLoadingLinks] = React.useState(true);
+  const [domains, setDomains] = React.useState<DomainData[]>([]);
+  const [isLoadingDomains, setIsLoadingDomains] = React.useState(false);
+  
   const params = useParams();
   const t = useTranslations("Dashboard");
   const workspaceId = params.workspaceId as string;
+  const { workspaces } = useWorkspace();
 
-  // Mock workspace info - replace with API call later
+  // Find the current workspace name
+  const currentWorkspace = workspaces?.find(
+    (workspace) => workspace.id === workspaceId
+  );
+  const workspaceName = currentWorkspace?.name || workspaceId;
+
+  // Format the title with possessive form
+  const workspaceTitle = `${workspaceName}${
+    workspaceName.endsWith("s") ? "'" : "'s"
+  } Workspace`;
+
+  // Fetch links when component mounts or workspaceId changes
+  React.useEffect(() => {
+    fetchLinks();
+    // Uncomment when API endpoint is available
+    // fetchDomains();
+  }, [workspaceId]);
+
+  // This function would fetch domains once the API endpoint is available
+  const fetchDomains = async () => {
+    setIsLoadingDomains(true);
+    try {
+      // Example endpoint - replace with actual API endpoint when available
+      const response = await fetch(`/api/workspaces/${workspaceId}/domains`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch domains");
+      }
+      const data = await response.json();
+      if (data.result) {
+        setDomains(data.result);
+      } else {
+        setDomains([]);
+      }
+    } catch (error) {
+      console.error("Error fetching domains:", error);
+      toast.error("Failed to load domains");
+    } finally {
+      setIsLoadingDomains(false);
+    }
+  };
+
+  const fetchLinks = async () => {
+    setIsLoadingLinks(true);
+    try {
+      const response = await fetch(API_URLS.URL.LIST(workspaceId));
+      if (!response.ok) {
+        throw new Error("Failed to fetch links");
+      }
+      const data = await response.json();
+      if (data.result && data.result.urls) {
+        const formattedLinks = data.result.urls.map((link: any) => ({
+          id: link.id,
+          short_code: link.short_code,
+          original_url: link.original_url,
+          short_url: link.short_url,
+          clicks: link.total_clicks || 0,
+          created_at: new Date(link.created_at).toISOString().split("T")[0],
+          expires_at: link.expires_at
+            ? new Date(link.expires_at).toISOString()
+            : undefined,
+        }));
+        setLinks(formattedLinks);
+      } else {
+        setLinks([]);
+      }
+    } catch (error) {
+      console.error("Error fetching links:", error);
+      toast.error(t("links.fetchError"));
+    } finally {
+      setIsLoadingLinks(false);
+    }
+  };
+
+  // Calculate workspace info based on actual data
   const workspaceInfo = {
-    name:
-      workspaceId === "workspace-1"
-        ? "My Personal Workspace"
-        : workspaceId === "workspace-2"
-        ? "Marketing Team"
-        : "Development",
+    name: workspaceTitle,
     totalLinks: links.length,
     totalClicks: links.reduce((sum, link) => sum + link.clicks, 0),
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url) return;
-
-    setIsLoading(true);
-
-    try {
-      // Mock API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Generate a random short code
-      const characters =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      let shortCode = "";
-      for (let i = 0; i < 6; i++) {
-        shortCode += characters.charAt(
-          Math.floor(Math.random() * characters.length)
-        );
-      }
-
-      // Use custom slug if provided
-      const slug = customSlug || shortCode;
-
-      // Add new link to the list
-      const newLink = {
-        id: Date.now().toString(),
-        shortUrl: `zipt.sh/${slug}`,
-        originalUrl: url,
-        clicks: 0,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-
-      setLinks([newLink, ...links]);
-      setUrl("");
-      setCustomSlug("");
-      setDialogOpen(false);
-
-      // Show success message
-      toast.success(t("links.created"));
-    } catch {
-      toast.error(t("links.error"));
-    } finally {
-      setIsLoading(false);
-    }
+  const handleCreateLinkSuccess = (newLink: LinkData) => {
+    setLinks([newLink, ...links]);
+    // Refresh links list to make sure we have the latest data
+    fetchLinks();
   };
 
   const copyToClipboard = (text: string) => {
@@ -137,67 +165,33 @@ export default function DashboardPage() {
     ? links.find((link) => link.id === selectedLinkId)
     : null;
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
   return (
     <div className="flex flex-col min-h-full pb-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">{workspaceInfo.name}</h1>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
+
+        <LinkDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          workspaceId={workspaceId}
+          onSuccess={handleCreateLinkSuccess}
+          apiUrls={{
+            CREATE: API_URLS.URL.CREATE
+          }}
+          domains={domains}
+          trigger={
             <Button>
               <Icon icon="lucide:plus" className="mr-2 h-4 w-4" />
               {t("links.create")}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("links.create")}</DialogTitle>
-              <DialogDescription>
-                {t("links.createDescription")}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {t("links.longUrl")}
-                </label>
-                <Input
-                  type="url"
-                  placeholder="https://example.com/very/long/url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {t("links.customSlug")}
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-shrink-0 text-sm text-muted-foreground">
-                    zipt.sh/
-                  </div>
-                  <Input
-                    placeholder="custom-slug (optional)"
-                    value={customSlug}
-                    onChange={(e) => setCustomSlug(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter className="pt-2">
-                <Button type="submit" disabled={isLoading || !url}>
-                  {isLoading && (
-                    <Icon
-                      icon="lucide:loader-2"
-                      className="mr-2 h-4 w-4 animate-spin"
-                    />
-                  )}
-                  {t("links.shorten")}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+          }
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-6">
@@ -245,146 +239,150 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold">{t("links.recent")}</h2>
-            <p className="text-sm text-muted-foreground">{t("links.recentDescription")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("links.recentDescription")}
+            </p>
           </div>
         </div>
-        
+
         <div className="space-y-4">
-          {links.map((link) => (
-            <div
-              key={link.id}
-              className="rounded-lg border border-border/60 p-5 bg-card hover:bg-card/80 transition-all shadow-sm hover:shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 overflow-hidden">
-                  <UrlFavicon url={link.originalUrl} className="h-5 w-5 flex-shrink-0" />
-                  <h3 className="font-medium truncate">{link.shortUrl}</h3>
-                </div>
-                <div className="ml-2 flex-shrink-0 flex items-center">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => copyToClipboard(link.shortUrl)}
-                    className="h-8 w-8"
-                  >
-                    <Icon icon="lucide:copy" className="h-4 w-4" />
-                    <span className="sr-only">{t("links.copy")}</span>
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => openSettingsDialog(link.id)}
-                    className="h-8 w-8"
-                  >
-                    <Icon icon="lucide:settings" className="h-4 w-4" />
-                    <span className="sr-only">{t("links.settings")}</span>
-                  </Button>
-                </div>
-              </div>
-
-              <p
-                className="text-sm text-muted-foreground truncate mt-2"
-                title={link.originalUrl}
-              >
-                {link.originalUrl}
-              </p>
-
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center text-sm">
-                    <Icon
-                      icon="lucide:mouse-pointer-click"
-                      className="mr-1 h-4 w-4 text-muted-foreground"
-                    />
-                    {link.clicks} {t("links.clicks")}
-                  </span>
-                  <span className="hidden sm:inline text-sm text-muted-foreground">
-                    {link.createdAt}
-                  </span>
-                </div>
-
-                <Button variant="outline" size="sm" className="sm:hidden">
-                  <Icon icon="lucide:bar-chart-2" className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hidden sm:flex"
-                >
-                  <Icon icon="lucide:bar-chart-2" className="mr-2 h-4 w-4" />
-                  <span>{t("links.analytics")}</span>
-                </Button>
-              </div>
+          {isLoadingLinks ? (
+            <div className="flex justify-center p-8">
+              <Icon
+                icon="lucide:loader-2"
+                className="h-8 w-8 animate-spin text-muted-foreground"
+              />
             </div>
-          ))}
+          ) : links.length === 0 ? (
+            <div className="rounded-lg border border-border/60 p-8 text-center">
+              <Icon
+                icon="lucide:link-off"
+                className="mx-auto h-12 w-12 text-muted-foreground"
+              />
+              <h3 className="mt-4 text-lg font-medium">{t("links.empty")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("links.emptyDescription")}
+              </p>
+              <Button onClick={() => setDialogOpen(true)} className="mt-4">
+                <Icon icon="lucide:plus" className="mr-2 h-4 w-4" />
+                {t("links.create")}
+              </Button>
+            </div>
+          ) : (
+            links.map((link) => (
+              <div
+                key={link.id}
+                className="rounded-lg border border-border/60 p-5 bg-card hover:bg-card/80 transition-all shadow-sm hover:shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 overflow-hidden">
+                    <UrlFavicon
+                      url={link.original_url}
+                      className="h-5 w-5 flex-shrink-0"
+                    />
+                    <h3 className="font-medium truncate">{link.short_url}</h3>
+                  </div>
+                  <div className="ml-2 flex-shrink-0 flex items-center">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(link.short_url)}
+                      className="h-8 w-8"
+                    >
+                      <Icon icon="lucide:copy" className="h-4 w-4" />
+                      <span className="sr-only">{t("links.copy")}</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => openSettingsDialog(link.id)}
+                      className="h-8 w-8"
+                    >
+                      <Icon icon="lucide:settings" className="h-4 w-4" />
+                      <span className="sr-only">{t("links.settings")}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <p
+                  className="text-sm text-muted-foreground truncate mt-2"
+                  title={link.original_url}
+                >
+                  {link.original_url}
+                </p>
+
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="flex items-center text-sm">
+                      <Icon
+                        icon="lucide:mouse-pointer-click"
+                        className="mr-1 h-4 w-4 text-muted-foreground"
+                      />
+                      {link.clicks} {t("links.clicks")}
+                    </span>
+                    <span className="hidden sm:inline text-sm text-muted-foreground">
+                      {link.created_at}
+                    </span>
+                    {link.expires_at && (
+                      <span className="hidden sm:inline text-sm text-amber-500">
+                        <Icon
+                          icon="lucide:alarm-clock"
+                          className="mr-1 h-4 w-4 inline"
+                        />
+                        Expires: {link.expires_at ? formatDate(link.expires_at) : ''}
+                      </span>
+                    )}
+                  </div>
+
+                  <Button variant="outline" size="sm" className="sm:hidden">
+                    <Icon icon="lucide:bar-chart-2" className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:flex"
+                    onClick={() =>
+                      (window.location.href = `/dashboard/${workspaceId}/analytics/${link.id}`)
+                    }
+                  >
+                    <Icon icon="lucide:bar-chart-2" className="mr-2 h-4 w-4" />
+                    <span>{t("links.analytics")}</span>
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       {/* Settings Dialog */}
-      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("links.settings")}</DialogTitle>
-            <DialogDescription>
-              {selectedLink && <span>{selectedLink.shortUrl}</span>}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {t("links.longUrl")}
-              </label>
-              <Input
-                type="url"
-                defaultValue={selectedLink?.originalUrl}
-                disabled
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {t("links.customSlug")}
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="flex-shrink-0 text-sm text-muted-foreground">
-                  zipt.sh/
-                </div>
-                <Input
-                  defaultValue={selectedLink?.shortUrl.replace("zipt.sh/", "")}
-                  disabled
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {t("links.created")}
-              </label>
-              <div className="rounded-md border p-4">
-                <div className="flex justify-between">
-                  <span>{t("links.clicks")}</span>
-                  <span className="font-medium">{selectedLink?.clicks}</span>
-                </div>
-                <div className="flex justify-between mt-2">
-                  <span>{t("links.created")}</span>
-                  <span className="font-medium">{selectedLink?.createdAt}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="space-x-2">
-            <Button variant="destructive">
-              <Icon icon="lucide:trash" className="mr-2 h-4 w-4" />
-              {t("links.delete")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setSettingsDialogOpen(false)}
-            >
-              {t("common.close")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LinkDialog
+        open={settingsDialogOpen}
+        onOpenChange={setSettingsDialogOpen}
+        workspaceId={workspaceId}
+        isEditMode={true}
+        initialData={selectedLink || undefined}
+        onSuccess={(link) => {
+          // If the link was deleted
+          if (link && selectedLinkId) {
+            setLinks(links.filter((l) => l.id !== link.id));
+          } else if (link) {
+            // If the link was updated
+            setLinks(
+              links.map((l) => (l.id === link.id ? link : l))
+            );
+          }
+          // Refresh links list to get the latest data
+          fetchLinks();
+        }}
+        apiUrls={{
+          CREATE: API_URLS.URL.CREATE,
+          UPDATE: API_URLS.URL.UPDATE,
+          DELETE: API_URLS.URL.DELETE
+        }}
+        domains={domains}
+      />
     </div>
   );
 }

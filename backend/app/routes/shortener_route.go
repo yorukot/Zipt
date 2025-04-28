@@ -14,7 +14,7 @@ func ShortenerRoute(r *gin.RouterGroup) {
 	r.Use(middleware.GetContextUserID())
 	// Public routes (anonymous users)
 	r.POST("/url", shortener.CreateShortURL)                   // Create short URL (anonymous users without custom slug)
-	r.POST("/check-shortcode", shortener.CheckShortCodeExists) // Check if short code exists
+	r.POST("/url/check-shortcode", shortener.CheckShortCodeExists) // Check if short code exists
 
 	// Protected routes (require authentication)
 	protected := r.Group("/url/:workspaceID")

@@ -51,7 +51,7 @@ Content-Type: application/json
   "status": 200,
   "message": "Signup successful",
   "error": null,
-  "data": {
+  "result": {
     "user_id": "123456789",
     "email": "user@example.com",
     "display_name": "Test User"
@@ -67,7 +67,7 @@ Content-Type: application/json
   "status": 400,
   "message": "Invalid request format",
   "error": "ErrBadRequest",
-  "data": {
+  "result": {
     "details": "Error details here"
   }
 }
@@ -79,7 +79,7 @@ Content-Type: application/json
   "status": 400,
   "message": "Email already in use",
   "error": "ErrEmailAlreadyUsed",
-  "data": {
+  "result": {
     "field": "email"
   }
 }
@@ -91,7 +91,7 @@ Content-Type: application/json
   "status": 500,
   "message": "Error message",
   "error": "ErrorType",
-  "data": {
+  "result": {
     "details": "Error details"
   }
 }
@@ -135,7 +135,7 @@ Content-Type: application/json
   "status": 200,
   "message": "Login successful",
   "error": null,
-  "data": {
+  "result": {
     "user": {
       "id": "123456789", 
       "email": "user@example.com",
@@ -157,7 +157,7 @@ Content-Type: application/json
   "status": 401,
   "message": "Invalid email or password",
   "error": "ErrInvalidCredentials",
-  "data": null
+  "result": null
 }
 ```
 
@@ -167,7 +167,7 @@ Content-Type: application/json
   "status": 500,
   "message": "Error retrieving user data",
   "error": "ErrGetData",
-  "data": {
+  "result": {
     "details": "Error details"
   }
 }
@@ -196,7 +196,7 @@ The request should include the session cookie set during login.
   "status": 200,
   "message": "Token refreshed successfully",
   "error": null,
-  "data": {
+  "result": {
     "token": {
       "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
       "expires_at": "2023-06-15T16:30:45Z"
@@ -213,7 +213,7 @@ The request should include the session cookie set during login.
   "status": 401,
   "message": "Invalid or expired session",
   "error": "ErrInvalidSession",
-  "data": null
+  "result": null
 }
 ```
 
@@ -223,7 +223,7 @@ The request should include the session cookie set during login.
   "status": 500,
   "message": "Error refreshing token",
   "error": "ErrGenerateToken",
-  "data": {
+  "result": {
     "details": "Error details"
   }
 }
@@ -252,7 +252,7 @@ The request should include the session cookie to be invalidated.
   "status": 200,
   "message": "Logout successful",
   "error": null,
-  "data": null
+  "result": null
 }
 ```
 
@@ -264,7 +264,7 @@ The request should include the session cookie to be invalidated.
   "status": 401,
   "message": "Invalid or expired session",
   "error": "ErrInvalidSession",
-  "data": null
+  "result": null
 }
 ```
 
@@ -274,7 +274,7 @@ The request should include the session cookie to be invalidated.
   "status": 500,
   "message": "Error during logout",
   "error": "ErrDeleteSession",
-  "data": {
+  "result": {
     "details": "Error details"
   }
 }
@@ -305,7 +305,7 @@ Cookie: session=your-session-cookie  (optional)
   "status": 200,
   "message": "User is logged in",
   "error": null,
-  "data": {
+  "result": {
     "logged_in": true,
     "user": {
       "id": "123456789",
@@ -326,7 +326,7 @@ Cookie: session=your-session-cookie  (optional)
   "status": 200,
   "message": "User is not logged in",
   "error": null,
-  "data": {
+  "result": {
     "logged_in": false
   }
 }
@@ -371,7 +371,7 @@ Authorization: Bearer {access_token}
   "status": 200,
   "message": "Password changed successfully",
   "error": null,
-  "data": null
+  "result": null
 }
 ```
 
@@ -383,7 +383,7 @@ Authorization: Bearer {access_token}
   "status": 401,
   "message": "User not authenticated",
   "error": "ErrUnauthorized",
-  "data": null
+  "result": null
 }
 ```
 
@@ -393,7 +393,7 @@ Authorization: Bearer {access_token}
   "status": 400,
   "message": "Current password is incorrect",
   "error": "ErrInvalidPassword",
-  "data": null
+  "result": null
 }
 ```
 
@@ -403,7 +403,7 @@ Authorization: Bearer {access_token}
   "status": 400,
   "message": "Invalid request format",
   "error": "ErrBadRequest",
-  "data": {
+  "result": {
     "details": "Error details here"
   }
 }
@@ -415,7 +415,7 @@ Authorization: Bearer {access_token}
   "status": 500,
   "message": "Error updating password",
   "error": "ErrSaveData",
-  "data": {
+  "result": {
     "details": "Error details"
   }
 }

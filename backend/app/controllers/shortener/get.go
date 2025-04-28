@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yorukot/zipt/pkg/utils"
 	"github.com/yorukot/zipt/app/queries"
+	"github.com/yorukot/zipt/pkg/utils"
 )
-
 
 // GetUserURLs returns all URLs created by the authenticated user
 func GetUserURLs(c *gin.Context) {
@@ -43,7 +42,7 @@ func GetUserURLs(c *gin.Context) {
 		ExpiresAt   *time.Time `json:"expires_at,omitempty"`
 		CreatedAt   time.Time  `json:"created_at"`
 		UpdatedAt   time.Time  `json:"updated_at"`
-		TotalClicks  int64      `json:"total_clicks"`
+		TotalClicks int64      `json:"total_clicks"`
 	}
 
 	enhancedURLs := make([]EnhancedURL, 0, len(urls))
@@ -70,7 +69,7 @@ func GetUserURLs(c *gin.Context) {
 			ExpiresAt:   url.ExpiresAt,
 			CreatedAt:   url.CreatedAt,
 			UpdatedAt:   url.UpdatedAt,
-			TotalClicks:  url.TotalClicks,
+			TotalClicks: url.TotalClicks,
 		})
 	}
 

@@ -97,6 +97,9 @@ func init() {
 	configureConnectionPool(dbType)
 
 	logger.Log.Sugar().Infof("Successfully connected to %s database", dbType)
+
+	// Ensure default domain exists
+	ensureDefaultDomain()
 }
 
 // getDatabaseName gets the database name from environment variables or generates a default name
@@ -397,11 +400,65 @@ func Initialize() {
 	// For most cases, the init() function is sufficient
 	logger.Log.Sugar().Info("Explicitly initializing database connection")
 
+	// Ensure the default domain exists
+	ensureDefaultDomain()
+
 	// If TimescaleDB is enabled, initialize it
 	if IsTimescaleEnabled {
 		if err := InitializeTimescale(); err != nil {
 			logger.Log.Sugar().Warnf("Failed to initialize TimescaleDB: %v", err)
 		}
+	}
+}
+
+// ensureDefaultDomain ensures that the default domain (ID 0) exists in the database
+func ensureDefaultDomain() {
+	// Check if the default domain exists
+	var count int64
+	result := DB.Table("domains").Where("id = 0").Count(&count)
+
+	if result.Error != nil {
+		logger.Log.Sugar().Errorf("Failed to check if default domain exists: %v", result.Error)
+		return
+	}
+
+	// If the default domain doesn't exist, create it
+	if count == 0 {
+		logger.Log.Sugar().Info("Creating default domain (ID 0)")
+
+		// Get the default domain from environment variables
+		defaultDomainName := os.Getenv("SHORT_DOMAIN")
+		if defaultDomainName == "" {
+			defaultDomainName = "localhost:8080" // Default for local development
+		}
+
+		now := time.Now().Format("2006-01-02 15:04:05")
+
+		// Use raw SQL to ensure ID 0 is set explicitly
+		sql := `INSERT INTO domains (id, domain, verified, verify_token, created_at, updated_at) 
+				VALUES (0, ?, true, 'default', ?, ?)`
+
+		result = DB.Exec(sql, defaultDomainName, now, now)
+
+		if result.Error != nil {
+			logger.Log.Sugar().Errorf("Failed to create default domain: %v", result.Error)
+		} else {
+			logger.Log.Sugar().Infof("Default domain created successfully with domain: %s", defaultDomainName)
+		}
+	} else {
+		// Ensure default domain has the current SHORT_DOMAIN value
+		defaultDomainName := os.Getenv("SHORT_DOMAIN")
+		if defaultDomainName != "" {
+			// Update the default domain if SHORT_DOMAIN is set
+			result = DB.Exec("UPDATE domains SET domain = ? WHERE id = 0", defaultDomainName)
+			if result.Error != nil {
+				logger.Log.Sugar().Errorf("Failed to update default domain: %v", result.Error)
+			} else if result.RowsAffected > 0 {
+				logger.Log.Sugar().Infof("Default domain updated to: %s", defaultDomainName)
+			}
+		}
+
+		logger.Log.Sugar().Info("Default domain (ID 0) already exists")
 	}
 }
 
