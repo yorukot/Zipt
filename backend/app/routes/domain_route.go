@@ -27,6 +27,6 @@ func DomainRoute(r *gin.RouterGroup) {
 		domainRoutes.DELETE("/:domainID", domain.DeleteDomain)
 
 		// Verify a domain
-		domainRoutes.POST("/:domainID/verify", domain.VerifyDomain)
+		domainRoutes.GET("/:domainID/verify", domain.VerifyDomain)
 	}
 }

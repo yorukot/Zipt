@@ -38,10 +38,6 @@ export function InvitationsPanel() {
   const { data, mutate } = useSWR<Invitation[]>(
     API_URLS.WORKSPACE.USER_INVITATIONS,
     fetcher,
-    { 
-      refreshInterval: 10000, // 10 seconds
-      fallbackData: []
-    }
   )
 
   // Extract invitations from the response

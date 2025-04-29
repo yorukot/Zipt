@@ -34,10 +34,10 @@ export const API_URLS = {
     LIST_USERS: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/users`,
     DOMAIN: {
       GET: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain`,
-      UPDATE: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain`,
-      LIST: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}`,
-      VERIFY: (workspaceId: string, domain: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain/${domain}/verify`,
-      CHECK_VALIDITY: (domain: string) => `${API_ENDPOINT}/domain/check-validity`,
+      LIST: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain`,
+      CREATE: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain`,
+      DELETE: (workspaceId: string, domainId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain/${domainId}`,
+      VERIFY: (workspaceId: string, domainId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain/${domainId}/verify`,
     },
   },
   URL: {
