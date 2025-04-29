@@ -66,7 +66,7 @@ export function CreateWorkspaceForm({ onSuccess }: CreateWorkspaceFormProps) {
 
       const workspace = await response.json()
       // Call the success callback with the new workspace ID
-      await onSuccess(workspace.result.id)
+      await onSuccess(workspace.id)
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message)

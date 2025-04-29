@@ -90,7 +90,7 @@ export function InviteUsersForm({ workspaceId, onFinish }: InviteUsersFormProps)
         }
 
         const userResult = await userSearchResponse.json();
-        if (!userResult.result || !userResult.result.id) {
+        if (!userResult || !userResult.id) {
           // Show error toast and return early
           toast.error(t("errors.userNotFound", { email: validatedEmail }));
           setInviteEmail("");
@@ -106,7 +106,7 @@ export function InviteUsersForm({ workspaceId, onFinish }: InviteUsersFormProps)
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              user_id: userResult.result.id,
+              user_id: userResult.id,
             }),
             credentials: "include",
           }

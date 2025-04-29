@@ -86,11 +86,9 @@ func ListWorkspaceUsers(c *gin.Context) {
 	// Get all users in the workspace with their details
 	users, err := queries.GetWorkspaceUsersWithDetails(workspaceID)
 	if err != nil {
-		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to retrieve workspace users", utils.ErrGetData, map[string]interface{}{
-			"details": err.Error(),
-		})
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to retrieve workspace users", utils.ErrGetData, nil)
 		return
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Workspace users retrieved successfully", nil, users)
+	c.JSON(http.StatusOK, users)
 }

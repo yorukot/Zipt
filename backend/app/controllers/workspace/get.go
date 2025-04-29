@@ -19,13 +19,11 @@ func GetWorkspaces(c *gin.Context) {
 
 	workspaces, result := queries.GetUserWorkspacesQueue(userID.(uint64))
 	if result.Error != nil {
-		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to get workspaces", utils.ErrGetData, map[string]interface{}{
-			"details": result.Error.Error(),
-		})
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to get workspaces", utils.ErrGetData, nil)
 		return
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Workspaces fetched successfully", nil, workspaces)
+	c.JSON(http.StatusOK, workspaces)
 }
 
 // GetWorkspace returns a single workspace by ID
@@ -45,5 +43,5 @@ func GetWorkspace(c *gin.Context) {
 		return
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Workspace fetched successfully", nil, workspace)
+	c.JSON(http.StatusOK, workspace)
 }

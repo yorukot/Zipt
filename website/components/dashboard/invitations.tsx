@@ -20,13 +20,6 @@ export interface Invitation {
   inviter_name: string;
 }
 
-// API response interface
-export interface ApiResponse<T> {
-  result: T;
-  success: boolean;
-  message?: string;
-}
-
 // Fetch invitations from API
 const fetcher = async (url: string) => {
   const response = await fetch(url);
@@ -42,17 +35,17 @@ export function InvitationsPanel() {
   const t = useTranslations("Dashboard")
   
   // Fetch invitations with SWR and 10s polling
-  const { data, mutate } = useSWR<ApiResponse<Invitation[]>>(
+  const { data, mutate } = useSWR<Invitation[]>(
     API_URLS.WORKSPACE.USER_INVITATIONS,
     fetcher,
     { 
       refreshInterval: 10000, // 10 seconds
-      fallbackData: { result: [], success: true } 
+      fallbackData: []
     }
   )
 
   // Extract invitations from the response
-  const invitations = data?.result || []
+  const invitations = data || []
 
   const handleAcceptInvite = async (inviteId: string, workspaceId: string) => {
     try {
@@ -143,16 +136,16 @@ export function InvitationsPanel() {
 
 // Component that just returns count of invitations
 export function InvitationCount() {
-  const { data } = useSWR<ApiResponse<Invitation[]>>(
+  const { data } = useSWR<Invitation[]>(
     API_URLS.WORKSPACE.USER_INVITATIONS,
     fetcher,
     { 
       refreshInterval: 10000,
-      fallbackData: { result: [], success: true } 
+      fallbackData: []
     }
   )
 
-  const invitations = data?.result || []
+  const invitations = data || []
   const count = invitations.length
   
   if (count === 0) {

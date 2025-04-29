@@ -40,7 +40,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   return (
     <WorkspaceContext.Provider 
       value={{ 
-        workspaces: data?.result || [], 
+        workspaces: data || [], 
         isLoading: !mounted || isLoading, 
         error, 
         mutate 

@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,7 +40,7 @@ func GetProfile(c *gin.Context) {
 		return // Error response sent in the create function
 	}
 
-	utils.FullyResponse(c, 200, "User profile acquired", nil, profile)
+	c.JSON(http.StatusOK, profile)
 }
 
 // extractUserIDFromContext gets the user ID from the Gin context

@@ -138,7 +138,7 @@ func GetUserInvitations(c *gin.Context) {
 		response = append(response, invitationResponse)
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Invitations fetched successfully", nil, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // UpdateInvitation updates the status of an invitation (accept/reject)
@@ -232,7 +232,7 @@ func GetWorkspaceInvitations(c *gin.Context) {
 		return
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Invitations fetched successfully", nil, invitations)
+	c.JSON(http.StatusOK, invitations)
 }
 
 // RemoveInvitation removes an invitation from a workspace

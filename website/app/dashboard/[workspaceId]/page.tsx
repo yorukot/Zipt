@@ -94,8 +94,8 @@ export default function DashboardPage() {
         throw new Error("Failed to fetch domains");
       }
       const data = await response.json();
-      if (data.result) {
-        setDomains(data.result);
+      if (data) {
+        setDomains(data);
       } else {
         setDomains([]);
       }
@@ -115,8 +115,8 @@ export default function DashboardPage() {
         throw new Error("Failed to fetch links");
       }
       const data = await response.json();
-      if (data.result && data.result.urls) {
-        const formattedLinks = data.result.urls.map((link: any) => ({
+      if (data) {
+        const formattedLinks = data.map((link: any) => ({
           id: link.id,
           short_code: link.short_code,
           original_url: link.original_url,

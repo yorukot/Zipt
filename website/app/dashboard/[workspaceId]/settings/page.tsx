@@ -53,7 +53,7 @@ export default function SettingsPage() {
         }
 
         // Set workspace data
-        setWorkspace(data.result);
+        setWorkspace(data);
       } catch (error) {
         console.error("Error fetching workspace:", error);
         setError(error instanceof Error ? error.message : "An error occurred");
@@ -144,7 +144,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="domain">
-          <DomainSettings workspaceSettings={workspaceSettings} />
+          <DomainSettings workspaceId={workspaceId} />
         </TabsContent>
 
         <TabsContent value="members">
