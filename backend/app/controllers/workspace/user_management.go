@@ -18,12 +18,22 @@ func RemoveUser(c *gin.Context) {
 		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
 		return
 	}
-
+	userIDAny, exists := c.Get("userID")
+	if !exists {
+		utils.FullyResponse(c, http.StatusUnauthorized, "User not authenticated", utils.ErrUnauthorized, nil)
+		return
+	}
+	userID := userIDAny.(uint64)
 	workspaceID := workspaceIDAny.(uint64)
 
 	targetUserID, err := strconv.ParseUint(c.Param("userId"), 10, 64)
 	if err != nil {
 		utils.FullyResponse(c, http.StatusBadRequest, "Invalid user ID", utils.ErrBadRequest, nil)
+		return
+	}
+
+	if userID == targetUserID {
+		utils.FullyResponse(c, http.StatusBadRequest, "You can not remove youself!", utils.ErrBadRequest, nil)
 		return
 	}
 
@@ -54,4 +64,33 @@ func RemoveUser(c *gin.Context) {
 	}
 
 	utils.FullyResponse(c, http.StatusOK, "User removed from workspace", nil, nil)
+}
+
+// ListWorkspaceUsers retrieves all users in a workspace
+func ListWorkspaceUsers(c *gin.Context) {
+	workspaceIDAny, exists := c.Get("workspaceID")
+	if !exists {
+		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
+		return
+	}
+
+	workspaceID := workspaceIDAny.(uint64)
+
+	// Get workspace role from context (set by auth middleware)
+	_, exists = c.Get("workspaceRole")
+	if !exists {
+		utils.FullyResponse(c, http.StatusForbidden, "You don't have permission to view users in this workspace", utils.ErrForbidden, nil)
+		return
+	}
+
+	// Get all users in the workspace with their details
+	users, err := queries.GetWorkspaceUsersWithDetails(workspaceID)
+	if err != nil {
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to retrieve workspace users", utils.ErrGetData, map[string]interface{}{
+			"details": err.Error(),
+		})
+		return
+	}
+
+	utils.FullyResponse(c, http.StatusOK, "Workspace users retrieved successfully", nil, users)
 }

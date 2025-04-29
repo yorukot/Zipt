@@ -127,19 +127,15 @@ export default function SettingsPage() {
         <TabsList className="mb-6 w-full justify-start">
           <TabsTrigger value="general">
             <Icon icon="lucide:settings" className="mr-2 h-4 w-4" />
-            {t("settings.general")}
+            <span className="hidden sm:inline">{t("settings.general")}</span>
           </TabsTrigger>
           <TabsTrigger value="domain">
             <Icon icon="lucide:globe" className="mr-2 h-4 w-4" />
-            {t("settings.domain")}
+            <span className="hidden sm:inline">{t("settings.domain")}</span>
           </TabsTrigger>
           <TabsTrigger value="members">
             <Icon icon="lucide:users" className="mr-2 h-4 w-4" />
-            {t("settings.members")}
-          </TabsTrigger>
-          <TabsTrigger value="integrations">
-            <Icon icon="lucide:plug" className="mr-2 h-4 w-4" />
-            {t("settings.integrations")}
+            <span className="hidden sm:inline">{t("settings.members")}</span>
           </TabsTrigger>
         </TabsList>
 

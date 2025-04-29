@@ -187,13 +187,6 @@ func UpdateInvitation(c *gin.Context) {
 		return
 	}
 
-	// Update the invitation status
-	updateResult := queries.UpdateWorkspaceInvitationStatus(invitationID, req.Status)
-	if updateResult.Error != nil {
-		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to update invitation", utils.ErrSaveData, nil)
-		return
-	}
-
 	// If the invitation was accepted, add the user to the workspace
 	if req.Status == models.StatusAccepted {
 		workspaceUser := models.WorkspaceUser{
@@ -208,6 +201,14 @@ func UpdateInvitation(c *gin.Context) {
 		result := queries.CreateWorkspaceUserQueue(workspaceUser)
 		if result.Error != nil {
 			utils.FullyResponse(c, http.StatusInternalServerError, "Failed to add user to workspace", utils.ErrSaveData, nil)
+			return
+		}
+	}
+
+	if req.Status == models.StatusAccepted || req.Status == models.StatusRejected {
+		deleteResult := queries.DeleteWorkspaceInvitation(invitationID)
+		if deleteResult.Error != nil {
+			utils.FullyResponse(c, http.StatusInternalServerError, "Failed to remove invitation", utils.ErrSaveData, nil)
 			return
 		}
 	}
@@ -232,4 +233,47 @@ func GetWorkspaceInvitations(c *gin.Context) {
 	}
 
 	utils.FullyResponse(c, http.StatusOK, "Invitations fetched successfully", nil, invitations)
+}
+
+// RemoveInvitation removes an invitation from a workspace
+func RemoveInvitation(c *gin.Context) {
+	// Get workspace ID from context (set by middleware)
+	workspaceIDAny, exists := c.Get("workspaceID")
+	if !exists {
+		utils.FullyResponse(c, http.StatusBadRequest, "Workspace ID is required", utils.ErrBadRequest, nil)
+		return
+	}
+	workspaceID := workspaceIDAny.(uint64)
+
+	// Get the invitation ID from the URL parameter
+	invitationID, err := strconv.ParseUint(c.Param("invitationID"), 10, 64)
+	if err != nil {
+		utils.FullyResponse(c, http.StatusBadRequest, "Invalid invitation ID", utils.ErrBadRequest, nil)
+		return
+	}
+
+	// Get the invitation
+	invitation, result := queries.GetWorkspaceInvitationByID(invitationID)
+	if result.Error == gorm.ErrRecordNotFound {
+		utils.FullyResponse(c, http.StatusNotFound, "Invitation not found", utils.ErrResourceNotFound, nil)
+		return
+	} else if result.Error != nil {
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to get invitation", utils.ErrGetData, nil)
+		return
+	}
+
+	// Check if the invitation belongs to the workspace
+	if invitation.WorkspaceID != workspaceID {
+		utils.FullyResponse(c, http.StatusForbidden, "Invitation does not belong to this workspace", utils.ErrForbidden, nil)
+		return
+	}
+
+	// Delete the invitation
+	deleteResult := queries.DeleteWorkspaceInvitation(invitationID)
+	if deleteResult.Error != nil {
+		utils.FullyResponse(c, http.StatusInternalServerError, "Failed to remove invitation", utils.ErrSaveData, nil)
+		return
+	}
+
+	utils.FullyResponse(c, http.StatusOK, "Invitation removed successfully", nil, nil)
 }

@@ -49,4 +49,8 @@ type WorkspaceInvitation struct {
 	Status      string    `json:"status" binding:"required"`
 	CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+
+	// Foreign key relationships
+	Workspace Workspace `json:"workspace" gorm:"foreignKey:WorkspaceID"`
+	User      User      `json:"user" gorm:"foreignKey:UserID"`
 }

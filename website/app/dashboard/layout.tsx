@@ -17,7 +17,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Handle workspaces loading, validation and redirects
   useEffect(() => {
     if (isLoading) return;
-
+  
     // Case 1: No workspaces available - redirect to create workspace page
     if (!workspaces || workspaces.length === 0) {
       redirect("/workspace/create");
