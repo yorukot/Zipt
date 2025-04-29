@@ -39,7 +39,7 @@ func GetDomains(c *gin.Context) {
 		})
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Domains retrieved successfully", nil, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // GetDomain returns a single domain by ID
@@ -72,7 +72,7 @@ func GetDomain(c *gin.Context) {
 		return
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "Domain retrieved successfully", nil, &DomainResponse{
+	c.JSON(http.StatusOK, &DomainResponse{
 		ID:          domain.ID,
 		WorkspaceID: domain.WorkspaceID,
 		Domain:      domain.Domain,

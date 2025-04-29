@@ -108,8 +108,8 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.result) {
-          setCurrentUser({ id: data.result.id });
+        if (data) {
+          setCurrentUser({ id: data.id });
         }
       }
     } catch (error) {
@@ -143,7 +143,7 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
       }
 
       const data = await response.json();
-      setInvitations(data.result);
+      setInvitations(data);
     } catch (error) {
       console.error("Error fetching invitations:", error);
       toast.error(t("settings.error"));
@@ -169,9 +169,9 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
       }
 
       const data = await response.json();
-      if (data.result) {
+      if (data) {
         // Map the response to the expected format with proper field names
-        const workspaceUsers = data.result.map((user: any) => ({
+        const workspaceUsers = data.map((user: any) => ({
           id: user.id,
           name: user.display_name || user.name || "Unknown User",
           email: user.email || "",
@@ -214,8 +214,8 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
       // If we found the user, use their ID
       if (userSearchResponse.ok) {
         const userResult = await userSearchResponse.json();
-        if (userResult.result && userResult.result.id) {
-          userIdToInvite = userResult.result.id;
+        if (userResult && userResult.id) {
+          userIdToInvite = userResult.id;
         }
       }
 

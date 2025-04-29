@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Toaster } from "sonner";
+import { TokenRefresh } from "@/components/token-refresh";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <TokenRefresh />
             <main className="min-h-screen">{children}</main>
             <Toaster />
           </ThemeProvider>

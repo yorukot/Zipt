@@ -32,6 +32,13 @@ export const API_URLS = {
     USER_INVITATIONS: `${API_ENDPOINT}/invitations`,
     INVITATION_PROCESS: (id: string) => `${API_ENDPOINT}/invitation/${id}`,
     LIST_USERS: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/users`,
+    DOMAIN: {
+      GET: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain`,
+      UPDATE: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain`,
+      LIST: (workspaceId: string) => `${API_ENDPOINT}/workspace/${workspaceId}`,
+      VERIFY: (workspaceId: string, domain: string) => `${API_ENDPOINT}/workspace/${workspaceId}/domain/${domain}/verify`,
+      CHECK_VALIDITY: (domain: string) => `${API_ENDPOINT}/domain/check-validity`,
+    },
   },
   URL: {
     CREATE: (workspaceId: string) => `${API_ENDPOINT}/url/${workspaceId}`,

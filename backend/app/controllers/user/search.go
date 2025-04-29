@@ -20,13 +20,6 @@ type UserSearchResponse struct {
 
 // SearchByEmail searches for a user by their email address
 func SearchByEmail(c *gin.Context) {
-	// Get user ID from context (current logged-in user)
-	currentUserID, exists := c.Get("userID")
-	if !exists {
-		utils.FullyResponse(c, http.StatusUnauthorized, "User not authenticated", utils.ErrUnauthorized, nil)
-		return
-	}
-
 	// Get email from query parameter
 	email := c.Query("email")
 	if email == "" {
@@ -47,12 +40,6 @@ func SearchByEmail(c *gin.Context) {
 		return
 	}
 
-	// Check if the user found is the same as the current user
-	if user.ID == currentUserID {
-		utils.FullyResponse(c, http.StatusBadRequest, "You cannot invite yourself", utils.ErrBadRequest, nil)
-		return
-	}
-
 	// Create response object (we don't want to expose password)
 	response := UserSearchResponse{
 		ID:          user.ID,
@@ -61,5 +48,5 @@ func SearchByEmail(c *gin.Context) {
 		Avatar:      user.Avatar,
 	}
 
-	utils.FullyResponse(c, http.StatusOK, "User found", nil, response)
+	c.JSON(http.StatusOK, response)
 }

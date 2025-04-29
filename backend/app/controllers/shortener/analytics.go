@@ -124,8 +124,7 @@ func GetURLAnalytics(c *gin.Context) {
 		}
 	}
 
-	// Return statistics
-	utils.FullyResponse(c, http.StatusOK, "Analytics retrieved successfully", nil, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"url": gin.H{
 			"short_code":   url.ShortCode,
 			"original_url": url.OriginalURL,
@@ -256,8 +255,7 @@ func GetURLTimeSeriesData(c *gin.Context) {
 		granularityDesc = "minute"
 	}
 
-	// Return time series data for charting
-	utils.FullyResponse(c, http.StatusOK, "Time series data retrieved successfully", nil, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"url": gin.H{
 			"id":           url.ID,
 			"short_code":   url.ShortCode,

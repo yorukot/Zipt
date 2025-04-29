@@ -74,7 +74,5 @@ func GetUserURLs(c *gin.Context) {
 	}
 
 	// Return workspace's URLs with enhanced information
-	utils.FullyResponse(c, http.StatusOK, "URLs retrieved successfully", nil, gin.H{
-		"urls": enhancedURLs,
-	})
+	c.JSON(http.StatusOK, enhancedURLs)
 }

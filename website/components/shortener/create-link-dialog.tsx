@@ -202,22 +202,22 @@ export function LinkDialog({
         ? {
             ...initialData,
             original_url: data.url,
-            short_code: responseData.result?.short_code || initialData.short_code,
-            short_url: responseData.result?.short_url || initialData.short_url,
-            domain_name: responseData.result?.domain_name || initialData.domain_name,
+            short_code: responseData.short_code || initialData.short_code,
+            short_url: responseData.short_url || initialData.short_url,
+            domain_name: responseData.domain_name || initialData.domain_name,
             expires_at: data.enableExpiration && data.expirationDate 
               ? data.expirationDate.toISOString() 
               : undefined,
           }
         : {
-            id: responseData.result.id,
-            short_code: responseData.result.short_code,
-            original_url: responseData.result.original_url,
-            short_url: responseData.result.short_url,
-            domain_name: responseData.result?.domain_name || "",
+            id: responseData.id,
+            short_code: responseData.short_code,
+            original_url: responseData.original_url,
+            short_url: responseData.short_url,
+            domain_name: responseData?.domain_name || "",
             clicks: 0,
             created_at: new Date().toISOString().split("T")[0],
-            expires_at: responseData.result.expires_at,
+            expires_at: responseData.expires_at,
           };
 
       // Call success callback with the link data
