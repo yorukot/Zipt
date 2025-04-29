@@ -2,6 +2,7 @@ package queries
 
 import (
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/yorukot/zipt/app/models"
@@ -179,7 +180,12 @@ func GetWorkspaceInvitationsByUserID(userID uint64) ([]models.WorkspaceInvitatio
 // GetWorkspaceInvitationsByWorkspaceID retrieves all workspace invitations for a workspace
 func GetWorkspaceInvitationsByWorkspaceID(workspaceID uint64) ([]models.WorkspaceInvitation, *gorm.DB) {
 	var invitations []models.WorkspaceInvitation
-	result := db.GetDB().Where("workspace_id = ?", workspaceID).Find(&invitations)
+	result := db.GetDB().
+		Preload("User", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, display_name, email")
+		}).
+		Where("workspace_id = ?", workspaceID).
+		Find(&invitations)
 	return invitations, result
 }
 
@@ -206,4 +212,34 @@ func CheckWorkspaceInvitationExists(workspaceID, userID uint64) (bool, *gorm.DB)
 func DeleteWorkspaceInvitation(id uint64) *gorm.DB {
 	result := db.GetDB().Delete(&models.WorkspaceInvitation{}, id)
 	return result
+}
+
+// GetWorkspaceUsersWithDetails retrieves all users in a workspace with their details
+func GetWorkspaceUsersWithDetails(workspaceID uint64) ([]map[string]interface{}, error) {
+	var workspaceUsers []models.WorkspaceUser
+	result := db.GetDB().Where("workspace_id = ?", workspaceID).Find(&workspaceUsers)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	var usersWithDetails []map[string]interface{}
+	for _, workspaceUser := range workspaceUsers {
+		user, userResult := GetUserQueueByID(workspaceUser.UserID)
+		if userResult.Error != nil {
+			continue // Skip this user if not found
+		}
+
+		userDetails := map[string]interface{}{
+			"id":           strconv.FormatUint(user.ID, 10),
+			"display_name": user.DisplayName,
+			"email":        user.Email,
+			"avatar":       user.Avatar,
+			"role":         workspaceUser.Role,
+			"created_at":   workspaceUser.CreatedAt,
+		}
+
+		usersWithDetails = append(usersWithDetails, userDetails)
+	}
+
+	return usersWithDetails, nil
 }

@@ -65,7 +65,6 @@ export function CreateWorkspaceForm({ onSuccess }: CreateWorkspaceFormProps) {
       }
 
       const workspace = await response.json()
-      console.log("workspace", workspace);
       // Call the success callback with the new workspace ID
       await onSuccess(workspace.result.id)
     } catch (error) {

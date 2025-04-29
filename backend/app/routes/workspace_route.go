@@ -26,9 +26,11 @@ func WorkspaceRoute(r *gin.RouterGroup) {
 
 	// Member routes - require at least member role
 	memberRoutes.Use(middleware.CheckWorkspaceRoleAndStore(models.RoleMember))
-	memberRoutes.GET("/:workspaceID", workspace.GetWorkspace)       // Get workspace details
-	memberRoutes.POST("/:workspaceID/invite", workspace.InviteUser) // Invite a user to workspace
-	memberRoutes.GET("/:workspaceID/invitations", workspace.GetWorkspaceInvitations) // Get all invitations for a workspace
+	memberRoutes.GET("/:workspaceID", workspace.GetWorkspace)                                 // Get workspace details
+	memberRoutes.POST("/:workspaceID/invite", workspace.InviteUser)                           // Invite a user to workspace
+	memberRoutes.GET("/:workspaceID/invitations", workspace.GetWorkspaceInvitations)          // Get all invitations for a workspace
+	memberRoutes.DELETE("/:workspaceID/invitation/:invitationID", workspace.RemoveInvitation) // Remove an invitation
+	memberRoutes.GET("/:workspaceID/users", workspace.ListWorkspaceUsers)                     // Get all users in workspace
 
 	// Owner routes - require owner role
 	ownerRoutes.Use(middleware.CheckWorkspaceRoleAndStore(models.RoleOwner))

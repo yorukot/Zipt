@@ -13,7 +13,9 @@ This document provides detailed information about the workspace management endpo
 - [Get Workspace Invitations](#get-workspace-invitations)
 - [Invite User](#invite-user)
 - [Update Invitation](#update-invitation)
+- [Remove Invitation](#remove-invitation)
 - [Remove User](#remove-user)
+- [List Workspace Users](#list-workspace-users)
 
 ## Create Workspace
 
@@ -715,6 +717,82 @@ Authorization: Bearer {access_token}
 }
 ```
 
+## Remove Invitation
+
+Remove an invitation from a workspace. Any workspace member can perform this action.
+
+### Request
+
+**Method:** `DELETE`
+
+**Endpoint:** `/api/v1/workspace/:workspaceID/invitation/:invitationID`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+| URL Parameter | Type | Required | Description |
+|---------------|------|----------|-------------|
+| `workspaceID` | string | Yes | ID of the workspace |
+| `invitationID` | string | Yes | ID of the invitation to remove |
+
+### Successful Response
+
+**Status Code:** `200 OK`
+
+**Body:**
+```json
+{
+  "status": 200,
+  "message": "Invitation removed successfully",
+  "error": null,
+  "result": null
+}
+```
+
+### Error Responses
+
+**Invalid Request (Status Code: 400 Bad Request)**
+```json
+{
+  "status": 400,
+  "message": "Invalid invitation ID",
+  "error": "ErrBadRequest",
+  "result": null
+}
+```
+
+**Not Found (Status Code: 404 Not Found)**
+```json
+{
+  "status": 404,
+  "message": "Invitation not found",
+  "error": "ErrResourceNotFound",
+  "result": null
+}
+```
+
+**Forbidden (Status Code: 403 Forbidden)**
+```json
+{
+  "status": 403,
+  "message": "Invitation does not belong to this workspace",
+  "error": "ErrForbidden",
+  "result": null
+}
+```
+
+**Server Error (Status Code: 500 Internal Server Error)**
+```json
+{
+  "status": 500,
+  "message": "Failed to remove invitation",
+  "error": "ErrSaveData",
+  "result": null
+}
+```
+
 ## Remove User
 
 Remove a user from a workspace. Only workspace owners can perform this action.
@@ -787,6 +865,90 @@ Authorization: Bearer {access_token}
   "status": 500,
   "message": "Failed to remove user from workspace",
   "error": "ErrSaveData",
+  "result": {
+    "details": "Error details"
+  }
+}
+```
+
+## List Workspace Users
+
+Retrieve all users in a workspace. Any workspace member can access this endpoint.
+
+### Request
+
+**Method:** `GET`
+
+**Endpoint:** `/api/v1/workspace/:workspaceID/users`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+| URL Parameter | Type | Required | Description |
+|---------------|------|----------|-------------|
+| `workspaceID` | string | Yes | ID of the workspace |
+
+### Successful Response
+
+**Status Code:** `200 OK`
+
+**Body:**
+```json
+{
+  "status": 200,
+  "message": "Workspace users retrieved successfully",
+  "error": null,
+  "result": [
+    {
+      "id": "123456789",
+      "display_name": "John Doe",
+      "email": "john@example.com",
+      "avatar": "https://example.com/avatars/john.jpg",
+      "role": "owner",
+      "created_at": "2023-06-15T14:30:45Z"
+    },
+    {
+      "id": "987654321",
+      "display_name": "Jane Smith",
+      "email": "jane@example.com",
+      "avatar": null,
+      "role": "member",
+      "created_at": "2023-06-16T10:20:30Z"
+    }
+  ]
+}
+```
+
+### Error Responses
+
+**Invalid Request (Status Code: 400 Bad Request)**
+```json
+{
+  "status": 400,
+  "message": "Workspace ID is required",
+  "error": "ErrBadRequest",
+  "result": null
+}
+```
+
+**Forbidden (Status Code: 403 Forbidden)**
+```json
+{
+  "status": 403,
+  "message": "You don't have permission to view users in this workspace",
+  "error": "ErrForbidden",
+  "result": null
+}
+```
+
+**Server Error (Status Code: 500 Internal Server Error)**
+```json
+{
+  "status": 500,
+  "message": "Failed to retrieve workspace users",
+  "error": "ErrGetData",
   "result": {
     "details": "Error details"
   }

@@ -20,7 +20,6 @@ async function refreshTokenFunc(
     }
 
     // If both tokens exist and are valid, no refresh needed
-    console.log("accessToken", accessToken);
     if (accessToken && refreshToken) {
       return { success: true };
     }
