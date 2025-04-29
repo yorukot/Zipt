@@ -9,8 +9,8 @@ type DomainRequest struct {
 
 // DomainResponse represents a domain in API responses
 type DomainResponse struct {
-	ID          uint64     `json:"id"`
-	WorkspaceID *uint64    `json:"workspace_id,omitempty"`
+	ID          uint64     `json:"id,string"`
+	WorkspaceID *uint64    `json:"workspace_id,string,omitempty"`
 	Domain      string     `json:"domain"`
 	Verified    bool       `json:"verified"`
 	VerifyToken string     `json:"verify_token,omitempty"`
