@@ -116,25 +116,20 @@ Authorization: Bearer {access_token}
 
 **Body:**
 ```json
-{
-  "status": 200,
-  "message": "Workspaces fetched successfully",
-  "error": null,
-  "result": [
+[
     {
-      "id": "123456789",
-      "name": "My Workspace",
-      "created_at": "2023-06-15T14:30:45Z",
-      "updated_at": "2023-06-15T14:30:45Z"
+        "id": "123456789",
+        "name": "My Workspace",
+        "created_at": "2023-06-15T14:30:45Z",
+        "updated_at": "2023-06-15T14:30:45Z"
     },
     {
-      "id": "987654321",
-      "name": "Another Workspace",
-      "created_at": "2023-06-16T10:20:30Z",
-      "updated_at": "2023-06-16T10:20:30Z"
+        "id": "987654321",
+        "name": "Another Workspace",
+        "created_at": "2023-06-16T10:20:30Z",
+        "updated_at": "2023-06-16T10:20:30Z"
     }
-  ]
-}
+]
 ```
 
 ### Error Responses
@@ -187,15 +182,10 @@ Authorization: Bearer {access_token}
 **Body:**
 ```json
 {
-  "status": 200,
-  "message": "Workspace fetched successfully",
-  "error": null,
-  "result": {
     "id": "123456789",
     "name": "My Workspace",
     "created_at": "2023-06-15T14:30:45Z",
     "updated_at": "2023-06-15T14:30:45Z"
-  }
 }
 ```
 
@@ -403,10 +393,6 @@ Authorization: Bearer {access_token}
 **Body:**
 ```json
 {
-  "status": 200,
-  "message": "Invitations fetched successfully",
-  "error": null,
-  "result": [
     {
       "id": "123456789",
       "workspace_id": "987654321",
@@ -425,7 +411,6 @@ Authorization: Bearer {access_token}
       "workspace_name": "Marketing Team",
       "inviter_name": "Jane Smith"
     }
-  ]
 }
 ```
 
@@ -477,10 +462,6 @@ Authorization: Bearer {access_token}
 **Body:**
 ```json
 {
-  "status": 200,
-  "message": "Invitations fetched successfully",
-  "error": null,
-  "result": [
     {
       "id": "123456789",
       "workspace_id": "987654321",
@@ -495,7 +476,6 @@ Authorization: Bearer {access_token}
       "inviter_id": "444555666",
       "status": "pending"
     }
-  ]
 }
 ```
 
@@ -896,29 +876,24 @@ Authorization: Bearer {access_token}
 
 **Body:**
 ```json
-{
-  "status": 200,
-  "message": "Workspace users retrieved successfully",
-  "error": null,
-  "result": [
+[
     {
-      "id": "123456789",
-      "display_name": "John Doe",
-      "email": "john@example.com",
-      "avatar": "https://example.com/avatars/john.jpg",
-      "role": "owner",
-      "created_at": "2023-06-15T14:30:45Z"
+        "id": "123456789",
+        "display_name": "John Doe",
+        "email": "john@example.com",
+        "avatar": "https://example.com/avatars/john.jpg",
+        "role": "owner",
+        "created_at": "2023-06-15T14:30:45Z"
     },
     {
-      "id": "987654321",
-      "display_name": "Jane Smith",
-      "email": "jane@example.com",
-      "avatar": null,
-      "role": "member",
-      "created_at": "2023-06-16T10:20:30Z"
+        "id": "987654321",
+        "display_name": "Jane Smith",
+        "email": "jane@example.com",
+        "avatar": null,
+        "role": "member",
+        "created_at": "2023-06-16T10:20:30Z"
     }
-  ]
-}
+]
 ```
 
 ### Error Responses

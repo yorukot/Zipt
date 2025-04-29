@@ -29,17 +29,12 @@ Authorization: Bearer {access_token}
 **Body:**
 ```json
 {
-  "status": 200,
-  "message": "User profile acquired",
-  "error": null,
-  "result": {
     "id": "123456789",
     "display_name": "Test User",
     "email": "user@example.com",
     "avatar": "https://example.com/avatar.jpg",
     "created_at": "2023-05-15T10:30:45Z",
     "updated_at": "2023-05-15T10:30:45Z"
-  }
 }
 ```
 
@@ -48,32 +43,32 @@ Authorization: Bearer {access_token}
 **Unauthorized (Status Code: 403 Forbidden)**
 ```json
 {
-  "status": 403,
-  "message": "UserID not found in context",
-  "error": "ErrUserIDNotFound",
-  "result": null
+    "status": 403,
+    "message": "UserID not found in context",
+    "error": "ErrUserIDNotFound",
+    "result": null
 }
 ```
 
 **User Not Found (Status Code: 403 Forbidden)**
 ```json
 {
-  "status": 403,
-  "message": "User not found",
-  "error": "ErrGetData",
-  "result": null
+    "status": 403,
+    "message": "User not found",
+    "error": "ErrGetData",
+    "result": null
 }
 ```
 
 **Server Error (Status Code: 500 Internal Server Error)**
 ```json
 {
-  "status": 500,
-  "message": "Error retrieving user data",
-  "error": "ErrGetData",
-  "result": {
-    "details": "Error details"
-  }
+    "status": 500,
+    "message": "Error retrieving user data",
+    "error": "ErrGetData",
+    "result": {
+        "details": "Error details"
+    }
 }
 ```
 
@@ -108,15 +103,10 @@ email=user@example.com
 **Body:**
 ```json
 {
-  "status": 200,
-  "message": "User found",
-  "error": null,
-  "result": {
     "id": "123456789",
     "display_name": "Test User",
     "email": "user@example.com",
     "avatar": "https://example.com/avatar.jpg"
-  }
 }
 ```
 
@@ -125,52 +115,52 @@ email=user@example.com
 **Unauthorized (Status Code: 401 Unauthorized)**
 ```json
 {
-  "status": 401,
-  "message": "User not authenticated",
-  "error": "ErrUnauthorized",
-  "result": null
+    "status": 401,
+    "message": "User not authenticated",
+    "error": "ErrUnauthorized",
+    "result": null
 }
 ```
 
 **Bad Request - Missing Email (Status Code: 400 Bad Request)**
 ```json
 {
-  "status": 400,
-  "message": "Email is required",
-  "error": "ErrBadRequest",
-  "result": null
+    "status": 400,
+    "message": "Email is required",
+    "error": "ErrBadRequest",
+    "result": null
 }
 ```
 
 **Bad Request - Self Invitation (Status Code: 400 Bad Request)**
 ```json
 {
-  "status": 400,
-  "message": "You cannot invite yourself",
-  "error": "ErrBadRequest",
-  "result": null
+    "status": 400,
+    "message": "You cannot invite yourself",
+    "error": "ErrBadRequest",
+    "result": null
 }
 ```
 
 **User Not Found (Status Code: 404 Not Found)**
 ```json
 {
-  "status": 404,
-  "message": "User not found",
-  "error": "ErrResourceNotFound",
-  "result": null
+    "status": 404,
+    "message": "User not found",
+    "error": "ErrResourceNotFound",
+    "result": null
 }
 ```
 
 **Server Error (Status Code: 500 Internal Server Error)**
 ```json
 {
-  "status": 500,
-  "message": "Error searching for user",
-  "error": "ErrGetData",
-  "result": {
-    "details": "Error details"
-  }
+    "status": 500,
+    "message": "Error searching for user",
+    "error": "ErrGetData",
+    "result": {
+        "details": "Error details"
+    }
 }
 ```
 
