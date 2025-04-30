@@ -10,7 +10,11 @@ func UserRoute(r *gin.RouterGroup) {
 	userGroup := r.Group("/users")
 	userGroup.Use(middleware.IsAuthorized())
 
-	userGroup.GET("/profile", userCtrl.GetProfile)
+	// Profile group
+	profileGroup := userGroup.Group("/profile")
+	profileGroup.GET("", userCtrl.GetProfile)
+	profileGroup.PUT("/email", userCtrl.UpdateEmail)
+	profileGroup.PUT("/display-name", userCtrl.UpdateDisplayName)
 
 	// Add search endpoint
 	userGroup.GET("/search", userCtrl.SearchByEmail)

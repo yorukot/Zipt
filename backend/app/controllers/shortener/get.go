@@ -33,7 +33,7 @@ func GetUserURLs(c *gin.Context) {
 
 	// Enhance URL data with formatted short URLs
 	type EnhancedURL struct {
-		ID          uint64     `json:"id"`
+		ID          uint64     `json:"id,string"`
 		ShortCode   string     `json:"short_code"`
 		OriginalURL string     `json:"original_url"`
 		ShortURL    string     `json:"short_url"`

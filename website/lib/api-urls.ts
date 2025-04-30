@@ -16,6 +16,7 @@ export const API_URLS = {
     LOGOUT: `${API_ENDPOINT}/auth/logout`,
     REFRESH: `${API_ENDPOINT}/auth/refresh`,
     CHECK: `${API_ENDPOINT}/auth/check`,
+    CHANGE_PASSWORD: `${API_ENDPOINT}/auth/change-password`,
   },
   USER: {
     PROFILE: `${API_ENDPOINT}/users/profile`,

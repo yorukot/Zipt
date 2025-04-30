@@ -9,9 +9,6 @@ import (
 func init() {
 	// Only auto-migrate URLMetric, removing the old tables
 	db.GetDB().AutoMigrate(&URLAnalytics{})
-	db.GetDB().AutoMigrate(&URLAnalyticsHourly{})
-	db.GetDB().AutoMigrate(&URLAnalyticsDaily{})
-	db.GetDB().AutoMigrate(&URLAnalyticsMonthly{})
 
 	// Enable TimescaleDB for analytics if available
 	if db.IsTimescaleEnabled {
@@ -41,18 +38,41 @@ type URLAnalytics struct {
 	BucketTime time.Time `json:"bucket_time" gorm:"primaryKey;index;not null"`
 }
 
-// Define model structs for the aggregated analytics tables
-// URLAnalyticsHourly represents hourly aggregated analytics data
+// URLAnalyticsHourly to store hourly aggregated analytics data
 type URLAnalyticsHourly struct {
-	db.URLAnalyticsHourly
+	URLID      uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
+	Referrer   string    `json:"referrer" gorm:"primaryKey;index;not null"`
+	Country    string    `json:"country" gorm:"primaryKey;index;not null"`
+	City       string    `json:"city" gorm:"primaryKey;index;not null"`
+	Device     string    `json:"device" gorm:"primaryKey;index;not null"`
+	Browser    string    `json:"browser" gorm:"primaryKey;index;not null"`
+	OS         string    `json:"os" gorm:"primaryKey;index;not null"`
+	BucketHour time.Time `json:"bucket_hour" gorm:"primaryKey;index;not null"`
+	TotalClicks int64    `json:"total_clicks"`
 }
 
-// URLAnalyticsDaily represents daily aggregated analytics data
+// URLAnalyticsDaily to store daily aggregated analytics data
 type URLAnalyticsDaily struct {
-	db.URLAnalyticsDaily
+	URLID      uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
+	Referrer   string    `json:"referrer" gorm:"primaryKey;index;not null"`
+	Country    string    `json:"country" gorm:"primaryKey;index;not null"`
+	City       string    `json:"city" gorm:"primaryKey;index;not null"`
+	Device     string    `json:"device" gorm:"primaryKey;index;not null"`
+	Browser    string    `json:"browser" gorm:"primaryKey;index;not null"`
+	OS         string    `json:"os" gorm:"primaryKey;index;not null"`
+	BucketDay  time.Time `json:"bucket_day" gorm:"primaryKey;index;not null"`
+	TotalClicks int64    `json:"total_clicks"`
 }
 
-// URLAnalyticsMonthly represents monthly aggregated analytics data
+// URLAnalyticsMonthly to store monthly aggregated analytics data
 type URLAnalyticsMonthly struct {
-	db.URLAnalyticsMonthly
+	URLID      uint64    `json:"url_id" gorm:"primaryKey;index;not null"`
+	Referrer   string    `json:"referrer" gorm:"primaryKey;index;not null"`
+	Country    string    `json:"country" gorm:"primaryKey;index;not null"`
+	City       string    `json:"city" gorm:"primaryKey;index;not null"`
+	Device     string    `json:"device" gorm:"primaryKey;index;not null"`
+	Browser    string    `json:"browser" gorm:"primaryKey;index;not null"`
+	OS         string    `json:"os" gorm:"primaryKey;index;not null"`
+	BucketMonth time.Time `json:"bucket_month" gorm:"primaryKey;index;not null"`
+	TotalClicks int64     `json:"total_clicks"`
 }

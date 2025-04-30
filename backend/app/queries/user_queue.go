@@ -29,3 +29,15 @@ func UpdateUserPassword(userID uint64, hashedPassword string) *gorm.DB {
 	result := db.GetDB().Model(&models.User{}).Where("id = ?", userID).Update("password", hashedPassword)
 	return result
 }
+
+// UpdateUserEmail updates a user's email in the database
+func UpdateUserEmail(userID uint64, email string) *gorm.DB {
+	result := db.GetDB().Model(&models.User{}).Where("id = ?", userID).Update("email", email)
+	return result
+}
+
+// UpdateUserDisplayName updates a user's display name in the database
+func UpdateUserDisplayName(userID uint64, displayName string) *gorm.DB {
+	result := db.GetDB().Model(&models.User{}).Where("id = ?", userID).Update("display_name", displayName)
+	return result
+}
