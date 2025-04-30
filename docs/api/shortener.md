@@ -541,76 +541,76 @@ end=1623761445    (Unix timestamp - optional, defaults to current time)
 
 ```json
 {
-        "url": {
-            "short_code": "abc123",
-            "original_url": "https://example.com/some-very-long-path",
-            "total_clicks": 42,
-            "created_at": "2023-06-15T14:30:45Z",
-            "expires_at": "2023-12-31T23:59:59Z"
-        },
-        "analytics": {
-            "total_clicks": 42,
-            "referrer": [
-                {
-                    "value": "direct",
-                    "total": 15
-                },
-                {
-                    "value": "google.com",
-                    "total": 12
-                }
-            ],
-            "country": [
-                {
-                    "value": "United States",
-                    "total": 18
-                },
-                {
-                    "value": "Germany",
-                    "total": 10
-                }
-            ],
-            "city": [
-                {
-                    "value": "New York",
-                    "total": 8
-                },
-                {
-                    "value": "Berlin",
-                    "total": 7
-                }
-            ],
-            "device": [
-                {
-                    "value": "iPhone",
-                    "total": 20
-                },
-                {
-                    "value": "Desktop",
-                    "total": 22
-                }
-            ],
-            "browser": [
-                {
-                    "value": "Chrome",
-                    "total": 25
-                },
-                {
-                    "value": "Safari",
-                    "total": 17
-                }
-            ],
-            "os": [
-                {
-                    "value": "iOS",
-                    "total": 20
-                },
-                {
-                    "value": "Windows",
-                    "total": 15
-                }
-            ]
-        }
+    "url": {
+        "short_code": "abc123",
+        "original_url": "https://example.com/some-very-long-path",
+        "total_clicks": 42,
+        "created_at": "2023-06-15T14:30:45Z",
+        "expires_at": "2023-12-31T23:59:59Z"
+    },
+    "analytics": {
+        "total_clicks": 42,
+        "referrer": [
+            {
+                "value": "direct",
+                "total": 15
+            },
+            {
+                "value": "google.com",
+                "total": 12
+            }
+        ],
+        "country": [
+            {
+                "value": "United States",
+                "total": 18
+            },
+            {
+                "value": "Germany",
+                "total": 10
+            }
+        ],
+        "city": [
+            {
+                "value": "New York",
+                "total": 8
+            },
+            {
+                "value": "Berlin",
+                "total": 7
+            }
+        ],
+        "device": [
+            {
+                "value": "iPhone",
+                "total": 20
+            },
+            {
+                "value": "Desktop",
+                "total": 22
+            }
+        ],
+        "browser": [
+            {
+                "value": "Chrome",
+                "total": 25
+            },
+            {
+                "value": "Safari",
+                "total": 17
+            }
+        ],
+        "os": [
+            {
+                "value": "iOS",
+                "total": 20
+            },
+            {
+                "value": "Windows",
+                "total": 15
+            }
+        ]
+    }
 }
 ```
 
@@ -719,8 +719,12 @@ os=iOS                    (optional filter)
 
 ```json
 {
-        "granularity": "hourly",
-        "total_clicks": 42,
+    "url": {
+        "id": 123456789,
+        "short_code": "abc123",
+        "original_url": "https://example.com/some-very-long-path"
+    },
+    "time_series": {
         "data": [
             {
                 "timestamp": "2023-06-15T14:00:00Z",
@@ -734,7 +738,17 @@ os=iOS                    (optional filter)
                 "timestamp": "2023-06-15T16:00:00Z",
                 "clicks": 12
             }
-        ]
+        ],
+        "granularity": "hourly",
+        "filters": {
+            "device": "iPhone",
+            "browser": "Chrome"
+        },
+        "date_range": {
+            "start": "2023-06-15T14:00:00Z",
+            "end": "2023-06-15T16:59:59Z"
+        }
+    }
 }
 ```
 
@@ -806,6 +820,13 @@ The API automatically tracks the following information when a short URL is acces
 3. **Device** - Type of device used (Desktop, iPhone, Android, etc.)
 4. **Browser** - Browser used (Chrome, Safari, Firefox, etc.)
 5. **OS** - Operating system (Windows, macOS, iOS, Android, etc.)
+
+This data is used to generate both aggregated analytics and time-series data. The system automatically determines the appropriate time granularity (minute, hourly, daily, monthly) based on the selected date range.
+
+Analytics endpoints support:
+- Filtering by any tracked dimension (referrer, country, city, device, browser, OS)
+- Custom date ranges using Unix timestamps
+- Automatic time granularity adjustment
 
 Analytics data is collected asynchronously and does not impact redirect performance.
 

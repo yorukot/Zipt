@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { Icon } from "@iconify/react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import { InvitationsPanel, InvitationCount } from "@/components/dashboard/invitations"
 import { useWorkspace } from "@/lib/context/workspace-context"
+import API_URLS from "@/lib/api-urls"
 
 // Remove mock data as we'll use the context data instead
 
@@ -65,6 +67,30 @@ export function Sidebar({ user, onClose }: SidebarProps) {
       href: `/dashboard/${workspaceId}/settings`,
     },
   ]
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(API_URLS.AUTH.LOGOUT, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        // Redirect to login page after successful logout
+        router.push("/login");
+        router.refresh(); // Refresh to update auth state
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Logout failed");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("An unexpected error occurred during logout");
+    }
+  };
 
   return (
     <aside className="flex h-full flex-col border-r bg-background">
@@ -180,21 +206,14 @@ export function Sidebar({ user, onClose }: SidebarProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{t("account.title")}</DropdownMenuLabel>
-              <DropdownMenuItem>
-                <Icon icon="lucide:user" className="mr-2 h-4 w-4" />
-                {t("account.profile")}
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Icon icon="lucide:settings" className="mr-2 h-4 w-4" />
-                {t("account.settings")}
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Icon icon="lucide:mail" className="mr-2 h-4 w-4" />
-                {t("account.invitations")}
-                <InvitationCount />
+              <DropdownMenuItem asChild>
+                <Link href="/user/profile">
+                  <Icon icon="lucide:user" className="mr-2 h-4 w-4" />
+                  {t("account.profile")}
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <Icon icon="lucide:log-out" className="mr-2 h-4 w-4" />
                 {t("account.logout")}
               </DropdownMenuItem>

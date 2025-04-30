@@ -183,11 +183,22 @@
         "clicksOverTime": "Clicks Over Time",
         "visitorsOverTime": "Visitors Over Time",
         "topCountries": "Top Countries",
+        "topCountriesDesc": "Geographic distribution of your link's visitors",
+        "topCities": "Top Cities",
+        "topCitiesDesc": "Most active cities visiting your link",
+        "topReferrers": "Top Referrers",
+        "topReferrersDesc": "Where your visitors are coming from",
+        "os": "Operating Systems",
+        "osDesc": "Distribution of operating systems used by visitors",
         "topDevices": "Device Types",
+        "topDevicesDesc": "Types of devices used to access your link",
         "topBrowsers": "Top Browsers",
+        "topBrowsersDesc": "Web browsers used by your visitors",
         "clicksMap": "Clicks by Location",
         "clicksMapDesc": "Geographical distribution of clicks",
-        "worldMap": "World Map"
+        "worldMap": "World Map",
+        "heatmapPlaceholder": "Click heatmap visualization coming soon",
+        "trendingUp": "Trending up by 5.2% this month"
       },
       "urlAnalytics": {
         "title": "Link Analytics",
@@ -195,6 +206,19 @@
         "clicksOverTime": "Clicks Over Time",
         "totalClicks": "Total Clicks",
         "avgClicksPerDay": "Avg. Daily Clicks",
+        "bestDay": "Best Day",
+        "trend": "Trend",
+        "deviceBreakdown": "Device Breakdown",
+        "browserBreakdown": "Browser Breakdown",
+        "heatmap": "Click Heatmap",
+        "heatmapDesc": "Visual representation of click patterns",
+        "rawData": "Raw Data",
+        "rawDataDesc": "Detailed click data for this link",
+        "downloadCSV": "Download CSV",
+        "timestamp": "Timestamp",
+        "source": "Source",
+        "location": "Location",
+        "device": "Device",
         "topReferrer": "Top Referrer",
         "topCountry": "Top Country",
         "topCountries": "Top Countries",
@@ -272,6 +296,33 @@
         "error": "An error occurred. Please try again.",
         "typeToConfirm": "Type the workspace name to confirm",
         "workspaceDeleted": "Workspace has been permanently deleted"
+      }
+    },
+    "Profile": {
+      "title": "Profile Settings",
+      "loading": "Loading profile information...",
+      "backToDashboard": "Back to Dashboard",
+      "displayName": {
+        "title": "Display Name",
+        "description": "This is how your name will appear across the platform.",
+        "label": "Display Name",
+        "placeholder": "Your display name",
+        "submit": "Update Display Name"
+      },
+      "email": {
+        "title": "Email Address",
+        "description": "Your email address is used for account notifications and login.",
+        "label": "Email Address",
+        "placeholder": "name@example.com",
+        "submit": "Update Email"
+      },
+      "password": {
+        "title": "Password",
+        "description": "Update your password to keep your account secure.",
+        "current": "Current Password",
+        "new": "New Password",
+        "confirm": "Confirm New Password",
+        "submit": "Update Password"
       }
     }
   }

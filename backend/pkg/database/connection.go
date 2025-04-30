@@ -74,6 +74,7 @@ func init() {
 				logger.Log.Sugar().Warnf("Failed to enable TimescaleDB extension: %v", err)
 			} else {
 				IsTimescaleEnabled = IsTimescaleDBEnabled()
+				fmt.Println("IsTimescaleEnabled", IsTimescaleEnabled)
 				if IsTimescaleEnabled {
 					logger.Log.Sugar().Info("TimescaleDB extension is enabled")
 				}
