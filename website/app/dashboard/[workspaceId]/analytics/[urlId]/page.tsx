@@ -48,10 +48,63 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { TrendingUp } from "lucide-react";
+import { fetcher } from "@/lib/utils/api";
+import useSWR from "swr";
+import API_URLS from "@/lib/api-urls";
+
+interface AnalyticsItem {
+  url_id: number;
+  referrer: string;
+  country: string;
+  city: string;
+  device: string;
+  browser: string;
+  os: string;
+  click_count: number;
+  bucket_time: string;
+}
+
+interface AnalyticsResponse {
+  url: {
+    short_code: string;
+    original_url: string;
+    total_clicks: number;
+    created_at: string;
+    expires_at: string | null;
+  };
+  analytics: {
+    total_clicks: number;
+    referrer: AnalyticsItem[];
+    country: AnalyticsItem[];
+    city: AnalyticsItem[];
+    device: AnalyticsItem[];
+    browser: AnalyticsItem[];
+    os: AnalyticsItem[];
+  };
+}
+
+interface TimeSeriesResponse {
+  url: {
+    id: number;
+    short_code: string;
+    original_url: string;
+  };
+  time_series: {
+    data: {
+      timestamp: string;
+      clicks: number;
+    }[];
+    granularity: string;
+    filters: Record<string, string>;
+    date_range: {
+      start: string;
+      end: string;
+    };
+  };
+}
 
 export default function URLAnalyticsPage() {
   const [timeRange, setTimeRange] = React.useState("7d");
-  const [isLoading, setIsLoading] = React.useState(true);
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("Dashboard");
@@ -59,81 +112,128 @@ export default function URLAnalyticsPage() {
   const workspaceId = params.workspaceId as string;
   const urlId = params.urlId as string;
 
-  // In a real implementation, you would fetch data from the API endpoints
-  // /api/v1/url/:workspaceID/:urlID/analytics
-  // /api/v1/url/:workspaceID/:urlID/analytics/timeseries
+  // Calculate time range parameters based on the selected timeRange
+  const getTimeRangeParams = () => {
+    const end = Math.floor(Date.now() / 1000); // Current time in seconds
+    let start: number;
 
+    switch (timeRange) {
+      case '24h':
+        start = end - 86400; // 24 hours in seconds
+        break;
+      case '7d':
+        start = end - 604800; // 7 days in seconds
+        break;
+      case '30d':
+        start = end - 2592000; // 30 days in seconds
+        break;
+      case '90d':
+        start = end - 7776000; // 90 days in seconds
+        break;
+      default:
+        // For 'all', use a very old date
+        start = 0;
+    }
+    
+    return { start, end };
+  };
+
+  const { start, end } = getTimeRangeParams();
+
+  // Fetch analytics data
+  const { data: analyticsData, error: analyticsError, isLoading: isAnalyticsLoading } = useSWR<AnalyticsResponse>(
+    API_URLS.URL.ANALYTICS(workspaceId, urlId),
+    fetcher
+  );
+
+  // Fetch time series data with proper time range
+  const { data: timeSeriesData, error: timeSeriesError, isLoading: isTimeSeriesLoading } = useSWR<TimeSeriesResponse>(
+    `${API_URLS.URL.TIMESERIES(workspaceId, urlId)}?start=${start}&end=${end}`,
+    fetcher
+  );
+  
   React.useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    console.log(analyticsData);
+    console.log(timeSeriesData);
+    console.log(error)
+  }, [isAnalyticsLoading, analyticsData]);
 
-    return () => clearTimeout(timer);
-  }, [workspaceId, urlId, timeRange]);
+  const isLoading = isAnalyticsLoading || isTimeSeriesLoading;
+  const error = analyticsError || timeSeriesError;
 
-  // Mock URL info data
-  const urlInfo = {
-    shortCode: "abc123",
-    originalUrl:
-      "https://example.com/some-very-long-path-that-needed-to-be-shortened-for-better-usability",
-    shortUrl: "https://zipt.io/abc123",
-    totalClicks: 542,
-    createdAt: "2023-06-15T14:30:45Z",
-    expiresAt: "2023-12-31T23:59:59Z",
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin text-primary">
+          <Icon icon="lucide:loader-2" className="h-8 w-8" />
+        </div>
+      </div>
+    );
+  }
 
-  // Mock analytics data
-  const analyticsData = {
-    total_clicks: 542,
-    referrer: [
-      { value: "direct", total: 180 },
-      { value: "google.com", total: 125 },
-      { value: "twitter.com", total: 87 },
-      { value: "facebook.com", total: 75 },
-      { value: "linkedin.com", total: 55 },
-    ],
-    country: [
-      { value: "United States", total: 215 },
-      { value: "Germany", total: 98 },
-      { value: "United Kingdom", total: 76 },
-      { value: "Canada", total: 47 },
-      { value: "Australia", total: 36 },
-    ],
-    city: [
-      { value: "New York", total: 68 },
-      { value: "Berlin", total: 54 },
-      { value: "London", total: 42 },
-      { value: "Toronto", total: 33 },
-      { value: "San Francisco", total: 29 },
-    ],
-    device: [
-      { value: "Desktop", total: 312 },
-      { value: "iPhone", total: 156 },
-      { value: "Android", total: 74 },
-    ],
-    browser: [
-      { value: "Chrome", total: 287 },
-      { value: "Safari", total: 138 },
-      { value: "Firefox", total: 67 },
-      { value: "Edge", total: 50 },
-    ],
-    os: [
-      { value: "Windows", total: 215 },
-      { value: "iOS", total: 156 },
-      { value: "macOS", total: 97 },
-      { value: "Android", total: 74 },
-    ],
-  };
+  if (error || !analyticsData || !timeSeriesData) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <p className="text-muted-foreground">Failed to load analytics data</p>
+          {error && <p className="text-destructive text-sm mt-2">{error.message}</p>}
+        </div>
+      </div>
+    );
+  }
 
-  // Mock time series data
-  const timeSeriesData = {
-    granularity: "hourly",
-    total_clicks: 542,
-    data: Array.from({ length: 24 }, (_, i) => ({
-      timestamp: new Date(Date.now() - (23 - i) * 3600000).toISOString(),
-      clicks: Math.floor(Math.random() * 30),
-    })),
+  const urlInfo = analyticsData.url;
+  const analytics = analyticsData.analytics;
+  const timeSeries = timeSeriesData.time_series;
+
+  // Transform data for charts - filter out ENGAGEMENT entries and format data
+  const referrerData = (analytics.referrer || [])
+    .filter(item => item.referrer !== "ENGAGEMENT")
+    .map((item) => ({
+      name: item.referrer || 'Unknown',
+      value: item.click_count || 0,
+      fill: item.referrer ? `var(--color-${item.referrer.replace(/\./g, '-')})` : 'var(--muted)'
+    }));
+
+  const deviceData = (analytics.device || [])
+    .filter(item => item.device !== "ENGAGEMENT")
+    .map((item) => ({
+      name: item.device || 'Unknown',
+      value: item.click_count || 0,
+      fill: item.device ? `var(--color-${item.device.toLowerCase().replace(/\s+/g, '-')})` : 'var(--muted)'
+    }));
+
+  const browserData = (analytics.browser || [])
+    .filter(item => item.browser !== "ENGAGEMENT")
+    .map((item) => ({
+      name: item.browser || 'Unknown',
+      value: item.click_count || 0,
+      fill: item.browser ? `var(--color-${item.browser.toLowerCase().replace(/\s+/g, '-')})` : 'var(--muted)'
+    }));
+
+  const countryData = (analytics.country || [])
+    .filter(item => item.country !== "ENGAGEMENT")
+    .map((item) => ({
+      value: item.country || 'Unknown',
+      total: item.click_count || 0
+    }));
+
+  const cityData = (analytics.city || [])
+    .filter(item => item.city !== "ENGAGEMENT")
+    .map((item) => ({
+      value: item.city || 'Unknown',
+      total: item.click_count || 0
+    }));
+
+  const osData = (analytics.os || [])
+    .filter(item => item.os !== "ENGAGEMENT")
+    .map((item) => ({
+      value: item.os || 'Unknown',
+      total: item.click_count || 0
+    }));
+
+  const handleBack = () => {
+    router.back();
   };
 
   // Chart configurations
@@ -184,75 +284,6 @@ export default function URLAnalyticsPage() {
     }
   } satisfies ChartConfig;
 
-  // Transform data for charts
-  const referrerData = Array.from({ length: 10 }, (_, i) => {
-    const item = analyticsData.referrer[i];
-    return {
-      name: item?.value || `Referrer ${i + 1}`,
-      value: item?.total || 0,
-      fill: item ? `var(--color-${item.value.replace('.', '-')})` : 'var(--muted)'
-    };
-  });
-
-  const deviceData = Array.from({ length: 10 }, (_, i) => {
-    const item = analyticsData.device[i];
-    return {
-      name: item?.value || `Device ${i + 1}`,
-      value: item?.total || 0,
-      fill: item ? `var(--color-${item.value.toLowerCase()})` : 'var(--muted)'
-    };
-  });
-
-  const browserData = Array.from({ length: 10 }, (_, i) => {
-    const item = analyticsData.browser[i];
-    return {
-      name: item?.value || `Browser ${i + 1}`,
-      value: item?.total || 0,
-      fill: item ? `var(--color-${item.value.toLowerCase()})` : 'var(--muted)'
-    };
-  });
-
-  // Transform country data for the chart
-  const countryData = Array.from({ length: 10 }, (_, i) => {
-    const item = analyticsData.country[i];
-    return {
-      value: item?.value || `Country ${i + 1}`,
-      total: item?.total || 0
-    };
-  });
-
-  // Transform city data for the chart
-  const cityData = Array.from({ length: 10 }, (_, i) => {
-    const item = analyticsData.city[i];
-    return {
-      value: item?.value || `City ${i + 1}`,
-      total: item?.total || 0
-    };
-  });
-
-  // Transform OS data for the chart
-  const osData = Array.from({ length: 10 }, (_, i) => {
-    const item = analyticsData.os[i];
-    return {
-      value: item?.value || `OS ${i + 1}`,
-      total: item?.total || 0
-    };
-  });
-
-  const handleBack = () => {
-    router.back();
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin text-primary">
-          <Icon icon="lucide:loader-2" className="h-8 w-8" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -265,9 +296,9 @@ export default function URLAnalyticsPage() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-xl">{urlInfo.shortCode}</CardTitle>
+          <CardTitle className="text-xl">{urlInfo.short_code}</CardTitle>
           <CardDescription className="truncate max-w-2xl">
-            {urlInfo.originalUrl}
+            {urlInfo.original_url}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -277,7 +308,7 @@ export default function URLAnalyticsPage() {
                 icon="lucide:link"
                 className="h-4 w-4 text-muted-foreground"
               />
-              <span className="text-sm">{urlInfo.shortUrl}</span>
+              <span className="text-sm">{`${window.location.origin}/${urlInfo.short_code}`}</span>
             </div>
             <div className="flex items-center gap-2">
               <Icon
@@ -285,17 +316,17 @@ export default function URLAnalyticsPage() {
                 className="h-4 w-4 text-muted-foreground"
               />
               <span className="text-sm">
-                {new Date(urlInfo.createdAt).toLocaleDateString()}
+                {new Date(urlInfo.created_at).toLocaleDateString()}
               </span>
             </div>
-            {urlInfo.expiresAt && (
+            {urlInfo.expires_at && (
               <div className="flex items-center gap-2">
                 <Icon
                   icon="lucide:calendar"
                   className="h-4 w-4 text-muted-foreground"
                 />
                 <span className="text-sm">
-                  Expires: {new Date(urlInfo.expiresAt).toLocaleDateString()}
+                  Expires: {new Date(urlInfo.expires_at).toLocaleDateString()}
                 </span>
               </div>
             )}
@@ -309,11 +340,11 @@ export default function URLAnalyticsPage() {
             {t("urlAnalytics.overviewTitle")}
           </h2>
           <div className="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium">
-            {urlInfo.totalClicks} clicks
+            {urlInfo.total_clicks} clicks
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Select defaultValue={timeRange} onValueChange={setTimeRange}>
+          <Select defaultValue={timeRange} onValueChange={(value) => setTimeRange(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("analytics.selectPeriod")} />
             </SelectTrigger>
@@ -338,7 +369,7 @@ export default function URLAnalyticsPage() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={timeSeriesConfig} className="min-h-[300px] w-full">
-            <AreaChart data={timeSeriesData.data} accessibilityLayer>
+            <AreaChart data={timeSeries.data} accessibilityLayer>
               <defs>
                 <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.8}/>
@@ -379,7 +410,7 @@ export default function URLAnalyticsPage() {
                 {t("urlAnalytics.totalClicks")}
               </div>
               <div className="mt-1 text-2xl font-bold">
-                {analyticsData.total_clicks}
+                {urlInfo.total_clicks}
               </div>
             </div>
             <div className="rounded-lg border p-3">
@@ -387,14 +418,14 @@ export default function URLAnalyticsPage() {
                 {t("urlAnalytics.avgClicksPerDay")}
               </div>
               <div className="mt-1 text-2xl font-bold">
-                {Math.round(analyticsData.total_clicks / 30)}
+                {Math.max(1, Math.round(urlInfo.total_clicks / (timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90)))}
               </div>
             </div>
             <div className="rounded-lg border p-3">
               <div className="text-xs font-medium text-muted-foreground">
                 {t("urlAnalytics.bestDay")}
               </div>
-              <div className="mt-1 text-2xl font-bold">Friday</div>
+              <div className="mt-1 text-2xl font-bold">-</div>
             </div>
             <div className="rounded-lg border p-3">
               <div className="text-xs font-medium text-muted-foreground">
@@ -402,7 +433,7 @@ export default function URLAnalyticsPage() {
               </div>
               <div className="mt-1 flex items-center text-2xl font-bold text-emerald-500">
                 <Icon icon="lucide:trending-up" className="mr-1 h-4 w-4" />
-                12%
+                -
               </div>
             </div>
           </div>
@@ -419,20 +450,20 @@ export default function URLAnalyticsPage() {
             <ChartContainer config={deviceConfig} className="min-h-[300px] w-full">
               <PieChart accessibilityLayer>
                 <Pie
-                  data={analyticsData.device}
+                  data={deviceData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
                   outerRadius={90}
-                  dataKey="total"
-                  nameKey="value"
+                  dataKey="value"
+                  nameKey="name"
                   paddingAngle={2}
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {analyticsData.device.map((item, index) => (
+                  {deviceData.map((item, index) => (
                     <Cell
-                      key={item.value}
-                      fill={`var(--chart-${index + 1})`}
+                      key={`${item.name}-${index}`}
+                      fill={`var(--chart-${index % 4 + 1})`}
                     />
                   ))}
                 </Pie>
@@ -451,20 +482,20 @@ export default function URLAnalyticsPage() {
             <ChartContainer config={browserConfig} className="min-h-[300px] w-full">
               <PieChart accessibilityLayer>
                 <Pie
-                  data={analyticsData.browser}
+                  data={browserData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
                   outerRadius={90}
-                  dataKey="total"
-                  nameKey="value"
+                  dataKey="value"
+                  nameKey="name"
                   paddingAngle={2}
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {analyticsData.browser.map((item, index) => (
+                  {browserData.map((item, index) => (
                     <Cell
-                      key={item.value}
-                      fill={`var(--chart-${index + 1})`}
+                      key={`${item.name}-${index}`}
+                      fill={`var(--chart-${index % 4 + 1})`}
                     />
                   ))}
                 </Pie>
@@ -508,7 +539,6 @@ export default function URLAnalyticsPage() {
                     tickMargin={10}
                     axisLine={false}
                     width={120}
-                    tickFormatter={(value) => value.startsWith('Country') ? '' : value}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -562,7 +592,6 @@ export default function URLAnalyticsPage() {
                     tickMargin={10}
                     axisLine={false}
                     width={120}
-                    tickFormatter={(value) => value.startsWith('City') ? '' : value}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -616,7 +645,6 @@ export default function URLAnalyticsPage() {
                     tickMargin={10}
                     axisLine={false}
                     width={120}
-                    tickFormatter={(value) => value.startsWith('Referrer') ? '' : value}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -670,7 +698,6 @@ export default function URLAnalyticsPage() {
                     tickMargin={10}
                     axisLine={false}
                     width={120}
-                    tickFormatter={(value) => value.startsWith('OS') ? '' : value}
                   />
                   <ChartTooltip
                     cursor={false}
@@ -702,18 +729,6 @@ export default function URLAnalyticsPage() {
       </Tabs>
 
       <Card>
-        <CardHeader>
-          <CardTitle>{t("urlAnalytics.heatmap")}</CardTitle>
-          <CardDescription>{t("urlAnalytics.heatmapDesc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center">
-          <div className="h-[300px] w-full flex items-center justify-center bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground">{t("analytics.heatmapPlaceholder")}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>{t("urlAnalytics.rawData")}</CardTitle>
@@ -733,14 +748,16 @@ export default function URLAnalyticsPage() {
               <div>{t("urlAnalytics.device")}</div>
             </div>
             <div className="divide-y">
-              {Array.from({ length: 5 }).map((_, i) => (
+              {analytics.referrer.slice(0, 5).map((item, i) => (
                 <div key={i} className="grid grid-cols-4 py-3 px-4">
                   <div className="text-muted-foreground">
-                    {new Date(Date.now() - i * 3600000).toLocaleString()}
+                    {item.bucket_time !== "0001-01-01T00:00:00Z" 
+                      ? new Date(item.bucket_time).toLocaleString() 
+                      : "N/A"}
                   </div>
-                  <div>{analyticsData.referrer[i % analyticsData.referrer.length].value}</div>
-                  <div>{analyticsData.country[i % analyticsData.country.length].value}</div>
-                  <div>{analyticsData.device[i % analyticsData.device.length].value}</div>
+                  <div>{item.referrer || "N/A"}</div>
+                  <div>{item.country || "N/A"}</div>
+                  <div>{item.device || "N/A"}</div>
                 </div>
               ))}
             </div>

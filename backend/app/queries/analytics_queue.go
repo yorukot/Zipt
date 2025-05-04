@@ -216,24 +216,34 @@ func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccur
 	offset := (page - 1) * 10
 
 	var vmodel any
+	var bucketField string
+	var clickField string
 
 	switch timeAccuracy {
 	case Hourly:
 		vmodel = models.URLAnalyticsHourly{}
+		bucketField = "bucket_hour"
+		clickField = "total_clicks"
 	case Daily:
 		vmodel = models.URLAnalyticsDaily{}
+		bucketField = "bucket_day"
+		clickField = "total_clicks"
 	case Monthly:
 		vmodel = models.URLAnalyticsMonthly{}
+		bucketField = "bucket_month"
+		clickField = "total_clicks"
 	default:
 		vmodel = models.URLAnalytics{}
+		bucketField = "bucket_time"
+		clickField = "click_count"
 	}
 
 	// TODO: Add page and page size
 	err := db.GetDB().Model(&vmodel).
-		Select(fmt.Sprintf("url_id, %s, SUM(click_count) as total_clicks", dataType)).
+		Select(fmt.Sprintf("url_id, %s, SUM(%s) as total_clicks", dataType, clickField)).
 		Where("url_id = ?", urlID).
-		Where("bucket_time >= ?", startDate).
-		Where("bucket_time <= ?", endDate).
+		Where(fmt.Sprintf("%s >= ?", bucketField), startDate).
+		Where(fmt.Sprintf("%s <= ?", bucketField), endDate).
 		Group(fmt.Sprintf("url_id, %s", dataType)).
 		Order("total_clicks DESC").
 		Limit(10).
@@ -261,28 +271,38 @@ func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[stri
 	// Select the appropriate model based on time accuracy
 	var vmodel any
 	var groupByFormat string
+	var bucketField string
+	var clickField string
 
 	switch timeAccuracy {
 	case Hourly:
 		vmodel = models.URLAnalyticsHourly{}
 		groupByFormat = "hour"
+		bucketField = "bucket_hour"
+		clickField = "total_clicks"
 	case Daily:
 		vmodel = models.URLAnalyticsDaily{}
 		groupByFormat = "day"
+		bucketField = "bucket_day"
+		clickField = "total_clicks"
 	case Monthly:
 		vmodel = models.URLAnalyticsMonthly{}
 		groupByFormat = "month"
+		bucketField = "bucket_month"
+		clickField = "total_clicks"
 	default:
 		vmodel = models.URLAnalytics{}
 		groupByFormat = "minute"
+		bucketField = "bucket_time"
+		clickField = "click_count"
 	}
 
 	// Start building the query
 	query := db.GetDB().Model(&vmodel).
-		Select(fmt.Sprintf("date_trunc('%s', bucket_time) as timestamp, SUM(click_count) as click_count", groupByFormat)).
+		Select(fmt.Sprintf("date_trunc('%s', %s) as timestamp, SUM(%s) as click_count", groupByFormat, bucketField, clickField)).
 		Where("url_id = ?", urlID).
-		Where("bucket_time >= ?", startDate).
-		Where("bucket_time <= ?", endDate)
+		Where(fmt.Sprintf("%s >= ?", bucketField), startDate).
+		Where(fmt.Sprintf("%s <= ?", bucketField), endDate)
 
 	// Add filters if provided
 	for field, value := range filters {

@@ -198,6 +198,7 @@
         "clicksMapDesc": "Geographical distribution of clicks",
         "worldMap": "World Map",
         "heatmapPlaceholder": "Click heatmap visualization coming soon",
+        "worldMapPlaceholder": "World map visualization loading...",
         "trendingUp": "Trending up by 5.2% this month"
       },
       "urlAnalytics": {
