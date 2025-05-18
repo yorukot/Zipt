@@ -5,6 +5,19 @@ import API_URLS from "@/lib/api-urls";
 
 // Function to refresh the access token
 async function refreshAccessToken() {
+  // Check if the refresh token is expired
+  const refreshToken = localStorage.getItem("refresh_token");
+  if (!refreshToken) {
+    return;
+  }
+
+  // Check if the access token is expired
+  const accessToken = localStorage.getItem("access_token");
+  if (!accessToken) {
+    return;
+  }
+
+  // Check if the access token is expired
   try {
     const response = await fetch(API_URLS.AUTH.REFRESH, {
       method: "POST",
@@ -37,4 +50,4 @@ export function TokenRefresh() {
   }, []);
 
   return null; // This component doesn't render anything
-} 
+}
