@@ -209,49 +209,98 @@ func GetTotalTime(startDate time.Time, endDate time.Time) (time.Duration, TimeAc
 	}
 }
 
-// GetAnalyticsDataByCountry retrieves analytics data for a specific URL by country
+// GetDiffrentTypeAnalyticsData retrieves analytics data for a specific URL by dataType (country, referrer, etc.)
 func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccuracy, dataType string, startDate time.Time, endDate time.Time) ([]models.URLAnalytics, error) {
 	var result []models.URLAnalytics
 
 	offset := (page - 1) * 10
 
-	var vmodel any
-	var bucketField string
-	var clickField string
+	// Note: We're not using time_bucket for this query since we're just grouping by dimensions
+	// The timeAccuracy parameter is only used for reference in other functions
 
-	switch timeAccuracy {
-	case Hourly:
-		vmodel = models.URLAnalyticsHourly{}
-		bucketField = "bucket_hour"
-		clickField = "total_clicks"
-	case Daily:
-		vmodel = models.URLAnalyticsDaily{}
-		bucketField = "bucket_day"
-		clickField = "total_clicks"
-	case Monthly:
-		vmodel = models.URLAnalyticsMonthly{}
-		bucketField = "bucket_month"
-		clickField = "total_clicks"
-	default:
-		vmodel = models.URLAnalytics{}
-		bucketField = "bucket_time"
-		clickField = "click_count"
+	// Validate dataType to prevent SQL injection
+	validDataTypes := map[string]bool{
+		"referrer": true,
+		"country":  true,
+		"city":     true,
+		"device":   true,
+		"browser":  true,
+		"os":       true,
 	}
 
-	// TODO: Add page and page size
-	err := db.GetDB().Model(&vmodel).
-		Select(fmt.Sprintf("url_id, %s, SUM(%s) as total_clicks", dataType, clickField)).
-		Where("url_id = ?", urlID).
-		Where(fmt.Sprintf("%s >= ?", bucketField), startDate).
-		Where(fmt.Sprintf("%s <= ?", bucketField), endDate).
-		Group(fmt.Sprintf("url_id, %s", dataType)).
-		Order("total_clicks DESC").
-		Limit(10).
-		Offset(offset).
-		Find(&result).Error
+	if !validDataTypes[dataType] {
+		return nil, fmt.Errorf("invalid data type: %s", dataType)
+	}
 
+	// Build and execute the SQL query
+	query := `
+		SELECT 
+			url_id, 
+			` + dataType + `, 
+			SUM(click_count) as total_clicks 
+		FROM url_analytics 
+		WHERE url_id = $1 
+		AND bucket_time >= $2 
+		AND bucket_time <= $3 
+		GROUP BY url_id, ` + dataType + ` 
+		ORDER BY total_clicks DESC 
+		LIMIT 10 
+		OFFSET $4
+	`
+
+	rows, err := db.GetDB().Raw(query, urlID, startDate, endDate, offset).Rows()
 	if err != nil {
 		logger.Log.Error(fmt.Sprintf("Error retrieving analytics data for URL ID %d: %v", urlID, err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Process the results
+	for rows.Next() {
+		var analytics models.URLAnalytics
+		var totalClicks int64
+
+		// We need dynamic scanning based on which field we're grouping by
+		switch dataType {
+		case "referrer":
+			if err := rows.Scan(&analytics.URLID, &analytics.Referrer, &totalClicks); err != nil {
+				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
+				continue
+			}
+		case "country":
+			if err := rows.Scan(&analytics.URLID, &analytics.Country, &totalClicks); err != nil {
+				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
+				continue
+			}
+		case "city":
+			if err := rows.Scan(&analytics.URLID, &analytics.City, &totalClicks); err != nil {
+				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
+				continue
+			}
+		case "device":
+			if err := rows.Scan(&analytics.URLID, &analytics.Device, &totalClicks); err != nil {
+				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
+				continue
+			}
+		case "browser":
+			if err := rows.Scan(&analytics.URLID, &analytics.Browser, &totalClicks); err != nil {
+				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
+				continue
+			}
+		case "os":
+			if err := rows.Scan(&analytics.URLID, &analytics.OS, &totalClicks); err != nil {
+				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
+				continue
+			}
+		}
+
+		analytics.ClickCount = totalClicks
+		result = append(result, analytics)
+	}
+
+	// Check for errors during row iteration
+	if err := rows.Err(); err != nil {
+		logger.Log.Error(fmt.Sprintf("Error iterating through analytics data rows: %v", err))
 		return nil, err
 	}
 
@@ -268,49 +317,43 @@ type TimeSeriesDataPoint struct {
 func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[string]string, startDate time.Time, endDate time.Time) ([]TimeSeriesDataPoint, error) {
 	var result []TimeSeriesDataPoint
 
-	// Select the appropriate model based on time accuracy
-	var vmodel any
-	var groupByFormat string
-	var bucketField string
-	var clickField string
-
+	// Determine time bucket interval based on time accuracy
+	var interval string
 	switch timeAccuracy {
 	case Hourly:
-		vmodel = models.URLAnalyticsHourly{}
-		groupByFormat = "hour"
-		bucketField = "bucket_hour"
-		clickField = "total_clicks"
+		interval = "1 hour"
 	case Daily:
-		vmodel = models.URLAnalyticsDaily{}
-		groupByFormat = "day"
-		bucketField = "bucket_day"
-		clickField = "total_clicks"
+		interval = "1 day"
 	case Monthly:
-		vmodel = models.URLAnalyticsMonthly{}
-		groupByFormat = "month"
-		bucketField = "bucket_month"
-		clickField = "total_clicks"
+		interval = "1 month"
 	default:
-		vmodel = models.URLAnalytics{}
-		groupByFormat = "minute"
-		bucketField = "bucket_time"
-		clickField = "click_count"
+		interval = "2 minutes" // Default to original data precision
 	}
 
-	// Start building the query
-	query := db.GetDB().Model(&vmodel).
-		Select(fmt.Sprintf("date_trunc('%s', %s) as timestamp, SUM(%s) as click_count", groupByFormat, bucketField, clickField)).
-		Where("url_id = ?", urlID).
-		Where(fmt.Sprintf("%s >= ?", bucketField), startDate).
-		Where(fmt.Sprintf("%s <= ?", bucketField), endDate)
+	// Build the base query
+	baseQuery := `
+		SELECT 
+			time_bucket($1, bucket_time) as timestamp, 
+			SUM(click_count) as click_count 
+		FROM url_analytics 
+		WHERE url_id = $2 
+		AND bucket_time >= $3 
+		AND bucket_time <= $4 
+	`
 
 	// Add filters if provided
+	filterCount := 5 // Starting parameter count
+	var additionalParams []interface{}
+	additionalFilters := ""
+
 	for field, value := range filters {
 		if value != "" {
 			// Validate field to prevent SQL injection
 			switch field {
 			case "referrer", "country", "city", "device", "browser", "os":
-				query = query.Where(fmt.Sprintf("%s = ?", field), value)
+				additionalFilters += fmt.Sprintf(" AND %s = $%d", field, filterCount)
+				additionalParams = append(additionalParams, value)
+				filterCount++
 			default:
 				// Skip invalid fields
 				logger.Log.Sugar().Warnf("Invalid filter field ignored: %s", field)
@@ -318,14 +361,39 @@ func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[stri
 		}
 	}
 
-	// Complete the query with grouping and ordering
-	err := query.
-		Group("timestamp").
-		Order("timestamp ASC").
-		Find(&result).Error
+	// Complete the query
+	query := baseQuery + additionalFilters + ` GROUP BY timestamp ORDER BY timestamp ASC`
 
+	// Prepare all parameters
+	params := []interface{}{
+		interval,  // $1 (interval for time_bucket)
+		urlID,     // $2
+		startDate, // $3
+		endDate,   // $4
+	}
+	params = append(params, additionalParams...)
+
+	// Execute the query
+	rows, err := db.GetDB().Raw(query, params...).Rows()
 	if err != nil {
 		logger.Log.Error(fmt.Sprintf("Error retrieving time series data for URL ID %d: %v", urlID, err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Process the results
+	for rows.Next() {
+		var point TimeSeriesDataPoint
+		if err := rows.Scan(&point.Timestamp, &point.ClickCount); err != nil {
+			logger.Log.Error(fmt.Sprintf("Error scanning time series data row: %v", err))
+			continue
+		}
+		result = append(result, point)
+	}
+
+	// Check for errors during row iteration
+	if err := rows.Err(); err != nil {
+		logger.Log.Error(fmt.Sprintf("Error iterating through time series data rows: %v", err))
 		return nil, err
 	}
 
