@@ -6,7 +6,7 @@ SELECT create_hypertable(
     );
 
 -- Create continuous aggregate view for hourly click counts
-CREATE MATERIALIZED VIEW url_analytics_hourly WITH (timescaledb.continuous) AS
+CREATE MATERIALIZED VIEW url_analytics_hourlies WITH (timescaledb.continuous) AS
 SELECT url_id,
     referrer,
     country,
@@ -27,7 +27,7 @@ GROUP BY url_id,
     bucket_hour;
 
 -- Create continuous aggregate view for daily click counts
-CREATE MATERIALIZED VIEW url_analytics_daily WITH (timescaledb.continuous) AS
+CREATE MATERIALIZED VIEW url_analytics_dailies WITH (timescaledb.continuous) AS
 SELECT url_id,
     referrer,
     country,
@@ -48,7 +48,7 @@ GROUP BY url_id,
     bucket_day;
 
 -- Create continuous aggregate view for monthly click counts
-CREATE MATERIALIZED VIEW url_analytics_monthly WITH (timescaledb.continuous) AS
+CREATE MATERIALIZED VIEW url_analytics_monthlies WITH (timescaledb.continuous) AS
 SELECT url_id,
     referrer,
     country,
@@ -70,7 +70,7 @@ GROUP BY url_id,
 
 -- Set retention policies for continuous aggregates
 SELECT add_continuous_aggregate_policy(
-        'url_analytics_hourly',
+        'url_analytics_hourlies',
         start_offset => INTERVAL '7 days',
         end_offset => INTERVAL '1 hour',
         schedule_interval => INTERVAL '1 hour'
@@ -79,8 +79,8 @@ SELECT add_continuous_aggregate_policy(
 -- Set data retention policies
 SELECT add_retention_policy('url_analytics', INTERVAL '12 hours');
 -- Hourly data retention: 14 days
-SELECT add_retention_policy('url_analytics_hourly', INTERVAL '14 days');
+SELECT add_retention_policy('url_analytics_hourlies', INTERVAL '14 days');
 -- Daily data retention: 365 days
-SELECT add_retention_policy('url_analytics_daily', INTERVAL '365 days');
+SELECT add_retention_policy('url_analytics_dailies', INTERVAL '365 days');
 -- Monthly data retention: 100 years
-SELECT add_retention_policy('url_analytics_monthly', INTERVAL '100 years');
+SELECT add_retention_policy('url_analytics_monthlies', INTERVAL '100 years');

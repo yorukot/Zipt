@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/app/queries"
+	"github.com/yorukot/zipt/pkg/logger"
 	"github.com/yorukot/zipt/pkg/utils"
 )
 
@@ -15,12 +16,12 @@ import (
 type AnalyticsDataType string
 
 const (
-	Referrer AnalyticsDataType = "Referrer"
-	Country  AnalyticsDataType = "Country"
-	City     AnalyticsDataType = "City"
-	Device   AnalyticsDataType = "Device"
-	Browser  AnalyticsDataType = "Browser"
-	OS       AnalyticsDataType = "OS"
+	Referrer AnalyticsDataType = "referrer"
+	Country  AnalyticsDataType = "country"
+	City     AnalyticsDataType = "city"
+	Device   AnalyticsDataType = "device"
+	Browser  AnalyticsDataType = "browser"
+	OS       AnalyticsDataType = "os"
 )
 
 // GetURLAnalytics returns analytics data for a specific URL
@@ -119,11 +120,11 @@ func GetURLAnalytics(c *gin.Context) {
 	// Fetch all analytics data types
 	for _, dataType := range []AnalyticsDataType{Referrer, Country, City, Device, Browser, OS} {
 		if err := fetchAnalytics(dataType); err != nil {
-			utils.FullyResponse(c, http.StatusInternalServerError, "Error retrieving analytics data", utils.ErrGetData, err)
-			return
+			logger.Log.Sugar().Errorf("Error retrieving analytics data for %s: %v", dataType, err)
 		}
 	}
 
+	// Even if some analytics types failed, return what we have
 	c.JSON(http.StatusOK, gin.H{
 		"url": gin.H{
 			"short_code":   url.ShortCode,
@@ -238,8 +239,9 @@ func GetURLTimeSeriesData(c *gin.Context) {
 	// Get time series data with filters
 	timeSeriesData, err := queries.GetTimeSeriesData(url.ID, timeAccuracy, filters, parsedStartDate, parsedEndDate)
 	if err != nil {
-		utils.FullyResponse(c, http.StatusInternalServerError, "Error retrieving time series data", utils.ErrGetData, err.Error())
-		return
+		// Log the error but still proceed to return an empty array instead of returning an error
+		logger.Log.Sugar().Errorf("Error retrieving time series data: %v", err)
+		timeSeriesData = []queries.TimeSeriesDataPoint{} // Return empty array instead of failing
 	}
 
 	// Determine the granularity description for frontend
