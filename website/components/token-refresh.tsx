@@ -12,12 +12,6 @@ async function refreshAccessToken() {
   }
 
   // Check if the access token is expired
-  const accessToken = localStorage.getItem("access_token");
-  if (!accessToken) {
-    return;
-  }
-
-  // Check if the access token is expired
   try {
     const response = await fetch(API_URLS.AUTH.REFRESH, {
       method: "POST",
