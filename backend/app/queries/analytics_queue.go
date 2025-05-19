@@ -317,32 +317,24 @@ type TimeSeriesDataPoint struct {
 func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[string]string, startDate time.Time, endDate time.Time) ([]TimeSeriesDataPoint, error) {
 	var result []TimeSeriesDataPoint
 
-	// Determine time bucket interval based on time accuracy
-	var interval string
-	switch timeAccuracy {
-	case Hourly:
-		interval = "1 hour"
-	case Daily:
-		interval = "1 day"
-	case Monthly:
-		interval = "1 month"
-	default:
-		interval = "2 minutes" // Default to original data precision
-	}
-
-	// Build the base query
+	// Build the base query without time bucketing - just get raw records
 	baseQuery := `
 		SELECT 
-			time_bucket($1, bucket_time) as timestamp, 
-			SUM(click_count) as click_count 
+			bucket_time as timestamp, 
+			click_count
 		FROM url_analytics 
-		WHERE url_id = $2 
-		AND bucket_time >= $3 
-		AND bucket_time <= $4 
+		WHERE url_id = $1 
+		AND bucket_time >= $2 
+		AND bucket_time <= $3
 	`
 
-	// Add filters if provided
-	filterCount := 5 // Starting parameter count
+	// Add default filter for ENGAGEMENT if no filters are provided
+	if len(filters) == 0 {
+		baseQuery += ` AND referrer = 'ENGAGEMENT' AND country = 'ENGAGEMENT' AND city = 'ENGAGEMENT' AND device = 'ENGAGEMENT' AND browser = 'ENGAGEMENT' AND os = 'ENGAGEMENT'`
+	}
+
+	// Add user-provided filters if any
+	filterCount := 4 // Starting parameter count
 	var additionalParams []interface{}
 	additionalFilters := ""
 
@@ -361,15 +353,14 @@ func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[stri
 		}
 	}
 
-	// Complete the query
-	query := baseQuery + additionalFilters + ` GROUP BY timestamp ORDER BY timestamp ASC`
+	// Complete the query with grouping to avoid duplicates
+	query := baseQuery + additionalFilters + ` GROUP BY timestamp, click_count ORDER BY timestamp ASC`
 
 	// Prepare all parameters
 	params := []interface{}{
-		interval,  // $1 (interval for time_bucket)
-		urlID,     // $2
-		startDate, // $3
-		endDate,   // $4
+		urlID,     // $1
+		startDate, // $2
+		endDate,   // $3
 	}
 	params = append(params, additionalParams...)
 

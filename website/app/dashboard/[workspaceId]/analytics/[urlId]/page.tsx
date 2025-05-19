@@ -186,6 +186,7 @@ export default function URLAnalyticsPage() {
   const analytics = analyticsData.analytics;
   const timeSeries = timeSeriesData.time_series;
 
+  
   // Transform data for charts - filter out ENGAGEMENT entries and format data
   const referrerData = (analytics.referrer || [])
     .filter(item => item.referrer !== "ENGAGEMENT")
