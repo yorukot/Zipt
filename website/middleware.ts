@@ -14,6 +14,7 @@ async function refreshTokenFunc(
   accessToken: string | undefined,
   refreshToken: string | undefined
 ): Promise<RefreshResult> {
+
   try {
     if (!refreshToken) {
       return { success: false };
@@ -23,7 +24,6 @@ async function refreshTokenFunc(
     if (accessToken && refreshToken) {
       return { success: true };
     }
-
     // If we get here, we need to refresh the token
     const res = await fetch(API_URLS.AUTH.REFRESH, {
       method: "POST",
@@ -80,6 +80,7 @@ export async function middleware(req: NextRequest) {
   // Handle authentication for private routes
   const accessToken = req.cookies.get("access_token")?.value;
   const refreshToken = req.cookies.get("refresh_token")?.value;
+
 
   // Try to refresh token if needed
   const { success, cookies } = await refreshTokenFunc(
