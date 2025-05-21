@@ -14,7 +14,6 @@ async function refreshTokenFunc(
   accessToken: string | undefined,
   refreshToken: string | undefined
 ): Promise<RefreshResult> {
-
   try {
     if (!refreshToken) {
       return { success: false };
@@ -38,23 +37,23 @@ async function refreshTokenFunc(
       // In Node.js/Next.js, headers.get only returns the first value
       // We need to manually extract and process all Set-Cookie headers
       const cookies: string[] = [];
-      const setCookie = res.headers.get('set-cookie');
-      
+      const setCookie = res.headers.get("set-cookie");
+
       if (setCookie) {
         // If there's a single Set-Cookie header with multiple cookies separated by commas
         // Split them into individual cookies
-        cookies.push(...setCookie.split(',').map(c => c.trim()));
+        cookies.push(...setCookie.split(",").map((c) => c.trim()));
       }
-      
+
       // Also check if there are multiple Set-Cookie headers
       // by iterating through all headers
       const headerEntries = Array.from(res.headers.entries());
       headerEntries.forEach(([key, value]) => {
-        if (key.toLowerCase() === 'set-cookie' && !cookies.includes(value)) {
+        if (key.toLowerCase() === "set-cookie" && !cookies.includes(value)) {
           cookies.push(value);
         }
       });
-      
+
       return {
         success: true,
         cookies,
@@ -71,16 +70,10 @@ async function refreshTokenFunc(
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  
-  // Skip authentication for non-private routes
-  if (!privateRoutes.some((route) => pathname.startsWith(route))) {
-    return NextResponse.next();
-  }
 
   // Handle authentication for private routes
   const accessToken = req.cookies.get("access_token")?.value;
   const refreshToken = req.cookies.get("refresh_token")?.value;
-
 
   // Try to refresh token if needed
   const { success, cookies } = await refreshTokenFunc(
@@ -88,8 +81,8 @@ export async function middleware(req: NextRequest) {
     refreshToken
   );
 
-  // If authentication failed, redirect to login
-  if (!success) {
+  // If authentication failed, and the route is private, redirect to login
+  if (!success && privateRoutes.some((route) => pathname.startsWith(route))) {
     const url = new URL("/login", req.url);
     url.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(url);
@@ -97,12 +90,12 @@ export async function middleware(req: NextRequest) {
 
   // Authentication succeeded
   const response = NextResponse.next();
-  
+
   // Apply new cookies if provided
   if (cookies && cookies.length > 0) {
     cookies.forEach((cookieString) => {
       if (cookieString) {
-        response.headers.append('Set-Cookie', cookieString);
+        response.headers.append("Set-Cookie", cookieString);
       }
     });
   }

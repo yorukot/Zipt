@@ -13,7 +13,7 @@ func init() {
 
 // ==================================================
 // Analytics time granularities:
-// - 2 mins record for 12 hours
+// - 2 mins record for 2 hours
 // - 1 hour record for 14 days
 // - 1 day record for 365 days
 // - 1 month record for 100 years
@@ -29,13 +29,31 @@ type URLAnalytics struct {
 	Device     string    `json:"device" gorm:"primaryKey;index;not null"`
 	Browser    string    `json:"browser" gorm:"primaryKey;index;not null"`
 	OS         string    `json:"os" gorm:"primaryKey;index;not null"`
-	ClickCount int64     `json:"click_count" gorm:"column:click_count;default:0"`
-	BucketTime time.Time `json:"bucket_time" gorm:"column:bucket_time;primaryKey;index;not null"`
+	CreatedAt  time.Time `json:"created_at" gorm:"column:created_at;primaryKey;index;not null"`
+	BucketTime time.Time `json:"bucket_time" gorm:"column:bucket_time;not null"`
 }
 
 // TableName specifies the table name for URLAnalytics
 func (URLAnalytics) TableName() string {
 	return "url_analytics"
+}
+
+// URLAnalyticsTwoMintus to store hourly aggregated analytics data
+type URLAnalyticsTwoMintus struct {
+	URLID       uint64    `json:"url_id" gorm:"column:url_id;primaryKey;index;not null"`
+	Referrer    string    `json:"referrer" gorm:"primaryKey;index;not null"`
+	Country     string    `json:"country" gorm:"primaryKey;index;not null"`
+	City        string    `json:"city" gorm:"primaryKey;index;not null"`
+	Device      string    `json:"device" gorm:"primaryKey;index;not null"`
+	Browser     string    `json:"browser" gorm:"primaryKey;index;not null"`
+	OS          string    `json:"os" gorm:"primaryKey;index;not null"`
+	Bucket2min  time.Time `json:"bucket_2min" gorm:"column:bucket_2min;primaryKey;index;not null"`
+	TotalClicks int64     `json:"total_clicks" gorm:"column:total_clicks"`
+}
+
+// TableName specifies the table name for URLAnalyticsTwoMintus
+func (URLAnalyticsTwoMintus) TableName() string {
+	return "url_analytics_2min"
 }
 
 // URLAnalyticsHourlies to store hourly aggregated analytics data

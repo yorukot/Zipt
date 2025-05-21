@@ -11,66 +11,27 @@ import (
 	"github.com/yorukot/zipt/pkg/logger"
 )
 
-// ================================
 // For the add or update analytics data to the database
-// ================================
 func TrackAllAnalytics(tracker models.URLAnalytics) *gorm.DB {
-	// Round the current time to the nearest 2-minute bucket for consistent grouping
 	now := time.Now()
-	bucketTime := now.Truncate(2 * time.Minute)
 
 	analytics := models.URLAnalytics{
-		URLID:      tracker.URLID,
-		Referrer:   tracker.Referrer,
-		Country:    tracker.Country,
-		City:       tracker.City,
-		Device:     tracker.Device,
-		Browser:    tracker.Browser,
-		OS:         tracker.OS,
-		ClickCount: 1,
-		BucketTime: bucketTime,
+		URLID:     tracker.URLID,
+		Referrer:  tracker.Referrer,
+		Country:   tracker.Country,
+		City:      tracker.City,
+		Device:    tracker.Device,
+		Browser:   tracker.Browser,
+		OS:        tracker.OS,
+		CreatedAt: now,
 	}
-
-	// First check if the analytics record already exists
-	var existingAnalytics models.URLAnalytics
-	checkResult := db.GetDB().Where("url_id = ?", analytics.URLID).
-		Where("referrer = ?", analytics.Referrer).
-		Where("country = ?", analytics.Country).
-		Where("city = ?", analytics.City).
-		Where("device = ?", analytics.Device).
-		Where("browser = ?", analytics.Browser).
-		Where("os = ?", analytics.OS).
-		Where("bucket_time = ?", analytics.BucketTime).
-		First(&existingAnalytics)
 
 	var result *gorm.DB
-	if checkResult.Error == nil {
-		// Record exists, update the click count at the database level to avoid race conditions
-		result = db.GetDB().Model(&models.URLAnalytics{}).
-			Where("url_id = ?", analytics.URLID).
-			Where("referrer = ?", analytics.Referrer).
-			Where("country = ?", analytics.Country).
-			Where("city = ?", analytics.City).
-			Where("device = ?", analytics.Device).
-			Where("browser = ?", analytics.Browser).
-			Where("os = ?", analytics.OS).
-			Where("bucket_time = ?", analytics.BucketTime).
-			Update("click_count", gorm.Expr("click_count + ?", 1))
-	} else if checkResult.Error == gorm.ErrRecordNotFound {
-		// Record doesn't exist, create a new one
-		result = db.GetDB().Create(&analytics)
-	} else {
-		// Some other error occurred during the check
-		result = checkResult
-		logger.Log.Error(fmt.Sprintf("Error checking existing analytics: %v", checkResult.Error))
-	}
+	result = db.GetDB().Create(&analytics)
 
 	if result.Error != nil {
 		logger.Log.Error(fmt.Sprintf("Error tracking analytics: %v", result.Error))
 	}
-
-	// Add the engagement analytics to the database
-	TrachEngagementAnalytics(analytics.URLID)
 
 	// Update the URL total click count
 	result = db.GetDB().Model(&models.URL{}).Where("id = ?", analytics.URLID).Update("total_clicks", gorm.Expr("total_clicks + ?", 1))
@@ -78,67 +39,6 @@ func TrackAllAnalytics(tracker models.URLAnalytics) *gorm.DB {
 	if result.Error != nil {
 		logger.Log.Error(fmt.Sprintf("Error updating URL total click count: %v", result.Error))
 	}
-
-	return result
-}
-
-func TrachEngagementAnalytics(URLID uint64) *gorm.DB {
-	// Round the current time to the nearest 2-minute bucket for consistent grouping
-	now := time.Now()
-	bucketTime := now.Truncate(2 * time.Minute)
-
-	analytics := models.URLAnalytics{
-		URLID:      URLID,
-		Referrer:   "ENGAGEMENT",
-		Country:    "ENGAGEMENT",
-		City:       "ENGAGEMENT",
-		Device:     "ENGAGEMENT",
-		Browser:    "ENGAGEMENT",
-		OS:         "ENGAGEMENT",
-		ClickCount: 1,
-		BucketTime: bucketTime,
-	}
-
-	// First check if the analytics record already exists
-	var existingAnalytics models.URLAnalytics
-	checkResult := db.GetDB().Where("url_id = ?", analytics.URLID).
-		Where("referrer = ?", analytics.Referrer).
-		Where("country = ?", analytics.Country).
-		Where("city = ?", analytics.City).
-		Where("device = ?", analytics.Device).
-		Where("browser = ?", analytics.Browser).
-		Where("os = ?", analytics.OS).
-		Where("bucket_time = ?", analytics.BucketTime).
-		First(&existingAnalytics)
-
-	var result *gorm.DB
-	if checkResult.Error == nil {
-		// Record exists, update the click count at the database level to avoid race conditions
-		result = db.GetDB().Model(&models.URLAnalytics{}).
-			Where("url_id = ?", analytics.URLID).
-			Where("referrer = ?", analytics.Referrer).
-			Where("country = ?", analytics.Country).
-			Where("city = ?", analytics.City).
-			Where("device = ?", analytics.Device).
-			Where("browser = ?", analytics.Browser).
-			Where("os = ?", analytics.OS).
-			Where("bucket_time = ?", analytics.BucketTime).
-			Update("click_count", gorm.Expr("click_count + ?", 1))
-	} else if checkResult.Error == gorm.ErrRecordNotFound {
-		// Record doesn't exist, create a new one
-		result = db.GetDB().Create(&analytics)
-	} else {
-		// Some other error occurred during the check
-		result = checkResult
-		logger.Log.Error(fmt.Sprintf("Error checking existing analytics: %v", checkResult.Error))
-	}
-
-	if result.Error != nil {
-		logger.Log.Error(fmt.Sprintf("Error tracking analytics: %v", result.Error))
-	}
-
-	// No need to update the URL total click count here since it's already done in TrackAllAnalytics
-	// This prevents double-counting when both functions are called
 
 	return result
 }
@@ -188,9 +88,10 @@ func GetURLsByWorkspaceID(workspaceID uint64) ([]models.URL, error) {
 type TimeAccuracy string
 
 const (
-	Hourly  TimeAccuracy = "hourly"
-	Daily   TimeAccuracy = "daily"
-	Monthly TimeAccuracy = "monthly"
+	TwoMinutes TimeAccuracy = "2min"
+	Hourly     TimeAccuracy = "hourly"
+	Daily      TimeAccuracy = "daily"
+	Monthly    TimeAccuracy = "monthly"
 )
 
 // Calculate the total time series data for a specific URL
@@ -198,113 +99,109 @@ func GetTotalTime(startDate time.Time, endDate time.Time) (time.Duration, TimeAc
 	total := endDate.Sub(startDate)
 
 	// Return the data time accuracy should be return
-	if total.Hours() <= 12 {
-		return total, "", nil // Return original data
-	} else if total.Hours() <= 336 {
+	if total.Hours() <= 24 {
+		return total, TwoMinutes, nil // Return original data
+		// 7 days
+	} else if total.Hours() <= 24*7 {
 		return total, Hourly, nil
-	} else if total.Hours() <= 720 {
+		// 30 days
+	} else if total.Hours() <= 24*30 {
 		return total, Daily, nil
+		// 2 years
+	} else if total.Hours() <= 24*365*2 {
+		return total, Monthly, nil
 	} else {
 		return total, Monthly, nil
 	}
 }
 
+// AnalyticsDataPoint represents a data point for analytics by type (country, referrer, etc.)
+type AnalyticsDataPoint struct {
+	Value      string `json:"value"`
+	ClickCount int64  `json:"click_count"`
+}
+
 // GetDiffrentTypeAnalyticsData retrieves analytics data for a specific URL by dataType (country, referrer, etc.)
-func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccuracy, dataType string, startDate time.Time, endDate time.Time) ([]models.URLAnalytics, error) {
-	var result []models.URLAnalytics
+func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccuracy, dataType string, startDate time.Time, endDate time.Time) ([]AnalyticsDataPoint, error) {
+	var analyticsData []AnalyticsDataPoint
 
-	offset := (page - 1) * 10
-
-	// Note: We're not using time_bucket for this query since we're just grouping by dimensions
-	// The timeAccuracy parameter is only used for reference in other functions
-
-	// Validate dataType to prevent SQL injection
-	validDataTypes := map[string]bool{
-		"referrer": true,
-		"country":  true,
-		"city":     true,
-		"device":   true,
-		"browser":  true,
-		"os":       true,
+	// If timeAccuracy is not provided, determine based on date range
+	if timeAccuracy == "" {
+		_, timeAccuracy, _ = GetTotalTime(startDate, endDate)
 	}
 
-	if !validDataTypes[dataType] {
+	// Define the time field and table name based on time accuracy
+	var tableName, timeField string
+
+	switch timeAccuracy {
+	case TwoMinutes:
+		tableName = "url_analytics_2min"
+		timeField = "bucket_2min"
+	case Hourly:
+		tableName = "url_analytics_hourlies"
+		timeField = "bucket_hour"
+	case Daily:
+		tableName = "url_analytics_dailies"
+		timeField = "bucket_day"
+	case Monthly:
+		tableName = "url_analytics_monthlies"
+		timeField = "bucket_month"
+	default:
+		tableName = "url_analytics_2min"
+		timeField = "bucket_2min"
+	}
+
+	// Validate dataType to prevent SQL injection
+	var validDataType string
+	switch dataType {
+	case "referrer":
+		validDataType = "referrer"
+	case "country":
+		validDataType = "country"
+	case "city":
+		validDataType = "city"
+	case "device":
+		validDataType = "device"
+	case "browser":
+		validDataType = "browser"
+	case "os":
+		validDataType = "os"
+	default:
 		return nil, fmt.Errorf("invalid data type: %s", dataType)
 	}
 
-	// Build and execute the SQL query
-	query := `
-		SELECT 
-			url_id, 
-			` + dataType + `, 
-			SUM(click_count) as total_clicks 
-		FROM url_analytics 
-		WHERE url_id = $1 
-		AND bucket_time >= $2 
-		AND bucket_time <= $3 
-		GROUP BY url_id, ` + dataType + ` 
-		ORDER BY total_clicks DESC 
-		LIMIT 10 
-		OFFSET $4
-	`
+	// Build and execute the query to get top 10 values by click count
+	query := fmt.Sprintf(`SELECT 
+		%s AS value,
+		SUM(total_clicks) AS click_count
+	FROM 
+		%s
+	WHERE 
+		url_id = ?
+		AND %s BETWEEN ? AND ?
+	GROUP BY 
+		%s
+	ORDER BY 
+		click_count DESC
+	LIMIT 10 OFFSET ?`,
+		validDataType, tableName, timeField, validDataType)
 
-	rows, err := db.GetDB().Raw(query, urlID, startDate, endDate, offset).Rows()
-	if err != nil {
-		logger.Log.Error(fmt.Sprintf("Error retrieving analytics data for URL ID %d: %v", urlID, err))
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Process the results
-	for rows.Next() {
-		var analytics models.URLAnalytics
-		var totalClicks int64
-
-		// We need dynamic scanning based on which field we're grouping by
-		switch dataType {
-		case "referrer":
-			if err := rows.Scan(&analytics.URLID, &analytics.Referrer, &totalClicks); err != nil {
-				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
-				continue
-			}
-		case "country":
-			if err := rows.Scan(&analytics.URLID, &analytics.Country, &totalClicks); err != nil {
-				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
-				continue
-			}
-		case "city":
-			if err := rows.Scan(&analytics.URLID, &analytics.City, &totalClicks); err != nil {
-				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
-				continue
-			}
-		case "device":
-			if err := rows.Scan(&analytics.URLID, &analytics.Device, &totalClicks); err != nil {
-				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
-				continue
-			}
-		case "browser":
-			if err := rows.Scan(&analytics.URLID, &analytics.Browser, &totalClicks); err != nil {
-				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
-				continue
-			}
-		case "os":
-			if err := rows.Scan(&analytics.URLID, &analytics.OS, &totalClicks); err != nil {
-				logger.Log.Error(fmt.Sprintf("Error scanning analytics data row: %v", err))
-				continue
-			}
-		}
-
-		analytics.ClickCount = totalClicks
-		result = append(result, analytics)
+	// Calculate offset based on page number (0-indexed)
+	offset := (page - 1) * 10
+	if offset < 0 {
+		offset = 0
 	}
 
-	// Check for errors during row iteration
-	if err := rows.Err(); err != nil {
-		logger.Log.Error(fmt.Sprintf("Error iterating through analytics data rows: %v", err))
-		return nil, err
-	}
+	args := []interface{}{urlID, startDate, endDate, offset}
+	logger.Log.Sugar().Debugf("Analytics query: %s with args: %v", query, args)
 
-	return result, nil
+	// Execute the query
+	if err := db.GetDB().Raw(query, args...).Scan(&analyticsData).Error; err != nil {
+		logger.Log.Error(fmt.Sprintf("Error retrieving analytics data: %v", err))
+		return []AnalyticsDataPoint{}, err
+	}
+	fmt.Println(analyticsData)
+	return analyticsData, nil
 }
 
 // TimeSeriesDataPoint represents a single point in a time series chart
@@ -315,78 +212,69 @@ type TimeSeriesDataPoint struct {
 
 // GetTimeSeriesData retrieves time series data for a specific URL with optional filters
 func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[string]string, startDate time.Time, endDate time.Time) ([]TimeSeriesDataPoint, error) {
-	var result []TimeSeriesDataPoint
+	var timeSeriesData []TimeSeriesDataPoint
 
-	// Build the base query without time bucketing - just get raw records
-	baseQuery := `
-		SELECT 
-			bucket_time as timestamp, 
-			click_count
-		FROM url_analytics 
-		WHERE url_id = $1 
-		AND bucket_time >= $2 
-		AND bucket_time <= $3
-	`
-
-	// Add default filter for ENGAGEMENT if no filters are provided
-	if len(filters) == 0 {
-		baseQuery += ` AND referrer = 'ENGAGEMENT' AND country = 'ENGAGEMENT' AND city = 'ENGAGEMENT' AND device = 'ENGAGEMENT' AND browser = 'ENGAGEMENT' AND os = 'ENGAGEMENT'`
+	// If timeAccuracy is not provided, determine based on date range
+	if timeAccuracy == "" {
+		_, timeAccuracy, _ = GetTotalTime(startDate, endDate)
 	}
 
-	// Add user-provided filters if any
-	filterCount := 4 // Starting parameter count
-	var additionalParams []interface{}
-	additionalFilters := ""
+	// Define the time field and table name based on time accuracy
+	var tableName, timeField string
 
-	for field, value := range filters {
-		if value != "" {
-			// Validate field to prevent SQL injection
-			switch field {
-			case "referrer", "country", "city", "device", "browser", "os":
-				additionalFilters += fmt.Sprintf(" AND %s = $%d", field, filterCount)
-				additionalParams = append(additionalParams, value)
-				filterCount++
-			default:
-				// Skip invalid fields
-				logger.Log.Sugar().Warnf("Invalid filter field ignored: %s", field)
+	switch timeAccuracy {
+	case TwoMinutes:
+		tableName = "url_analytics_2min"
+		timeField = "bucket_2min"
+	case Hourly:
+		tableName = "url_analytics_hourlies"
+		timeField = "bucket_hour"
+	case Daily:
+		tableName = "url_analytics_dailies"
+		timeField = "bucket_day"
+	case Monthly:
+		tableName = "url_analytics_monthlies"
+		timeField = "bucket_month"
+	default:
+		tableName = "url_analytics_2min"
+		timeField = "bucket_2min"
+	}
+
+	// Build and execute the query
+	query := fmt.Sprintf(`SELECT 
+		%s AS timestamp,
+		SUM(total_clicks) AS click_count
+	FROM 
+		%s
+	WHERE 
+		url_id = ?
+		AND %s BETWEEN ? AND ?`,
+		timeField, tableName, timeField)
+
+	// Add filters if provided
+	args := []interface{}{urlID, startDate, endDate}
+	if len(filters) > 0 {
+		for field, value := range filters {
+			if value != "" {
+				// Validate field to prevent SQL injection
+				switch field {
+				case "referrer", "country", "city", "device", "browser", "os":
+					query += fmt.Sprintf(" AND %s = ?", field)
+					args = append(args, value)
+				}
 			}
 		}
 	}
 
-	// Complete the query with grouping to avoid duplicates
-	query := baseQuery + additionalFilters + ` GROUP BY timestamp, click_count ORDER BY timestamp ASC`
-
-	// Prepare all parameters
-	params := []interface{}{
-		urlID,     // $1
-		startDate, // $2
-		endDate,   // $3
-	}
-	params = append(params, additionalParams...)
+	// Complete the query with GROUP BY to aggregate by timestamp
+	query += fmt.Sprintf(" GROUP BY %s ORDER BY %s ASC", timeField, timeField)
+	logger.Log.Sugar().Debugf("Time series query: %s with args: %v", query, args)
 
 	// Execute the query
-	rows, err := db.GetDB().Raw(query, params...).Rows()
-	if err != nil {
-		logger.Log.Error(fmt.Sprintf("Error retrieving time series data for URL ID %d: %v", urlID, err))
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Process the results
-	for rows.Next() {
-		var point TimeSeriesDataPoint
-		if err := rows.Scan(&point.Timestamp, &point.ClickCount); err != nil {
-			logger.Log.Error(fmt.Sprintf("Error scanning time series data row: %v", err))
-			continue
-		}
-		result = append(result, point)
+	if err := db.GetDB().Raw(query, args...).Scan(&timeSeriesData).Error; err != nil {
+		logger.Log.Error(fmt.Sprintf("Error retrieving time series data: %v", err))
+		return []TimeSeriesDataPoint{}, err
 	}
 
-	// Check for errors during row iteration
-	if err := rows.Err(); err != nil {
-		logger.Log.Error(fmt.Sprintf("Error iterating through time series data rows: %v", err))
-		return nil, err
-	}
-
-	return result, nil
+	return timeSeriesData, nil
 }

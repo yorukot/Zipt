@@ -4,21 +4,21 @@ import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
-import { 
-  Area, 
-  AreaChart, 
-  Bar, 
-  BarChart, 
-  CartesianGrid, 
-  Cell, 
-  Line, 
-  LineChart, 
-  PieChart, 
-  Pie, 
-  ResponsiveContainer, 
-  Tooltip, 
-  XAxis, 
-  YAxis 
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  PieChart,
+  Pie,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-  type ChartConfig
+  type ChartConfig,
 } from "@/components/ui/chart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -92,7 +92,7 @@ interface TimeSeriesResponse {
   time_series: {
     data: {
       timestamp: string;
-      clicks: number;
+      click_count: number;
     }[];
     granularity: string;
     filters: Record<string, string>;
@@ -118,45 +118,50 @@ export default function URLAnalyticsPage() {
     let start: number;
 
     switch (timeRange) {
-      case '24h':
+      case "1h":
+        start = end - 3600; // 1 hour in seconds
+        break;
+      case "24h":
         start = end - 86400; // 24 hours in seconds
         break;
-      case '7d':
+      case "7d":
         start = end - 604800; // 7 days in seconds
         break;
-      case '30d':
+      case "30d":
         start = end - 2592000; // 30 days in seconds
         break;
-      case '90d':
+      case "90d":
         start = end - 7776000; // 90 days in seconds
         break;
       default:
         // For 'all', use a very old date
         start = 0;
     }
-    
+
     return { start, end };
   };
 
   const { start, end } = getTimeRangeParams();
 
   // Fetch analytics data
-  const { data: analyticsData, error: analyticsError, isLoading: isAnalyticsLoading } = useSWR<AnalyticsResponse>(
-    API_URLS.URL.ANALYTICS(workspaceId, urlId),
+  const {
+    data: analyticsData,
+    error: analyticsError,
+    isLoading: isAnalyticsLoading,
+  } = useSWR<AnalyticsResponse>(
+    `${API_URLS.URL.ANALYTICS(workspaceId, urlId)}?start=${start}&end=${end}`,
     fetcher
   );
 
   // Fetch time series data with proper time range
-  const { data: timeSeriesData, error: timeSeriesError, isLoading: isTimeSeriesLoading } = useSWR<TimeSeriesResponse>(
+  const {
+    data: timeSeriesData,
+    error: timeSeriesError,
+    isLoading: isTimeSeriesLoading,
+  } = useSWR<TimeSeriesResponse>(
     `${API_URLS.URL.TIMESERIES(workspaceId, urlId)}?start=${start}&end=${end}`,
     fetcher
   );
-  
-  React.useEffect(() => {
-    console.log(analyticsData);
-    console.log(timeSeriesData);
-    console.log(error)
-  }, [isAnalyticsLoading, analyticsData]);
 
   const isLoading = isAnalyticsLoading || isTimeSeriesLoading;
   const error = analyticsError || timeSeriesError;
@@ -176,7 +181,9 @@ export default function URLAnalyticsPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <p className="text-muted-foreground">Failed to load analytics data</p>
-          {error && <p className="text-destructive text-sm mt-2">{error.message}</p>}
+          {error && (
+            <p className="text-destructive text-sm mt-2">{error.message}</p>
+          )}
         </div>
       </div>
     );
@@ -186,51 +193,157 @@ export default function URLAnalyticsPage() {
   const analytics = analyticsData.analytics;
   const timeSeries = timeSeriesData.time_series;
 
-  
   // Transform data for charts - filter out ENGAGEMENT entries and format data
   const referrerData = (analytics.referrer || [])
-    .filter(item => item.referrer !== "ENGAGEMENT")
+    .filter((item) => item.referrer !== "ENGAGEMENT")
     .map((item) => ({
-      name: item.referrer || 'Unknown',
+      name: item.referrer || "Unknown",
       value: item.click_count || 0,
-      fill: item.referrer ? `var(--color-${item.referrer.replace(/\./g, '-')})` : 'var(--muted)'
+      fill: item.referrer
+        ? `var(--color-${item.referrer.replace(/\./g, "-")})`
+        : "var(--muted)",
     }));
 
+  // Function to fill in missing time points with zero values
+  const fillMissingTimePoints = (
+    data: any[],
+    startTime: number,
+    endTime: number
+  ) => {
+    // If no data provided, return an empty array
+    if (!data || data.length === 0) {
+      console.log("No data to fill");
+      return [];
+    }
+
+    console.log("Original data:", data);
+
+    // Convert the original data points to a map for quick lookup
+    const originalPoints = new Map();
+    data.forEach((point) => {
+      const timestamp = new Date(point.timestamp).getTime();
+      originalPoints.set(timestamp, {
+        timestamp: point.timestamp,
+        click_count: point.click_count,
+      });
+    });
+
+    // Sort original data points by timestamp
+    const sortedTimestamps = Array.from(originalPoints.keys()).sort(
+      (a, b) => a - b
+    );
+
+    // If there are no data points, return empty array
+    if (sortedTimestamps.length === 0) return [];
+
+    // Use the actual data for start/end times if they're more restrictive
+    const actualStartTime = Math.min(startTime * 1000, sortedTimestamps[0]);
+    const actualEndTime = Math.max(
+      endTime * 1000,
+      sortedTimestamps[sortedTimestamps.length - 1]
+    );
+
+    // Choose a reasonable interval based on the data density and time range
+    const totalHours = (actualEndTime - actualStartTime) / (60 * 60 * 1000);
+
+    // Use the interval that matches the data granularity
+    let interval = 60 * 60 * 1000; // Default to hourly
+    if (timeSeries.granularity === "minute") {
+      interval = 2 * 60 * 1000; // 2 minutes
+    } else if (timeSeries.granularity === "daily") {
+      interval = 24 * 60 * 60 * 1000; // Daily
+    } else if (timeSeries.granularity === "monthly") {
+      interval = 30 * 24 * 60 * 60 * 1000; // Approximate monthly
+    }
+
+    // Generate the filled data array
+    const filledData = [];
+
+    // Ensure we have the original data points first
+    for (const point of data) {
+      filledData.push({
+        timestamp: point.timestamp,
+        click_count: point.click_count,
+      });
+    }
+
+    // Now add zero points for gaps
+    for (let time = actualStartTime; time <= actualEndTime; time += interval) {
+      // Skip if this timestamp already exists (within a small tolerance)
+      const tolerance = 60 * 1000; // 1 minute tolerance
+      let exists = false;
+
+      for (const existingTime of sortedTimestamps) {
+        if (Math.abs(existingTime - time) < tolerance) {
+          exists = true;
+          break;
+        }
+      }
+
+      if (!exists) {
+        filledData.push({
+          timestamp: new Date(time).toISOString(),
+          click_count: 0,
+        });
+      }
+    }
+
+    // Sort the combined array by timestamp
+    filledData.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    console.log("Filled data:", filledData);
+    return filledData;
+  };
+
+  // Fill in missing data points for time series
+  const filledTimeSeriesData = fillMissingTimePoints(
+    timeSeries.data,
+    start,
+    end
+  );
+
   const deviceData = (analytics.device || [])
-    .filter(item => item.device !== "ENGAGEMENT")
+    .filter((item) => item.device !== "ENGAGEMENT")
     .map((item) => ({
-      name: item.device || 'Unknown',
+      name: item.device || "Unknown",
       value: item.click_count || 0,
-      fill: item.device ? `var(--color-${item.device.toLowerCase().replace(/\s+/g, '-')})` : 'var(--muted)'
+      fill: item.device
+        ? `var(--color-${item.device.toLowerCase().replace(/\s+/g, "-")})`
+        : "var(--muted)",
     }));
 
   const browserData = (analytics.browser || [])
-    .filter(item => item.browser !== "ENGAGEMENT")
+    .filter((item) => item.browser !== "ENGAGEMENT")
     .map((item) => ({
-      name: item.browser || 'Unknown',
+      name: item.browser || "Unknown",
       value: item.click_count || 0,
-      fill: item.browser ? `var(--color-${item.browser.toLowerCase().replace(/\s+/g, '-')})` : 'var(--muted)'
+      fill: item.browser
+        ? `var(--color-${item.browser.toLowerCase().replace(/\s+/g, "-")})`
+        : "var(--muted)",
     }));
 
   const countryData = (analytics.country || [])
-    .filter(item => item.country !== "ENGAGEMENT")
+    .filter((item) => item.country !== "ENGAGEMENT")
     .map((item) => ({
-      value: item.country || 'Unknown',
-      total: item.click_count || 0
+      value: item.country || "Unknown",
+      total: item.click_count || 0,
     }));
 
   const cityData = (analytics.city || [])
-    .filter(item => item.city !== "ENGAGEMENT")
+    .filter((item) => item.city !== "ENGAGEMENT")
     .map((item) => ({
-      value: item.city || 'Unknown',
-      total: item.click_count || 0
+      value: item.city || "Unknown",
+      total: item.click_count || 0,
     }));
 
   const osData = (analytics.os || [])
-    .filter(item => item.os !== "ENGAGEMENT")
+    .filter((item) => item.os !== "ENGAGEMENT")
     .map((item) => ({
-      value: item.os || 'Unknown',
-      total: item.click_count || 0
+      value: item.os || "Unknown",
+      total: item.click_count || 0,
     }));
 
   const handleBack = () => {
@@ -241,48 +354,48 @@ export default function URLAnalyticsPage() {
   const timeSeriesConfig: ChartConfig = {
     clicks: {
       label: "Clicks",
-      color: "var(--chart-1)"
-    }
+      color: "var(--chart-1)",
+    },
   };
   const deviceConfig: ChartConfig = {
     Desktop: {
       label: "Desktop",
-      color: "var(--chart-1)"
+      color: "var(--chart-1)",
     },
     Mobile: {
       label: "Mobile",
-      color: "var(--chart-2)"
+      color: "var(--chart-2)",
     },
     Tablet: {
       label: "Tablet",
-      color: "var(--chart-3)"
-    }
+      color: "var(--chart-3)",
+    },
   };
 
   const browserConfig: ChartConfig = {
     Chrome: {
       label: "Chrome",
-      color: "var(--chart-1)"
+      color: "var(--chart-1)",
     },
     Safari: {
       label: "Safari",
-      color: "var(--chart-2)"
+      color: "var(--chart-2)",
     },
     Firefox: {
       label: "Firefox",
-      color: "var(--chart-3)"
+      color: "var(--chart-3)",
     },
     Edge: {
       label: "Edge",
-      color: "var(--chart-4)"
-    }
+      color: "var(--chart-4)",
+    },
   };
 
   const countriesConfig = {
     total: {
       label: "Clicks",
-      color: "var(--chart-1)"
-    }
+      color: "var(--chart-1)",
+    },
   } satisfies ChartConfig;
 
   return (
@@ -345,11 +458,15 @@ export default function URLAnalyticsPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Select defaultValue={timeRange} onValueChange={(value) => setTimeRange(value)}>
+          <Select
+            defaultValue={timeRange}
+            onValueChange={(value) => setTimeRange(value)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("analytics.selectPeriod")} />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="1h">{t("analytics.last1Hour")}</SelectItem>
               <SelectItem value="24h">{t("analytics.last24Hours")}</SelectItem>
               <SelectItem value="7d">{t("analytics.last7Days")}</SelectItem>
               <SelectItem value="30d">{t("analytics.last30Days")}</SelectItem>
@@ -369,17 +486,28 @@ export default function URLAnalyticsPage() {
           <CardTitle>{t("urlAnalytics.clicksOverTime")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={timeSeriesConfig} className="min-h-[300px] w-full">
-            <AreaChart data={timeSeries.data} accessibilityLayer>
+          <ChartContainer
+            config={timeSeriesConfig}
+            className="min-h-[300px] w-full"
+          >
+            <AreaChart data={filledTimeSeriesData} accessibilityLayer>
               <defs>
                 <linearGradient id="colorClicks" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.1}/>
+                  <stop
+                    offset="5%"
+                    stopColor="var(--chart-1)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--chart-1)"
+                    stopOpacity={0.1}
+                  />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="timestamp" 
+              <XAxis
+                dataKey="timestamp"
                 tickFormatter={(timestamp) => {
                   const date = new Date(timestamp);
                   return `${date.getHours()}:00`;
@@ -387,10 +515,20 @@ export default function URLAnalyticsPage() {
                 tickLine={false}
                 axisLine={false}
               />
-              <YAxis tickLine={false} axisLine={false} />
-              <ChartTooltip 
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                domain={[0, "auto"]}
+                allowDataOverflow={true}
+                // Ensure Y-axis only shows integer values
+                tickCount={5}
+                allowDecimals={false}
+                // Format ticks as integers
+                tickFormatter={(value) => Math.floor(value).toString()}
+              />
+              <ChartTooltip
                 content={<ChartTooltipContent />}
-                formatter={(value, name, props) => [value, 'Clicks']}
+                formatter={(value, name, props) => [value, "Clicks"]}
                 labelFormatter={(label) => {
                   const date = new Date(label);
                   return `${date.toLocaleDateString()} ${date.getHours()}:00`;
@@ -398,7 +536,7 @@ export default function URLAnalyticsPage() {
               />
               <Area
                 type="monotone"
-                dataKey="clicks"
+                dataKey="click_count"
                 stroke="var(--chart-1)"
                 fillOpacity={1}
                 fill="url(#colorClicks)"
@@ -419,7 +557,19 @@ export default function URLAnalyticsPage() {
                 {t("urlAnalytics.avgClicksPerDay")}
               </div>
               <div className="mt-1 text-2xl font-bold">
-                {Math.max(1, Math.round(urlInfo.total_clicks / (timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90)))}
+                {Math.max(
+                  1,
+                  Math.round(
+                    urlInfo.total_clicks /
+                      (timeRange === "24h"
+                        ? 1
+                        : timeRange === "7d"
+                        ? 7
+                        : timeRange === "30d"
+                        ? 30
+                        : 90)
+                  )
+                )}
               </div>
             </div>
             <div className="rounded-lg border p-3">
@@ -433,8 +583,7 @@ export default function URLAnalyticsPage() {
                 {t("urlAnalytics.trend")}
               </div>
               <div className="mt-1 flex items-center text-2xl font-bold text-emerald-500">
-                <Icon icon="lucide:trending-up" className="mr-1 h-4 w-4" />
-                -
+                <Icon icon="lucide:trending-up" className="mr-1 h-4 w-4" />-
               </div>
             </div>
           </div>
@@ -448,7 +597,10 @@ export default function URLAnalyticsPage() {
             <CardDescription>{t("analytics.topDevicesDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="min-h-[300px]">
-            <ChartContainer config={deviceConfig} className="min-h-[300px] w-full">
+            <ChartContainer
+              config={deviceConfig}
+              className="min-h-[300px] w-full"
+            >
               <PieChart accessibilityLayer>
                 <Pie
                   data={deviceData}
@@ -459,12 +611,14 @@ export default function URLAnalyticsPage() {
                   dataKey="value"
                   nameKey="name"
                   paddingAngle={2}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {deviceData.map((item, index) => (
                     <Cell
                       key={`${item.name}-${index}`}
-                      fill={`var(--chart-${index % 4 + 1})`}
+                      fill={`var(--chart-${(index % 4) + 1})`}
                     />
                   ))}
                 </Pie>
@@ -480,7 +634,10 @@ export default function URLAnalyticsPage() {
             <CardDescription>{t("analytics.topBrowsersDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="min-h-[300px]">
-            <ChartContainer config={browserConfig} className="min-h-[300px] w-full">
+            <ChartContainer
+              config={browserConfig}
+              className="min-h-[300px] w-full"
+            >
               <PieChart accessibilityLayer>
                 <Pie
                   data={browserData}
@@ -491,12 +648,14 @@ export default function URLAnalyticsPage() {
                   dataKey="value"
                   nameKey="name"
                   paddingAngle={2}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {browserData.map((item, index) => (
                     <Cell
                       key={`${item.name}-${index}`}
-                      fill={`var(--chart-${index % 4 + 1})`}
+                      fill={`var(--chart-${(index % 4) + 1})`}
                     />
                   ))}
                 </Pie>
@@ -510,9 +669,13 @@ export default function URLAnalyticsPage() {
 
       <Tabs defaultValue="countries">
         <TabsList className="mb-4">
-          <TabsTrigger value="countries">{t("analytics.topCountries")}</TabsTrigger>
+          <TabsTrigger value="countries">
+            {t("analytics.topCountries")}
+          </TabsTrigger>
           <TabsTrigger value="cities">{t("analytics.topCities")}</TabsTrigger>
-          <TabsTrigger value="referrers">{t("analytics.topReferrers")}</TabsTrigger>
+          <TabsTrigger value="referrers">
+            {t("analytics.topReferrers")}
+          </TabsTrigger>
           <TabsTrigger value="os">{t("analytics.os")}</TabsTrigger>
         </TabsList>
 
@@ -520,7 +683,9 @@ export default function URLAnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("analytics.topCountries")}</CardTitle>
-              <CardDescription>{t("analytics.topCountriesDesc")}</CardDescription>
+              <CardDescription>
+                {t("analytics.topCountriesDesc")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={countriesConfig}>
@@ -544,22 +709,28 @@ export default function URLAnalyticsPage() {
                   <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent hideLabel />}
-                    formatter={(value) => value === 0 ? null : [`${value} clicks`, "Clicks"]}
+                    formatter={(value) =>
+                      value === 0 ? null : [`${value} clicks`, "Clicks"]
+                    }
                   />
-                  <Bar 
-                    dataKey="total" 
-                    fill="var(--chart-1)" 
+                  <Bar
+                    dataKey="total"
+                    fill="var(--chart-1)"
                     radius={5}
                     onMouseEnter={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-1-hover)');
+                        element.setAttribute("fill", "var(--chart-1-hover)");
                       }
                     }}
                     onMouseLeave={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-1)');
+                        element.setAttribute("fill", "var(--chart-1)");
                       }
                     }}
                   />
@@ -597,22 +768,28 @@ export default function URLAnalyticsPage() {
                   <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent hideLabel />}
-                    formatter={(value) => value === 0 ? null : [`${value} clicks`, "Clicks"]}
+                    formatter={(value) =>
+                      value === 0 ? null : [`${value} clicks`, "Clicks"]
+                    }
                   />
-                  <Bar 
-                    dataKey="total" 
-                    fill="var(--chart-2)" 
+                  <Bar
+                    dataKey="total"
+                    fill="var(--chart-2)"
                     radius={5}
                     onMouseEnter={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-2-hover)');
+                        element.setAttribute("fill", "var(--chart-2-hover)");
                       }
                     }}
                     onMouseLeave={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-2)');
+                        element.setAttribute("fill", "var(--chart-2)");
                       }
                     }}
                   />
@@ -626,7 +803,9 @@ export default function URLAnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("analytics.topReferrers")}</CardTitle>
-              <CardDescription>{t("analytics.topReferrersDesc")}</CardDescription>
+              <CardDescription>
+                {t("analytics.topReferrersDesc")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={countriesConfig}>
@@ -650,22 +829,28 @@ export default function URLAnalyticsPage() {
                   <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent hideLabel />}
-                    formatter={(value) => value === 0 ? null : [`${value} clicks`, "Clicks"]}
+                    formatter={(value) =>
+                      value === 0 ? null : [`${value} clicks`, "Clicks"]
+                    }
                   />
-                  <Bar 
-                    dataKey="value" 
-                    fill="var(--chart-3)" 
+                  <Bar
+                    dataKey="value"
+                    fill="var(--chart-3)"
                     radius={5}
                     onMouseEnter={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-3-hover)');
+                        element.setAttribute("fill", "var(--chart-3-hover)");
                       }
                     }}
                     onMouseLeave={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-3)');
+                        element.setAttribute("fill", "var(--chart-3)");
                       }
                     }}
                   />
@@ -703,22 +888,28 @@ export default function URLAnalyticsPage() {
                   <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent hideLabel />}
-                    formatter={(value) => value === 0 ? null : [`${value} clicks`, "Clicks"]}
+                    formatter={(value) =>
+                      value === 0 ? null : [`${value} clicks`, "Clicks"]
+                    }
                   />
-                  <Bar 
-                    dataKey="total" 
-                    fill="var(--chart-4)" 
+                  <Bar
+                    dataKey="total"
+                    fill="var(--chart-4)"
                     radius={5}
                     onMouseEnter={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-4-hover)');
+                        element.setAttribute("fill", "var(--chart-4-hover)");
                       }
                     }}
                     onMouseLeave={(data) => {
-                      const element = document.querySelector(`.recharts-bar-rectangle-${data.index}`);
+                      const element = document.querySelector(
+                        `.recharts-bar-rectangle-${data.index}`
+                      );
                       if (element) {
-                        element.setAttribute('fill', 'var(--chart-4)');
+                        element.setAttribute("fill", "var(--chart-4)");
                       }
                     }}
                   />
@@ -752,8 +943,8 @@ export default function URLAnalyticsPage() {
               {analytics.referrer.slice(0, 5).map((item, i) => (
                 <div key={i} className="grid grid-cols-4 py-3 px-4">
                   <div className="text-muted-foreground">
-                    {item.bucket_time !== "0001-01-01T00:00:00Z" 
-                      ? new Date(item.bucket_time).toLocaleString() 
+                    {item.bucket_time !== "0001-01-01T00:00:00Z"
+                      ? new Date(item.bucket_time).toLocaleString()
                       : "N/A"}
                   </div>
                   <div>{item.referrer || "N/A"}</div>

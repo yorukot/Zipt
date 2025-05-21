@@ -1,12 +1,13 @@
 package shortener
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yorukot/zipt/app/models"
 	"github.com/yorukot/zipt/app/queries"
 	"github.com/yorukot/zipt/pkg/logger"
 	"github.com/yorukot/zipt/pkg/utils"
@@ -92,11 +93,16 @@ func GetURLAnalytics(c *gin.Context) {
 	}
 	parsedStartDate := time.Unix(startTimestamp, 0)
 
-	// Validate time range
+	// Validate time range and swap if necessary
 	if parsedEndDate.Before(parsedStartDate) {
-		utils.FullyResponse(c, http.StatusBadRequest, "End date must be after start date", utils.ErrBadRequest, nil)
-		return
+		logger.Log.Sugar().Warnf("End date (%s) is before start date (%s), swapping them",
+			parsedEndDate.Format(time.RFC3339), parsedStartDate.Format(time.RFC3339))
+		parsedEndDate, parsedStartDate = parsedStartDate, parsedEndDate
 	}
+
+	// Debug the date range
+	logger.Log.Sugar().Infof("Querying analytics with date range: %s to %s",
+		parsedStartDate.Format(time.RFC3339), parsedEndDate.Format(time.RFC3339))
 
 	_, timeAccuracy, err := queries.GetTotalTime(parsedStartDate, parsedEndDate)
 	if err != nil {
@@ -105,7 +111,7 @@ func GetURLAnalytics(c *gin.Context) {
 	}
 
 	// Map to store all analytics results
-	analyticsData := make(map[AnalyticsDataType][]models.URLAnalytics)
+	analyticsData := make(map[AnalyticsDataType][]queries.AnalyticsDataPoint)
 
 	// Function to fetch analytics data by type
 	fetchAnalytics := func(dataType AnalyticsDataType) error {
@@ -123,6 +129,21 @@ func GetURLAnalytics(c *gin.Context) {
 			logger.Log.Sugar().Errorf("Error retrieving analytics data for %s: %v", dataType, err)
 		}
 	}
+
+	// Ensure all analytics fields are non-nil slices
+	for _, dataType := range []AnalyticsDataType{Referrer, Country, City, Device, Browser, OS} {
+		if analyticsData[dataType] == nil {
+			analyticsData[dataType] = make([]queries.AnalyticsDataPoint, 0)
+		}
+	}
+
+	// Print the analytics data
+	// make the analytics data to json
+	analyticsDataJSON, err := json.Marshal(analyticsData)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Error marshalling analytics data: %v", err)
+	}
+	fmt.Println(string(analyticsDataJSON))
 
 	// Even if some analytics types failed, return what we have
 	c.JSON(http.StatusOK, gin.H{
@@ -213,13 +234,17 @@ func GetURLTimeSeriesData(c *gin.Context) {
 	}
 	parsedStartDate := time.Unix(startTimestamp, 0)
 
-	// Validate time range
+	// Validate time range and swap if necessary
 	if parsedEndDate.Before(parsedStartDate) {
-		utils.FullyResponse(c, http.StatusBadRequest, "End date must be after start date", utils.ErrBadRequest, nil)
-		return
+		logger.Log.Sugar().Warnf("End date (%s) is before start date (%s), swapping them",
+			parsedEndDate.Format(time.RFC3339), parsedStartDate.Format(time.RFC3339))
+		parsedEndDate, parsedStartDate = parsedStartDate, parsedEndDate
 	}
 
-	// Determine the appropriate time accuracy based on the date range
+	// Debug the date range
+	logger.Log.Sugar().Infof("Querying analytics with date range: %s to %s",
+		parsedStartDate.Format(time.RFC3339), parsedEndDate.Format(time.RFC3339))
+
 	_, timeAccuracy, err := queries.GetTotalTime(parsedStartDate, parsedEndDate)
 	if err != nil {
 		utils.FullyResponse(c, http.StatusBadRequest, "Invalid time range", utils.ErrBadRequest, err.Error())
