@@ -1,0 +1,191 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: zipt_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_DBNAME:-zipt}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"  # Public database access
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zipt_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: zipt_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zipt_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zipt_backend
+    restart: unless-stopped
+    environment:
+      # Server Configuration
+      GIN_MODE: ${GIN_MODE:-release}
+      PORT: ${PORT:-8080}
+      VERSION: ${VERSION:-1}
+      MACHINE_ID: ${MACHINE_ID:-1}
+      
+      # URLs Configuration
+      BACKEND_URL: ${BACKEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SHORT_DOMAIN: ${SHORT_DOMAIN}
+      LINKS_DOMAIN: ${LINKS_DOMAIN}
+      
+      # Database Configuration
+      DATABASE_HOST: ${DATABASE_HOST:-database}
+      DATABASE_USER: ${DATABASE_USER:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_DBNAME: ${DATABASE_DBNAME:-zipt}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_SSLMODE: ${DATABASE_SSLMODE:-disable}
+      
+      # Database Connection Pool
+      DATABASE_MAX_IDLE_CONNS: ${DATABASE_MAX_IDLE_CONNS:-10}
+      DATABASE_MAX_OPEN_CONNS: ${DATABASE_MAX_OPEN_CONNS:-100}
+      DATABASE_CONN_MAX_LIFETIME: ${DATABASE_CONN_MAX_LIFETIME:-30}
+      
+      # Password Hashing (Argon2)
+      ARGON2_MEMORY: ${ARGON2_MEMORY:-65536}
+      ARGON2_ITERATIONS: ${ARGON2_ITERATIONS:-20}
+      ARGON2_PARALLELISM: ${ARGON2_PARALLELISM:-4}
+      
+      # Authentication
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      COOKIE_PATH: ${COOKIE_PATH:-/}
+      COOKIE_REFRESH_TOKEN_EXPIRES: ${COOKIE_REFRESH_TOKEN_EXPIRES:-60}
+      COOKIE_ACCESS_TOKEN_EXPIRES: ${COOKIE_ACCESS_TOKEN_EXPIRES:-15}
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zipt_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+      args:
+        SERVER_API_ENDPOINT: ${SERVER_API_ENDPOINT}
+        NEXT_PUBLIC_SERVER_API_ENDPOINT: ${NEXT_PUBLIC_SERVER_API_ENDPOINT}
+        NEXT_PUBLIC_LINKS_DOMAIN: ${NEXT_PUBLIC_LINKS_DOMAIN}
+    container_name: zipt_frontend
+    restart: unless-stopped
+    environment:
+      SERVER_API_ENDPOINT: ${SERVER_API_ENDPOINT}
+      NEXT_PUBLIC_SERVER_API_ENDPOINT: ${NEXT_PUBLIC_SERVER_API_ENDPOINT}
+      NEXT_PUBLIC_LINKS_DOMAIN: ${NEXT_PUBLIC_LINKS_DOMAIN}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zipt_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  proxy:
+    build:
+      context: ./docker/caddy
+      dockerfile: Dockerfile
+    container_name: zipt_proxy
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - zipt_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  zipt_network:
+    driver: bridge 
