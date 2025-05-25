@@ -1,8 +1,6 @@
 package shortener
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -136,14 +134,6 @@ func GetURLAnalytics(c *gin.Context) {
 			analyticsData[dataType] = make([]queries.AnalyticsDataPoint, 0)
 		}
 	}
-
-	// Print the analytics data
-	// make the analytics data to json
-	analyticsDataJSON, err := json.Marshal(analyticsData)
-	if err != nil {
-		logger.Log.Sugar().Errorf("Error marshalling analytics data: %v", err)
-	}
-	fmt.Println(string(analyticsDataJSON))
 
 	// Even if some analytics types failed, return what we have
 	c.JSON(http.StatusOK, gin.H{

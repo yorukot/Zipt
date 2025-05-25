@@ -118,7 +118,7 @@ func GetTotalTime(startDate time.Time, endDate time.Time) (time.Duration, TimeAc
 // AnalyticsDataPoint represents a data point for analytics by type (country, referrer, etc.)
 type AnalyticsDataPoint struct {
 	Value      string `json:"value"`
-	ClickCount int64  `json:"click_count"`
+	TotalClicks int64  `json:"total_clicks"`
 }
 
 // GetDiffrentTypeAnalyticsData retrieves analytics data for a specific URL by dataType (country, referrer, etc.)
@@ -173,7 +173,7 @@ func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccur
 	// Build and execute the query to get top 10 values by click count
 	query := fmt.Sprintf(`SELECT 
 		%s AS value,
-		SUM(total_clicks) AS click_count
+		SUM(total_clicks) AS total_clicks
 	FROM 
 		%s
 	WHERE 
@@ -182,7 +182,7 @@ func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccur
 	GROUP BY 
 		%s
 	ORDER BY 
-		click_count DESC
+		total_clicks DESC
 	LIMIT 10 OFFSET ?`,
 		validDataType, tableName, timeField, validDataType)
 
@@ -207,7 +207,7 @@ func GetDiffrentTypeAnalyticsData(urlID uint64, page int, timeAccuracy TimeAccur
 // TimeSeriesDataPoint represents a single point in a time series chart
 type TimeSeriesDataPoint struct {
 	Timestamp  time.Time `json:"timestamp"`
-	ClickCount int64     `json:"click_count"`
+	TotalClicks int64     `json:"total_clicks"`
 }
 
 // GetTimeSeriesData retrieves time series data for a specific URL with optional filters
@@ -243,7 +243,7 @@ func GetTimeSeriesData(urlID uint64, timeAccuracy TimeAccuracy, filters map[stri
 	// Build and execute the query
 	query := fmt.Sprintf(`SELECT 
 		%s AS timestamp,
-		SUM(total_clicks) AS click_count
+		SUM(total_clicks) AS total_clicks
 	FROM 
 		%s
 	WHERE 
