@@ -1,103 +1,104 @@
-# Development configuration - will work on localhost
-:2000 {
-    # Configure compression
-    encode zstd gzip
-
-    # Common headers for security
+# Main domain for the frontend
+{$DOMAIN:localhost} {
+    # Enable automatic HTTPS
+    tls {$EMAIL}
+    
+    # Security headers
     header {
         # Security headers
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options nosniff
-        X-Frame-Options SAMEORIGIN
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
         X-XSS-Protection "1; mode=block"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
         Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        
+        # Remove server information
         -Server
     }
-
-    # API routes, making sure API calls to /api/* are routed to backend
-    handle_path /api/* {
-        rewrite * /api{uri}  # Rewrite the path to keep the /api prefix
+    
+    # API routes to backend
+    handle /api/* {
         reverse_proxy backend:8080 {
-            header_up X-Forwarded-For {remote_host}
+            header_up Host {host}
             header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}
         }
     }
 
-    # Static assets with longer cache time
-    @static path /_next* /favicon.ico /robots.txt /sitemap.xml /manifest.json
-    handle @static {
-        reverse_proxy website:3000 {
-            header_up X-Forwarded-For {remote_host}
+    # Health check endpoint
+    handle /health {
+        reverse_proxy backend:8080 {
+            header_up Host {host}
             header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}
         }
-        header Cache-Control "public, max-age=2592000, immutable" # 30 days + immutable for better caching
     }
 
-    # Frontend routes
+    # Everything else goes to the frontend
     handle {
         reverse_proxy website:3000 {
-            header_up X-Forwarded-For {remote_host}
+            header_up Host {host}
             header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
             header_up X-Forwarded-Proto {scheme}
         }
     }
-
-    # Handle errors with custom pages
-    handle_errors {
-        respond "{http.error.status_code} {http.error.status_text}" {http.error.status_code}
-    }
-
+    
     # Logging
     log {
-        output stdout
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
         format json
-        level INFO
     }
 }
 
-# Short URL service on a separate port
-:3001 {
-    # Configure compression
-    encode zstd gzip
-
-    # Common headers for security
+# Short domain for redirects (if different from main domain)
+{$SHORT_DOMAIN:localhost:8080} {
+    # Enable automatic HTTPS if it's a different domain
+    @is_different_domain `{$SHORT_DOMAIN} != {$DOMAIN}`
+    tls {$EMAIL} {
+        @is_different_domain
+    }
+    
+    # Security headers for short domain
     header {
-        # Security headers
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options nosniff
-        X-Frame-Options SAMEORIGIN
-        X-XSS-Protection "1; mode=block"
-        Content-Security-Policy "default-src 'self'"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
         -Server
-        # Set to no cache
-        Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
     }
-
-    # Short URL redirection (for all paths)
-    handle /* {
-        reverse_proxy backend:8080 {
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Shortener-Domain true
-        }
+    
+    # All requests on short domain go to backend for redirect handling
+    reverse_proxy backend:8080 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
     }
-
-    # Handle errors with custom pages
-    handle_errors {
-        respond "{http.error.status_code} {http.error.status_text}" {http.error.status_code}
-    }
-
-    # Logging
+    
+    # Logging for short domain
     log {
-        output stdout
+        output file /var/log/caddy/short_access.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
         format json
-        level INFO
     }
+}
+
+# Global options
+{
+    # Email for Let's Encrypt
+    email {$EMAIL}
+    
+    # Enable the admin API
+    admin off
+    
+    # Disable automatic HTTPS redirects for development
+    # auto_https off
 }

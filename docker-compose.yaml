@@ -1,0 +1,220 @@
+version: '3.8'
+
+networks:
+  zipt:
+    driver: bridge
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:16-alpine
+    container_name: zipt-database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_DBNAME:-zipt}
+      POSTGRES_USER: ${DATABASE_USER:-zipt}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zipt
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-zipt} -d ${DATABASE_DBNAME:-zipt}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis Cache (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: zipt-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password}
+    volumes:
+      - redis_data:/data
+    networks:
+      - zipt
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: zipt-backend
+    restart: unless-stopped
+    environment:
+      # Server Configuration
+      GIN_MODE: ${GIN_MODE:-release}
+      PORT: 8080
+      VERSION: ${VERSION:-1}
+      
+      # URLs and Domains
+      BASE_URL: ${BASE_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      SHORT_DOMAIN: ${SHORT_DOMAIN}
+      
+      # Database Configuration
+      DATABASE_TYPE: postgres
+      DATABASE_HOST: database
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DATABASE_USER:-zipt}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_DBNAME: ${DATABASE_DBNAME:-zipt}
+      DATABASE_SSLMODE: disable
+      DATABASE_MAX_IDLE_CONNS: ${DATABASE_MAX_IDLE_CONNS:-10}
+      DATABASE_MAX_OPEN_CONNS: ${DATABASE_MAX_OPEN_CONNS:-100}
+      DATABASE_CONN_MAX_LIFETIME: ${DATABASE_CONN_MAX_LIFETIME:-30}
+      
+      # Security Configuration
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      COOKIE_PATH: ${COOKIE_PATH:-/}
+      COOKIE_REFRESH_TOKEN_EXPIRES: ${COOKIE_REFRESH_TOKEN_EXPIRES:-60}
+      COOKIE_ACCESS_TOKEN_EXPIRES: ${COOKIE_ACCESS_TOKEN_EXPIRES:-15}
+      
+      # Encryption Configuration
+      ARGON2_MEMORY: ${ARGON2_MEMORY:-65536}
+      ARGON2_ITERATIONS: ${ARGON2_ITERATIONS:-20}
+      ARGON2_PARALLELISM: ${ARGON2_PARALLELISM:-4}
+      
+      # Optional: Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
+      
+      # Optional: AWS S3 Configuration
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET}
+      
+      # Optional: GeoIP Configuration
+      GEOIP_DATABASE_PATH: ${GEOIP_DATABASE_PATH:-./data/GeoLite2-City.mmdb}
+      
+      # Optional: Email Configuration
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+      
+      # Machine ID for distributed systems
+      MACHINE_ID: ${MACHINE_ID:-1}
+    volumes:
+      - backend_data:/app/data
+      - backend_static:/app/static
+    networks:
+      - zipt
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Frontend Website
+  website:
+    build:
+      context: ./website
+      dockerfile: ../docker/Dockerfile.website
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_API_SHORT_DOMAIN: ${NEXT_PUBLIC_API_SHORT_DOMAIN}
+        NEXT_PUBLIC_LINKS_DOMAIN: ${NEXT_PUBLIC_LINKS_DOMAIN}
+    container_name: zipt-website
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      NEXT_PUBLIC_API_SHORT_DOMAIN: ${NEXT_PUBLIC_API_SHORT_DOMAIN}
+      NEXT_PUBLIC_LINKS_DOMAIN: ${NEXT_PUBLIC_LINKS_DOMAIN}
+    networks:
+      - zipt
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Reverse Proxy (Caddy)
+  proxy:
+    image: caddy:2.7-alpine
+    container_name: zipt-proxy
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${SHORT_URL_PORT:-8080}:8080"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN}
+      SHORT_DOMAIN: ${SHORT_DOMAIN}
+      EMAIL: ${ACME_EMAIL}
+    networks:
+      - zipt
+    depends_on:
+      - backend
+      - website
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_data:
+    driver: local
+  backend_static:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local 

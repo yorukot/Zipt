@@ -1,0 +1,354 @@
+{
+  "name": "Zipt URL Shortener",
+  "description": "A modern, feature-rich URL shortener with analytics, workspace management, and custom domain support",
+  "version": "1.0.0",
+  "author": "Zipt Team",
+  "repository": "https://github.com/yorukot/zipt",
+  "license": "MIT",
+  "tags": ["url-shortener", "analytics", "go", "nextjs", "postgresql", "redis"],
+  "category": "productivity",
+  "logo": "https://raw.githubusercontent.com/yorukot/zipt/main/website/public/favicon.ico",
+  "screenshots": [
+    "https://raw.githubusercontent.com/yorukot/zipt/main/docs/screenshots/dashboard.png",
+    "https://raw.githubusercontent.com/yorukot/zipt/main/docs/screenshots/analytics.png"
+  ],
+  "documentation": "https://github.com/yorukot/zipt/blob/main/COOLIFY_DEPLOYMENT.md",
+  "compose_file": "docker-compose.coolify.yml",
+  "environment_file": "coolify.env.example",
+  "services": {
+    "proxy": {
+      "name": "Reverse Proxy",
+      "description": "Caddy reverse proxy with automatic HTTPS",
+      "image": "caddy:2.7-alpine",
+      "ports": [
+        {
+          "internal": 80,
+          "external": 80,
+          "protocol": "http",
+          "description": "HTTP traffic"
+        },
+        {
+          "internal": 443,
+          "external": 443,
+          "protocol": "https",
+          "description": "HTTPS traffic"
+        }
+      ],
+      "volumes": [
+        {
+          "source": "./docker/caddy/Caddyfile",
+          "target": "/etc/caddy/Caddyfile",
+          "type": "bind",
+          "readonly": true
+        }
+      ],
+      "healthcheck": {
+        "test": ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 3
+      }
+    },
+    "website": {
+      "name": "Frontend",
+      "description": "Next.js frontend application with TypeScript and Tailwind CSS",
+      "build": {
+        "context": "./website",
+        "dockerfile": "../docker/Dockerfile.website"
+      },
+      "healthcheck": {
+        "test": ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 3
+      }
+    },
+    "backend": {
+      "name": "API Server",
+      "description": "Go/Gin backend API with comprehensive analytics",
+      "build": {
+        "context": ".",
+        "dockerfile": "docker/Dockerfile.backend"
+      },
+      "healthcheck": {
+        "test": ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": 3
+      }
+    },
+    "database": {
+      "name": "PostgreSQL Database",
+      "description": "PostgreSQL 16 database with automatic migrations",
+      "image": "postgres:16-alpine",
+      "volumes": [
+        {
+          "source": "postgres_data",
+          "target": "/var/lib/postgresql/data",
+          "type": "volume"
+        }
+      ],
+      "healthcheck": {
+        "test": ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-zipt}"],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 5
+      }
+    },
+    "redis": {
+      "name": "Redis Cache",
+      "description": "Redis 7 for caching and session storage",
+      "image": "redis:7-alpine",
+      "volumes": [
+        {
+          "source": "redis_data",
+          "target": "/data",
+          "type": "volume"
+        }
+      ],
+      "healthcheck": {
+        "test": ["CMD", "redis-cli", "--raw", "incr", "ping"],
+        "interval": "10s",
+        "timeout": "3s",
+        "retries": 5
+      }
+    }
+  },
+  "environment": {
+    "required": [
+      {
+        "name": "DOMAIN",
+        "description": "Main domain for the web interface",
+        "example": "zipt.example.com",
+        "type": "string"
+      },
+      {
+        "name": "SHORT_DOMAIN",
+        "description": "Domain for short URL redirects",
+        "example": "short.example.com",
+        "type": "string"
+      },
+      {
+        "name": "ACME_EMAIL",
+        "description": "Email for Let's Encrypt SSL certificates",
+        "example": "admin@example.com",
+        "type": "email"
+      },
+      {
+        "name": "DATABASE_PASSWORD",
+        "description": "PostgreSQL database password",
+        "type": "password",
+        "generate": true
+      },
+      {
+        "name": "JWT_SECRET_KEY",
+        "description": "Secret key for JWT token signing",
+        "type": "password",
+        "generate": true,
+        "length": 64
+      },
+      {
+        "name": "REDIS_PASSWORD",
+        "description": "Redis authentication password",
+        "type": "password",
+        "generate": true
+      },
+      {
+        "name": "BASE_URL",
+        "description": "Base URL for the application",
+        "example": "https://zipt.example.com",
+        "type": "url"
+      },
+      {
+        "name": "BACKEND_URL",
+        "description": "Backend API URL",
+        "example": "https://zipt.example.com",
+        "type": "url"
+      },
+      {
+        "name": "FRONTEND_URL",
+        "description": "Frontend application URL",
+        "example": "https://zipt.example.com",
+        "type": "url"
+      },
+      {
+        "name": "NEXT_PUBLIC_API_BASE_URL",
+        "description": "Public API base URL for frontend",
+        "example": "https://zipt.example.com/api/v1",
+        "type": "url"
+      },
+      {
+        "name": "NEXT_PUBLIC_API_SHORT_DOMAIN",
+        "description": "Public short domain for frontend",
+        "example": "https://short.example.com",
+        "type": "url"
+      },
+      {
+        "name": "NEXT_PUBLIC_LINKS_DOMAIN",
+        "description": "Links domain for frontend",
+        "example": "short.example.com",
+        "type": "string"
+      },
+      {
+        "name": "COOKIE_DOMAIN",
+        "description": "Domain for cookie settings",
+        "example": "zipt.example.com",
+        "type": "string"
+      }
+    ],
+    "optional": [
+      {
+        "name": "DATABASE_USER",
+        "description": "PostgreSQL database username",
+        "default": "zipt",
+        "type": "string"
+      },
+      {
+        "name": "DATABASE_DBNAME",
+        "description": "PostgreSQL database name",
+        "default": "zipt",
+        "type": "string"
+      },
+      {
+        "name": "GIN_MODE",
+        "description": "Gin framework mode",
+        "default": "release",
+        "type": "select",
+        "options": ["release", "debug"]
+      },
+      {
+        "name": "VERSION",
+        "description": "Application version",
+        "default": "1",
+        "type": "string"
+      },
+      {
+        "name": "MACHINE_ID",
+        "description": "Machine ID for distributed systems",
+        "default": "1",
+        "type": "number"
+      },
+      {
+        "name": "AWS_ACCESS_KEY_ID",
+        "description": "AWS access key for S3 storage",
+        "type": "string"
+      },
+      {
+        "name": "AWS_SECRET_ACCESS_KEY",
+        "description": "AWS secret key for S3 storage",
+        "type": "password"
+      },
+      {
+        "name": "AWS_REGION",
+        "description": "AWS region for S3 storage",
+        "default": "us-east-1",
+        "type": "string"
+      },
+      {
+        "name": "S3_BUCKET",
+        "description": "S3 bucket name for file storage",
+        "type": "string"
+      },
+      {
+        "name": "SMTP_HOST",
+        "description": "SMTP server hostname",
+        "type": "string"
+      },
+      {
+        "name": "SMTP_PORT",
+        "description": "SMTP server port",
+        "default": "587",
+        "type": "number"
+      },
+      {
+        "name": "SMTP_USERNAME",
+        "description": "SMTP username",
+        "type": "string"
+      },
+      {
+        "name": "SMTP_PASSWORD",
+        "description": "SMTP password",
+        "type": "password"
+      },
+      {
+        "name": "SMTP_FROM",
+        "description": "Email sender address",
+        "type": "email"
+      }
+    ]
+  },
+  "volumes": [
+    {
+      "name": "postgres_data",
+      "description": "PostgreSQL database files",
+      "backup": true
+    },
+    {
+      "name": "redis_data",
+      "description": "Redis cache data",
+      "backup": false
+    },
+    {
+      "name": "backend_data",
+      "description": "Backend application data",
+      "backup": true
+    },
+    {
+      "name": "caddy_data",
+      "description": "Caddy SSL certificates and data",
+      "backup": true
+    },
+    {
+      "name": "caddy_config",
+      "description": "Caddy configuration cache",
+      "backup": false
+    }
+  ],
+  "networks": [
+    {
+      "name": "default",
+      "description": "Default network for all services"
+    }
+  ],
+  "features": [
+    "URL Shortening with custom codes",
+    "Comprehensive Analytics Dashboard",
+    "Workspace Management",
+    "Custom Domain Support",
+    "Team Collaboration",
+    "Geographic Analytics",
+    "Device and Browser Tracking",
+    "Real-time Analytics",
+    "Dark/Light Theme",
+    "Multi-language Support",
+    "RESTful API",
+    "Automatic HTTPS",
+    "Health Monitoring"
+  ],
+  "requirements": {
+    "memory": "512MB",
+    "cpu": "0.5",
+    "storage": "2GB"
+  },
+  "scaling": {
+    "horizontal": true,
+    "vertical": true,
+    "load_balancer": true
+  },
+  "backup": {
+    "database": true,
+    "volumes": ["postgres_data", "backend_data", "caddy_data"],
+    "frequency": "daily"
+  },
+  "monitoring": {
+    "health_checks": true,
+    "metrics": true,
+    "logs": true
+  },
+  "security": {
+    "https": true,
+    "security_headers": true,
+    "password_hashing": "argon2",
+    "jwt_tokens": true
+  }
+} 

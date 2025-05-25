@@ -144,12 +144,10 @@ export function fillMissingTimePoints(
 // Transform data for charts - filter out ENGAGEMENT entries and format data
 export function transformReferrerData(referrerItems: AnalyticsItem[]): ChartItem[] {
   return (referrerItems || [])
-    .map((item) => ({
+    .map((item, index) => ({
       name: item.value || "Unknown",
       value: item.total_clicks || 0,
-      fill: item.value
-        ? `var(--color-${item.value.replace(/\./g, "-")})`
-        : "var(--muted)",
+      fill: `var(--chart-${(index % 5) + 1})`,
     }));
 }
 

@@ -10,11 +10,11 @@ import { Button } from "@/components/ui/button";
 import { fetcher } from "@/lib/utils/api";
 import API_URLS from "@/lib/api-urls";
 
-import { URLHeader } from "./url-header";
-import { PeriodSelector } from "./period-selector";
-import { TimeSeriesChart } from "./time-series-chart";
-import { DeviceCharts } from "./device-charts";
-import { DetailTabs } from "./detail-tabs";
+import { URLHeader } from "./_components/url-header";
+import { PeriodSelector } from "./_components/period-selector";
+import { TimeSeriesChart } from "./_components/time-series-chart";
+import { DeviceCharts } from "./_components/device-charts";
+import { DetailTabs } from "./_components/detail-tabs";
 import {
   AnalyticsResponse,
   TimeSeriesResponse,
@@ -26,7 +26,7 @@ import {
   transformCountryData,
   transformCityData,
   transformOsData,
-} from "./utils";
+} from "./_components/utils";
 
 // Helper function to convert bar chart data to pie chart format
 function convertToPieChartFormat(barData: { value: string; total: number }[]): { name: string; value: number; fill: string }[] {

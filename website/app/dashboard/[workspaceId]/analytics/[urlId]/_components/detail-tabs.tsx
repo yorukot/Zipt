@@ -6,6 +6,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Cell,
 } from "recharts";
 import { useTranslations } from "next-intl";
 
@@ -220,10 +221,13 @@ export function DetailTabs({ countryData, cityData, referrerData, osData }: Deta
                 />
                 <Bar
                   dataKey="value"
-                  fill="var(--chart-1)"
                   radius={[0, 4, 4, 0]}
                   barSize={24}
-                />
+                >
+                  {referrerData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={`var(--chart-${(index % 5) + 1})`} />
+                  ))}
+                </Bar>
               </BarChart>
             </ChartContainer>
           </CardContent>

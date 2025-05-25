@@ -1,7 +1,7 @@
 ---
-description: 
+description: If you are going to develop backend please use this rule
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # AI Pair Programming Assistant: Gin Backend Development Guidelines
 Your Expertise
