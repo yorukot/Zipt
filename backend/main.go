@@ -56,6 +56,12 @@ func main() {
 
 	route(r)
 
+	root.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
+
 	printAppInfo()
 
 	root.NoRoute(func(c *gin.Context) {
