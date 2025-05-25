@@ -12,8 +12,8 @@
   "services": {
     "database": {
       "type": "postgresql",
-      "version": "16",
-      "description": "PostgreSQL database for storing URLs, analytics, and user data",
+      "version": "17",
+      "description": "TimescaleDB database for storing URLs, analytics, and user data with time-series capabilities",
       "healthcheck": {
         "test": ["CMD-SHELL", "pg_isready -U postgres"],
         "interval": "30s",

@@ -83,7 +83,7 @@ If you want to use custom domains:
 
 ### Database Configuration
 
-The setup includes PostgreSQL by default. For external database:
+The setup includes TimescaleDB by default. For external database:
 
 1. Remove the `database` service from docker-compose.yml
 2. Update these environment variables:
@@ -127,7 +127,7 @@ The deployment includes:
 
 - **Frontend**: Next.js application (port 3000)
 - **Backend**: Go/Gin API server (port 8080)
-- **Database**: PostgreSQL 16
+- **Database**: TimescaleDB (PostgreSQL 17 with time-series extensions)
 - **Proxy**: Caddy 2.7 with automatic HTTPS
 
 ## 🔍 Health Checks
@@ -136,7 +136,7 @@ The application includes health checks for all services:
 
 - **Backend**: `GET /api/v1/health`
 - **Frontend**: `GET /`
-- **Database**: PostgreSQL ready check
+- **Database**: TimescaleDB ready check
 
 ## 📊 Monitoring and Logs
 
@@ -235,7 +235,7 @@ DATABASE_MAX_IDLE_CONNS=50
 For high-traffic deployments:
 
 1. **Load Balancer**: Use Coolify's load balancing features
-2. **Database**: Consider PostgreSQL clustering or managed database
+2. **Database**: Consider TimescaleDB clustering or managed TimescaleDB service
 3. **CDN**: Add CloudFlare or similar CDN for static assets
 
 ### Vertical Scaling
@@ -260,7 +260,7 @@ The application handles database migrations automatically on startup.
 
 ### Backup Strategy
 
-1. **Database Backups**: Configure automatic PostgreSQL backups
+1. **Database Backups**: Configure automatic TimescaleDB backups
 2. **Volume Backups**: Backup Docker volumes regularly
 3. **Configuration Backups**: Keep environment variables backed up
 
