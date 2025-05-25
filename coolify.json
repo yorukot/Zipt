@@ -79,8 +79,8 @@
     "backend": {
       "type": "application",
       "build": {
-        "context": "./backend",
-        "dockerfile": "Dockerfile"
+        "context": ".",
+        "dockerfile": "docker/Dockerfile.backend"
       },
       "description": "Go/Gin API server for URL shortening and analytics",
       "healthcheck": {
@@ -228,8 +228,8 @@
     "frontend": {
       "type": "application",
       "build": {
-        "context": "./website",
-        "dockerfile": "Dockerfile",
+        "context": ".",
+        "dockerfile": "docker/Dockerfile.website",
         "args": {
           "SERVER_API_ENDPOINT": "${SERVER_API_ENDPOINT}",
           "NEXT_PUBLIC_SERVER_API_ENDPOINT": "${NEXT_PUBLIC_SERVER_API_ENDPOINT}",
