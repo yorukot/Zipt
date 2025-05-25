@@ -161,7 +161,7 @@ export function TimeSeriesChart({ urlInfo, timeSeriesData, timeRange }: TimeSeri
             />
             <ChartTooltip
               content={<ChartTooltipContent />}
-              formatter={(value, name, props) => [value, "Clicks"]}
+              formatter={(value) => [value, "Clicks"]}
               labelFormatter={(label) => {
                 const date = new Date(label);
                 return `${date.toLocaleDateString()} ${date.getHours()}:00`;

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Icon } from "@iconify/react"
 
 interface UrlFaviconProps {
@@ -31,9 +32,11 @@ export function UrlFavicon({ url, className = "h-4 w-4" }: UrlFaviconProps) {
   }
 
   return (
-    <img
+    <Image
       src={faviconUrl}
       alt="Website favicon"
+      width={16}
+      height={16}
       className={className}
       onError={() => setHasError(true)}
     />

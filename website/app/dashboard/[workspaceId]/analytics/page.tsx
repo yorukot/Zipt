@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useParams } from "next/navigation";
+// useParams import removed as it's not used
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
 import {
@@ -11,8 +11,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   PieChart,
   Pie,
   ResponsiveContainer,
@@ -48,9 +46,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = React.useState("7d");
-  const params = useParams();
+  // const params = useParams(); // Unused for now
   const t = useTranslations("Dashboard");
-  const workspaceId = params.workspaceId as string;
+  // const workspaceId = params.workspaceId as string; // Unused for now
 
   // Mock analytics data - replace with API call later
   const analyticsData = {

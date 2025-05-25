@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+// Alert components removed as they're not used
 import { API_URLS } from "@/lib/api-urls";
 import { Badge } from "@/components/ui/badge";
 
@@ -29,16 +29,15 @@ interface DomainData {
   verify_token?: string;
 }
 
-interface DomainListData
-  extends Array<{
-    id: string;
-    workspace_id: string;
-    domain: string;
-    verified: boolean;
-    verify_token?: string;
-    created_at: string;
-    updated_at: string;
-  }> {}
+interface DomainListData {
+  id: string;
+  workspace_id: string;
+  domain: string;
+  verified: boolean;
+  verify_token?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -49,7 +48,6 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
   const t = useTranslations("Dashboard");
 
   const {
-    data: currentDomain,
     error: currentDomainError,
     mutate: mutateCurrentDomain,
   } = useSWR<DomainData>(API_URLS.WORKSPACE.DOMAIN.GET(workspaceId), fetcher);
@@ -58,7 +56,7 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
     data: domainList,
     error: domainListError,
     mutate: mutateDomainList,
-  } = useSWR<DomainListData>(
+  } = useSWR<DomainListData[]>(
     API_URLS.WORKSPACE.DOMAIN.LIST(workspaceId),
     fetcher
   );
@@ -115,7 +113,7 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
       setNewDomain("");
       toast.success(t("settings.savedDomain"));
     } catch (error) {
-
+      console.error("Error creating domain:", error);
       toast.error(t("settings.error"));
     } finally {
       setIsLoading(false);
@@ -144,6 +142,7 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
       await Promise.all([mutateCurrentDomain(), mutateDomainList()]);
       toast.success(t("settings.domainVerified"));
     } catch (error) {
+      console.error("Error verifying domain:", error);
       toast.error(t("settings.verificationError"));
     }
   };
@@ -275,9 +274,9 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
                                   ? domainParts[0]
                                   : "@";
                                 // For subdomains, we need the main domain for DNS settings
-                                const mainDomain = isSubdomain
-                                  ? domainParts.slice(1).join(".")
-                                  : domain.domain;
+                                // const mainDomain = isSubdomain
+                                //   ? domainParts.slice(1).join(".")
+                                //   : domain.domain;
 
                                 return (
                                   <>
@@ -345,7 +344,7 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
                                               ⚠️
                                             </span>
                                             <p className="text-xs">
-                                              Note: Some DNS providers don't
+                                              Note: Some DNS providers don&apos;t
                                               allow CNAME records on apex
                                               domains. If you encounter issues,
                                               consider using an A record
@@ -368,7 +367,7 @@ export function DomainSettings({ workspaceId }: DomainSettingsProps) {
                           <span className="text-amber-600">⚠️</span>
                           <p>
                             DNS changes may take up to 24-48 hours to propagate.
-                            Click "Verify Domain" after adding these records.
+                            Click &quot;Verify Domain&quot; after adding these records.
                           </p>
                         </div>
                       </div>

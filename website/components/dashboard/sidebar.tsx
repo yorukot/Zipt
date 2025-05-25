@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { Icon } from "@iconify/react"
 import { useTranslations } from "next-intl"
@@ -26,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { InvitationsPanel, InvitationCount } from "@/components/dashboard/invitations"
+import { InvitationsPanel } from "@/components/dashboard/invitations"
 import { useWorkspace } from "@/lib/context/workspace-context"
 import API_URLS from "@/lib/api-urls"
 
@@ -187,9 +188,11 @@ export function Sidebar({ user, onClose }: SidebarProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="w-full justify-start gap-2">
                 {user.avatar ? (
-                  <img 
+                  <Image 
                     src={user.avatar} 
                     alt={user.name} 
+                    width={24}
+                    height={24}
                     className="h-6 w-6 rounded-full" 
                   />
                 ) : (

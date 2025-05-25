@@ -80,8 +80,8 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
   const [invitations, setInvitations] = React.useState<Invitation[]>([]);
   const [inviteEmail, setInviteEmail] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isFetching, setIsFetching] = React.useState(false);
-  const [isSearching, setIsSearching] = React.useState(false);
+  // const [isFetching, setIsFetching] = React.useState(false); // Unused for now
+  // const [isSearching, setIsSearching] = React.useState(false); // Unused for now
   const [removeDialogOpen, setRemoveDialogOpen] = React.useState(false);
   const [memberToRemove, setMemberToRemove] = React.useState<Member | null>(
     null
@@ -117,16 +117,10 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
     }
   };
 
-  // Fetch invitations and users on component mount
-  React.useEffect(() => {
-    fetchWorkspaceInvitations();
-    fetchUsers();
-  }, [workspaceId]);
-
   // Fetch workspace invitations
-  const fetchWorkspaceInvitations = async () => {
+  const fetchWorkspaceInvitations = React.useCallback(async () => {
     try {
-      setIsFetching(true);
+      // setIsFetching(true); // Commented out since setIsFetching is unused
       const response = await fetch(
         API_URLS.WORKSPACE.WORKSPACE_INVITATIONS(workspaceId),
         {
@@ -148,14 +142,14 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
       console.error("Error fetching invitations:", error);
       toast.error(t("settings.error"));
     } finally {
-      setIsFetching(false);
+      // setIsFetching(false); // Commented out since setIsFetching is unused
     }
-  };
+  }, [workspaceId, t]);
 
   // Fetch all users
-  const fetchUsers = async () => {
+  const fetchUsers = React.useCallback(async () => {
     try {
-      setIsSearching(true);
+      // setIsSearching(true); // Commented out since setIsSearching is unused
       const response = await fetch(API_URLS.WORKSPACE.LIST_USERS(workspaceId), {
         method: "GET",
         headers: {
@@ -171,7 +165,14 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
       const data = await response.json();
       if (data) {
         // Map the response to the expected format with proper field names
-        const workspaceUsers = data.map((user: any) => ({
+        const workspaceUsers = data.map((user: {
+          id: string;
+          display_name?: string;
+          name?: string;
+          email?: string;
+          role?: string;
+          avatar?: string;
+        }) => ({
           id: user.id,
           name: user.display_name || user.name || "Unknown User",
           email: user.email || "",
@@ -186,9 +187,15 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
       console.error("Error fetching workspace users:", error);
       toast.error(t("settings.failedToFetchUsers"));
     } finally {
-      setIsSearching(false);
+      // setIsSearching(false); // Commented out since setIsSearching is unused
     }
-  };
+  }, [workspaceId, t]);
+
+  // Fetch invitations and users on component mount
+  React.useEffect(() => {
+    fetchWorkspaceInvitations();
+    fetchUsers();
+  }, [workspaceId, fetchWorkspaceInvitations, fetchUsers]);
 
   // Handle sending an invitation
   const handleInvite = async () => {
@@ -247,9 +254,10 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
 
       // Refresh invitations list
       fetchWorkspaceInvitations();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error inviting member:", error);
-      toast.error(error.message || t("settings.error"));
+      const errorMessage = error instanceof Error ? error.message : t("settings.error");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -286,9 +294,10 @@ export function MembersSettings({ workspaceSettings }: MembersSettingsProps) {
 
       // Refresh available users as this member can now be invited again
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error removing member:", error);
-      toast.error(error.message || t("settings.error"));
+      const errorMessage = error instanceof Error ? error.message : t("settings.error");
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

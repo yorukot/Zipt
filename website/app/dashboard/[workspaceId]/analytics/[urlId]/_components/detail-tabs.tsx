@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/tabs";
 import {
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";

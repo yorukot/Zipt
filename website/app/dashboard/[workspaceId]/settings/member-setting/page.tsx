@@ -12,7 +12,13 @@ interface Workspace {
   id: string;
   name: string;
   domain?: string;
-  members?: any[];
+  members?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    avatar?: string;
+  }>;
   integrations?: {
     googleAnalytics: boolean;
     slack: boolean;
@@ -65,7 +71,7 @@ export default function MemberSettingsPage() {
     name: workspace.name,
     domain: workspace.domain || "zipt.sh",
     members: workspace.members || [
-      { name: "You", email: "you@example.com", role: "Owner" },
+      { id: "default", name: "You", email: "you@example.com", role: "Owner" },
     ],
     integrations: workspace.integrations || {
       googleAnalytics: false,

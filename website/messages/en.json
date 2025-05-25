@@ -127,7 +127,9 @@
         "accept": "Accept",
         "reject": "Reject",
         "inviteAccepted": "Invitation accepted successfully!",
-        "inviteRejected": "Invitation rejected"
+        "inviteRejected": "Invitation rejected",
+        "inviteAcceptError": "Error accepting invitation",
+        "inviteRejectError": "Error rejecting invitation"
       },
       "stats": {
         "totalLinks": "Total Links",
@@ -146,6 +148,7 @@
         "originalUrl": "Original URL",
         "clicks": "Clicks",
         "created": "Link shortened successfully!",
+        "updated": "Link updated successfully!",
         "copied": "Copied to clipboard!",
         "error": "An error occurred. Please try again.",
         "fetchError": "Failed to fetch your links",
@@ -170,6 +173,7 @@
       "analytics": {
         "title": "Analytics",
         "selectPeriod": "Select period",
+        "last1Hour": "Last 1 hour",
         "last24Hours": "Last 24 hours",
         "last7Days": "Last 7 days",
         "last30Days": "Last 30 days",
@@ -210,6 +214,7 @@
         "bestDay": "Best Day",
         "trend": "Trend",
         "deviceBreakdown": "Device Breakdown",
+        "countryBreakdown": "Country Breakdown",
         "browserBreakdown": "Browser Breakdown",
         "heatmap": "Click Heatmap",
         "heatmapDesc": "Visual representation of click patterns",
@@ -265,6 +270,7 @@
         "verifyDomain": "Verify Domain",
         "invalidDomain": "Invalid domain format",
         "invalidDomainFormat": "Please enter a valid domain name",
+        "domainExists": "Domain already exists",
         "domainVerified": "Domain verified successfully",
         "verificationError": "Failed to verify domain",
         "savedDomain": "Domain settings saved!",
@@ -296,7 +302,20 @@
         "integrationDisabled": "{integration} integration disabled",
         "error": "An error occurred. Please try again.",
         "typeToConfirm": "Type the workspace name to confirm",
-        "workspaceDeleted": "Workspace has been permanently deleted"
+        "workspaceDeleted": "Workspace has been permanently deleted",
+        "failedToFetchUsers": "Failed to fetch users",
+        "unknownUser": "Unknown User",
+        "dangerZone": "Danger Zone",
+        "dangerZoneDescription": "Once you delete a workspace, there is no going back. Please be certain.",
+        "deleteWorkspace": "Delete workspace",
+        "deleteWorkspaceTitle": "Delete workspace permanently?",
+        "deleteWorkspaceDescription": "This action is irreversible and will permanently delete the workspace",
+        "deleteWorkspaceConfirmation": "Please type {workspaceName} to confirm deletion:",
+        "deleteWorkspaceConfirmationPlaceholder": "Type the workspace name to confirm",
+        "deleteWorkspacePermanently": "Permanently Delete Workspace",
+        "deleteWorkspaceCheckUnderstanding": "I understand that this will delete all workspace settings and configurations",
+        "deleteWorkspaceCheckLinks": "I understand that all links created in this workspace will no longer work",
+        "deleteWorkspaceCheckPermanent": "I understand that this action is permanent and cannot be undone"
       }
     },
     "Profile": {

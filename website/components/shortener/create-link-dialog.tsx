@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+// Label import removed as it's not used
 import {
   Select,
   SelectContent,
@@ -152,7 +152,7 @@ export function LinkDialog({
     setIsLoading(true);
 
     try {
-      const payload: Record<string, any> = {
+      const payload: Record<string, string> = {
         original_url: data.url,
       };
 

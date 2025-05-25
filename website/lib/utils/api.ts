@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import API_URLS from "@/lib/api-urls";
+// API_URLS import removed as it's not used
 
 export const fetcher = async (url: string) => {
   try {

@@ -5,32 +5,12 @@ import { useParams } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { format } from "date-fns";
-
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { UrlFavicon } from "@/components/url-favicon";
 import API_URLS from "@/lib/api-urls";
 import { useWorkspace } from "@/lib/context/workspace-context";
 import { LinkDialog } from "@/components/shortener/create-link-dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormDescription,
-} from "@/components/ui/form";
 
 // Define interfaces for our data
 interface LinkData {
@@ -58,8 +38,8 @@ export default function DashboardPage() {
     null
   );
   const [isLoadingLinks, setIsLoadingLinks] = React.useState(true);
-  const [domains, setDomains] = React.useState<DomainData[]>([]);
-  const [isLoadingDomains, setIsLoadingDomains] = React.useState(false);
+  const [domains] = React.useState<DomainData[]>([]);
+  // const [isLoadingDomains, setIsLoadingDomains] = React.useState(false); // Unused for now
   
   const params = useParams();
   const t = useTranslations("Dashboard");
@@ -77,37 +57,30 @@ export default function DashboardPage() {
     workspaceName.endsWith("s") ? "'" : "'s"
   } Workspace`;
 
-  // Fetch links when component mounts or workspaceId changes
-  React.useEffect(() => {
-    fetchLinks();
-    // Uncomment when API endpoint is available
-    // fetchDomains();
-  }, [workspaceId]);
+  // This function would fetch domains once the API endpoint is available (unused for now)
+  // const fetchDomains = async () => {
+  //   // setIsLoadingDomains(true); // Commented out since setIsLoadingDomains is unused
+  //   try {
+  //     // Example endpoint - replace with actual API endpoint when available
+  //     const response = await fetch(`/api/workspaces/${workspaceId}/domains`);
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch domains");
+  //     }
+  //     const data = await response.json();
+  //     if (data) {
+  //       setDomains(data);
+  //     } else {
+  //       setDomains([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching domains:", error);
+  //     toast.error("Failed to load domains");
+  //   } finally {
+  //     // setIsLoadingDomains(false); // Commented out since setIsLoadingDomains is unused
+  //   }
+  // };
 
-  // This function would fetch domains once the API endpoint is available
-  const fetchDomains = async () => {
-    setIsLoadingDomains(true);
-    try {
-      // Example endpoint - replace with actual API endpoint when available
-      const response = await fetch(`/api/workspaces/${workspaceId}/domains`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch domains");
-      }
-      const data = await response.json();
-      if (data) {
-        setDomains(data);
-      } else {
-        setDomains([]);
-      }
-    } catch (error) {
-      console.error("Error fetching domains:", error);
-      toast.error("Failed to load domains");
-    } finally {
-      setIsLoadingDomains(false);
-    }
-  };
-
-  const fetchLinks = async () => {
+  const fetchLinks = React.useCallback(async () => {
     setIsLoadingLinks(true);
     try {
       const response = await fetch(API_URLS.URL.LIST(workspaceId));
@@ -116,7 +89,16 @@ export default function DashboardPage() {
       }
       const data = await response.json();
       if (data) {
-        const formattedLinks = data.map((link: any) => ({
+        const formattedLinks = data.map((link: {
+          id: string;
+          short_code: string;
+          original_url: string;
+          short_url: string;
+          domain_name: string;
+          total_clicks?: number;
+          created_at: string;
+          expires_at?: string;
+        }) => ({
           id: link.id,
           short_code: link.short_code,
           original_url: link.original_url,
@@ -138,7 +120,14 @@ export default function DashboardPage() {
     } finally {
       setIsLoadingLinks(false);
     }
-  };
+  }, [workspaceId, t]);
+
+  // Fetch links when component mounts or workspaceId changes
+  React.useEffect(() => {
+    fetchLinks();
+    // Uncomment when API endpoint is available
+    // fetchDomains();
+  }, [fetchLinks]);
 
   // Calculate workspace info based on actual data
   const workspaceInfo = {

@@ -22,7 +22,6 @@ import {
   getTimeRangeParams,
   transformReferrerData,
   transformDeviceData,
-  transformBrowserData,
   transformCountryData,
   transformCityData,
   transformOsData,

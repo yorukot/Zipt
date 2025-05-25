@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+// useForm and zodResolver imports removed as they're not used
 import { Icon } from "@iconify/react";
 import { useTranslations } from "next-intl";
 import * as z from "zod";
@@ -10,9 +9,9 @@ import API_URLS from "@/lib/api-urls";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { FormLabel } from "@/components/ui/form";
+// FormLabel import removed as it's not used
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+// cn import removed as it's not used
 
 // Email validation schema
 const emailSchema = z.string().email({

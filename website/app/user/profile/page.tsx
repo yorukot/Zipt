@@ -13,14 +13,12 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+// Separator import removed as it's not used
 import API_URLS from "@/lib/api-urls";
 
 // Zod schema for display name form
@@ -152,7 +150,7 @@ export default function ProfilePage() {
     }
 
     fetchUserProfile();
-  }, [router]);
+  }, [router, displayNameForm, emailForm]);
 
   // Handle display name update
   const onSubmitDisplayName = async (values: DisplayNameFormValues) => {

@@ -4,7 +4,7 @@ import * as React from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import useSWR from "swr"
-import { Icon } from "@iconify/react"
+// Icon import removed as it's not used
 
 import API_URLS from "@/lib/api-urls"
 import { Button } from "@/components/ui/button"

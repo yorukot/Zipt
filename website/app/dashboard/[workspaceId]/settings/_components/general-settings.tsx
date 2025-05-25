@@ -148,23 +148,23 @@ export function GeneralSettings({ workspaceSettings }: GeneralSettingsProps) {
         
         <div className="pt-6">
           <Separator className="mb-6" />
-          <h3 className="text-lg font-medium text-destructive mb-2">Danger Zone</h3>
+          <h3 className="text-lg font-medium text-destructive mb-2">{t("settings.dangerZone")}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Once you delete a workspace, there is no going back. Please be certain.
+            {t("settings.dangerZoneDescription")}
           </p>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="destructive" className="flex items-center">
                 <Icon icon="lucide:trash-2" className="mr-2 h-4 w-4" />
-                Delete workspace
+                {t("settings.deleteWorkspace")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-destructive">Delete workspace permanently?</DialogTitle>
+                <DialogTitle className="text-destructive">{t("settings.deleteWorkspaceTitle")}</DialogTitle>
                 <DialogDescription>
-                  This action is irreversible and will permanently delete the workspace
+                  {t("settings.deleteWorkspaceDescription")}
                   <span className="font-bold"> {workspaceSettings.name}</span>.
                 </DialogDescription>
               </DialogHeader>
@@ -183,7 +183,7 @@ export function GeneralSettings({ workspaceSettings }: GeneralSettingsProps) {
                       htmlFor="check-understanding" 
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I understand that this will delete all workspace settings and configurations
+                      {t("settings.deleteWorkspaceCheckUnderstanding")}
                     </label>
                   </div>
 
@@ -199,7 +199,7 @@ export function GeneralSettings({ workspaceSettings }: GeneralSettingsProps) {
                       htmlFor="check-links" 
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I understand that all links created in this workspace will no longer work
+                      {t("settings.deleteWorkspaceCheckLinks")}
                     </label>
                   </div>
 
@@ -215,17 +215,17 @@ export function GeneralSettings({ workspaceSettings }: GeneralSettingsProps) {
                       htmlFor="check-permanent" 
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I understand that this action is permanent and cannot be undone
+                      {t("settings.deleteWorkspaceCheckPermanent")}
                     </label>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <p className="text-sm font-medium">
-                    Please type <span className="font-bold">{workspaceSettings.name}</span> to confirm deletion:
+                    {t("settings.deleteWorkspaceConfirmation", { workspaceName: workspaceSettings.name })}
                   </p>
                   <Input 
-                    placeholder="Type the workspace name to confirm"
+                    placeholder={t("settings.deleteWorkspaceConfirmationPlaceholder")}
                     value={deleteConfirmation}
                     onChange={(e) => setDeleteConfirmation(e.target.value)}
                     className="border-destructive/50 focus-visible:ring-destructive/30"
@@ -235,7 +235,7 @@ export function GeneralSettings({ workspaceSettings }: GeneralSettingsProps) {
               
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
+                  {t("settings.cancel")}
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -245,7 +245,7 @@ export function GeneralSettings({ workspaceSettings }: GeneralSettingsProps) {
                   {isDeleteLoading && (
                     <Icon icon="lucide:loader-2" className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Permanently Delete Workspace
+                  {t("settings.deleteWorkspacePermanently")}
                 </Button>
               </DialogFooter>
             </DialogContent>

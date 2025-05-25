@@ -12,7 +12,11 @@ interface Workspace {
   id: string;
   name: string;
   domain?: string;
-  members?: any[];
+  members?: Array<{
+    name: string;
+    email: string;
+    role: string;
+  }>;
   integrations?: {
     googleAnalytics: boolean;
     slack: boolean;

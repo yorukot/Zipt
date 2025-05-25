@@ -18,14 +18,7 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
+// ChartConfig import removed as it's not used in this component
 
 import { CountryFlag } from "./country-flag";
 
@@ -64,7 +57,7 @@ const DeviceDisplay = ({ deviceName }: { deviceName: string }) => {
 };
 
 // Custom tooltip content for device data
-const DeviceTooltipContent = (props: any) => {
+const DeviceTooltipContent = (props: { active?: boolean; payload?: Array<{ payload: ChartItem }> }) => {
   const { active, payload } = props;
   
   if (!active || !payload || !payload.length) {
@@ -86,27 +79,27 @@ const DeviceTooltipContent = (props: any) => {
   );
 };
 
-// Custom legend content for device data
-const DeviceLegendContent = (props: any) => {
-  const { payload } = props;
-  
-  return (
-    <ul className="flex flex-wrap gap-4 mt-4">
-      {payload.map((entry: any, index: number) => (
-        <li key={`item-${index}`} className="flex items-center gap-2">
-          <span
-            className="h-3 w-3 rounded-sm"
-            style={{ backgroundColor: entry.color }}
-          />
-          <DeviceDisplay deviceName={entry.value} />
-        </li>
-      ))}
-    </ul>
-  );
-};
+// Custom legend content for device data (unused)
+// const DeviceLegendContent = (props: { payload?: Array<{ value: string; color: string }> }) => {
+//   const { payload } = props;
+//   
+//   return (
+//     <ul className="flex flex-wrap gap-4 mt-4">
+//       {payload?.map((entry, index: number) => (
+//         <li key={`item-${index}`} className="flex items-center gap-2">
+//           <span
+//             className="h-3 w-3 rounded-sm"
+//             style={{ backgroundColor: entry.color }}
+//           />
+//           <DeviceDisplay deviceName={entry.value} />
+//         </li>
+//       ))}
+//     </ul>
+//   );
+// };
 
 // Custom tooltip content for country data
-const CountryTooltipContent = (props: any) => {
+const CountryTooltipContent = (props: { active?: boolean; payload?: Array<{ payload: ChartItem }> }) => {
   const { active, payload } = props;
   
   if (!active || !payload || !payload.length) {
@@ -130,65 +123,65 @@ const CountryTooltipContent = (props: any) => {
   );
 };
 
-// Custom legend content for country data
-const CountryLegendContent = (props: any) => {
-  const { payload } = props;
-  
-  return (
-    <ul className="flex flex-wrap gap-4 mt-4">
-      {payload.map((entry: any, index: number) => (
-        <li key={`item-${index}`} className="flex items-center gap-2">
-          <span
-            className="h-3 w-3 rounded-sm"
-            style={{ backgroundColor: entry.color }}
-          />
-          <CountryFlag 
-            countryCode={entry.value}
-            className="text-sm"
-          />
-        </li>
-      ))}
-    </ul>
-  );
-};
+// Custom legend content for country data (unused)
+// const CountryLegendContent = (props: { payload?: Array<{ value: string; color: string }> }) => {
+//   const { payload } = props;
+//   
+//   return (
+//     <ul className="flex flex-wrap gap-4 mt-4">
+//       {payload?.map((entry, index: number) => (
+//         <li key={`item-${index}`} className="flex items-center gap-2">
+//           <span
+//             className="h-3 w-3 rounded-sm"
+//             style={{ backgroundColor: entry.color }}
+//           />
+//           <CountryFlag 
+//             countryCode={entry.value}
+//             className="text-sm"
+//           />
+//         </li>
+//       ))}
+//     </ul>
+//   );
+// };
 
 export function DeviceCharts({ deviceData, countryData }: DeviceChartsProps) {
   const t = useTranslations("Dashboard");
 
-  // Chart configurations
-  const deviceConfig: ChartConfig = {
-    Desktop: {
-      label: "Desktop",
-      color: "var(--chart-1)",
-    },
-    Mobile: {
-      label: "Mobile",
-      color: "var(--chart-2)",
-    },
-    Tablet: {
-      label: "Tablet",
-      color: "var(--chart-3)",
-    },
-  };
+  // Chart configurations (unused but kept for potential future use)
+  // const deviceConfig: ChartConfig = {
+  //   Desktop: {
+  //     label: "Desktop",
+  //     color: "var(--chart-1)",
+  //   },
+  //   Mobile: {
+  //     label: "Mobile",
+  //     color: "var(--chart-2)",
+  //   },
+  //   Tablet: {
+  //     label: "Tablet",
+  //     color: "var(--chart-3)",
+  //   },
+  // };
 
-  const countryConfig: ChartConfig = {
-    USA: {
-      label: "USA",
-      color: "var(--chart-1)",
-    },
-    Canada: {
-      label: "Canada",
-      color: "var(--chart-2)",
-    },
-    UK: {
-      label: "UK",
-      color: "var(--chart-3)",
-    },
-    Other: {
-      label: "Other",
-      color: "var(--chart-4)",
-    },
-  };
+  // const countryConfig: ChartConfig = {
+  //   USA: {
+  //     label: "USA",
+  //     color: "var(--chart-1)",
+  //   },
+  //   Canada: {
+  //     label: "Canada",
+  //     color: "var(--chart-2)",
+  //   },
+  //   UK: {
+  //     label: "UK",
+  //     color: "var(--chart-3)",
+  //   },
+  //   Other: {
+  //     label: "Other",
+  //     color: "var(--chart-4)",
+  //   },
+  // };
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -219,7 +212,6 @@ export function DeviceCharts({ deviceData, countryData }: DeviceChartsProps) {
                 nameKey="name"
                 paddingAngle={2}
                 label={({ name, percent }) => {
-                  const icon = getDeviceIcon(name);
                   return `${name}: ${(percent * 100).toFixed(0)}%`;
                 }}
               >
