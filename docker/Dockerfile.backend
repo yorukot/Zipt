@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache gcc musl-dev git
@@ -27,14 +27,11 @@ FROM alpine:3.18
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata sqlite
+RUN apk add --no-cache ca-certificates tzdata sqlite wget
 
 # Copy binary from build stage
 COPY --from=builder /app/main /app/main
 RUN chmod +x /app/main
-
-# Copy configuration files
-COPY --from=builder /app/template.env .env
 
 # Create directory for SQLite database (if used)
 RUN mkdir -p /app/data
