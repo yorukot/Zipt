@@ -32,7 +32,6 @@ ACME_EMAIL=admin@example.com
 # Security
 JWT_SECRET_KEY=your_super_secret_jwt_key_here_make_it_long_and_random
 DATABASE_PASSWORD=your_secure_database_password_here
-REDIS_PASSWORD=your_redis_password_here
 
 # Application URLs
 BASE_URL=https://your-domain.com
@@ -97,17 +96,7 @@ The setup includes PostgreSQL by default. For external database:
    DATABASE_SSLMODE=require
    ```
 
-### Redis Configuration
 
-Redis is included for caching. For external Redis:
-
-1. Remove the `redis` service from docker-compose.yml
-2. Update these environment variables:
-   ```env
-   REDIS_HOST=your-redis-host
-   REDIS_PORT=6379
-   REDIS_PASSWORD=your-redis-password
-   ```
 
 ### Email Configuration (Optional)
 
@@ -139,7 +128,6 @@ The deployment includes:
 - **Frontend**: Next.js application (port 3000)
 - **Backend**: Go/Gin API server (port 8080)
 - **Database**: PostgreSQL 16
-- **Cache**: Redis 7
 - **Proxy**: Caddy 2.7 with automatic HTTPS
 
 ## 🔍 Health Checks
@@ -149,7 +137,6 @@ The application includes health checks for all services:
 - **Backend**: `GET /api/v1/health`
 - **Frontend**: `GET /`
 - **Database**: PostgreSQL ready check
-- **Redis**: Redis ping check
 
 ## 📊 Monitoring and Logs
 
@@ -239,11 +226,7 @@ DATABASE_MAX_OPEN_CONNS=200
 DATABASE_MAX_IDLE_CONNS=50
 ```
 
-#### Redis Optimization
-```bash
-# Monitor Redis memory usage
-docker exec zipt-redis redis-cli info memory
-```
+
 
 ## 📈 Scaling
 
@@ -253,8 +236,7 @@ For high-traffic deployments:
 
 1. **Load Balancer**: Use Coolify's load balancing features
 2. **Database**: Consider PostgreSQL clustering or managed database
-3. **Redis**: Use Redis Cluster for distributed caching
-4. **CDN**: Add CloudFlare or similar CDN for static assets
+3. **CDN**: Add CloudFlare or similar CDN for static assets
 
 ### Vertical Scaling
 
@@ -327,7 +309,6 @@ Before going live:
 ### Optional Variables
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `REDIS_PASSWORD` | Redis password | `redis_password` |
 | `GIN_MODE` | Gin framework mode | `release` |
 | `DATABASE_MAX_OPEN_CONNS` | Max DB connections | `100` |
 
